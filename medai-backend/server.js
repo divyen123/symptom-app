@@ -909,6 +909,87 @@ app.delete("/api/medications", authMiddleware, async (req, res) => {
   }
 });
 
+// GET all saved plans
+app.get("/api/saved-plans", authMiddleware, async (req, res) => {
+  try {
+    const { data: plans, error } = await supabase
+      .from("saved_plans")
+      .select("id, plan_name, plan_data, created_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    // Map backend snake_case to frontend keys if needed, or return as is
+    const mapped = (plans || []).map(p => ({
+      id: p.id,
+      plan_name: p.plan_name,
+      plan_data: p.plan_data,
+      created_at: p.created_at
+    }));
+    res.json(mapped);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new saved plan
+app.post("/api/saved-plans", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      plan_name: req.body.planName || `Health Plan - ${new Date().toLocaleDateString()}`,
+      plan_data: req.body.planData
+    };
+
+    const { data: doc, error } = await supabase
+      .from("saved_plans")
+      .insert(record)
+      .select("id, plan_name, plan_data, created_at")
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({
+      id: doc.id,
+      plan_name: doc.plan_name,
+      plan_data: doc.plan_data,
+      created_at: doc.created_at
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE one saved plan
+app.delete("/api/saved-plans/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("saved_plans")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE all saved plans
+app.delete("/api/saved-plans", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("saved_plans")
+      .delete()
+      .eq("user_id", req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Listen ───────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

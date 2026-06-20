@@ -118,3 +118,15 @@ create table if not exists public.medications (
 
 -- Index for medications by user_id
 create index if not exists medications_user_id_idx on public.medications (user_id);
+
+-- 8. Create Saved Plans Table
+create table if not exists public.saved_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  plan_name text not null,
+  plan_data jsonb not null,
+  created_at timestamp with time zone default now()
+);
+
+-- Index for saved plans by user_id
+create index if not exists saved_plans_user_id_idx on public.saved_plans (user_id);

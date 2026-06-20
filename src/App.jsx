@@ -227,6 +227,11 @@ const apiCreateMedication    = (med) => fetch(`${API}/medications`, { method: "P
 const apiDeleteMedication    = (id) => fetch(`${API}/medications/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
 const apiDeleteAllMedications= () => fetch(`${API}/medications`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
 
+const apiFetchSavedPlans = () => fetch(`${API}/saved-plans`, { headers: authHeaders() }).then(r => r.json());
+const apiSavePlan        = (plan) => fetch(`${API}/saved-plans`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(plan) }).then(r => r.json());
+const apiDeletePlan      = (id) => fetch(`${API}/saved-plans/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiDeleteAllPlans  = () => fetch(`${API}/saved-plans`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+
 const apiResetProfile = () =>
   fetch(`${API}/auth/reset-profile`, { method: "DELETE", headers: authHeaders() }).then(async r => {
     const data = await r.json();
@@ -1267,7 +1272,7 @@ function VerificationDialog({
   );
 }
 
-function PageBackButton({ onClick, label = "Back to Wellness" }) {
+function PageBackButton({ onClick, label = "Back to Wellness", style = {} }) {
   return (
     <button
       onClick={onClick}
@@ -1278,6 +1283,7 @@ function PageBackButton({ onClick, label = "Back to Wellness" }) {
         padding: "8px 14px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
         cursor: "pointer", marginBottom: 16, fontFamily: "var(--font)",
         transition: "all 0.2s ease",
+        ...style
       }}
       onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.borderColor = "var(--blue-border)"; }}
       onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.borderColor = "var(--border)"; }}
@@ -11190,8 +11196,203 @@ function AuthFlow({ onLoginSuccess }) {
 
 
 
+const NUTRIENT_DETAILS_LOOKUP = {
+  magnesium: {
+    foods: [
+      "Spinach & Kale (rich in chlorophyll)",
+      "Pumpkin Seeds (highly concentrated source)",
+      "Almonds & Cashews (great for snacks)",
+      "Black Beans & Edamame (fiber-rich options)",
+      "Avocados (healthy fats + magnesium)",
+      "Dark Chocolate (70%+ cocoa, delicious mineral source)"
+    ],
+    ingredients: ["Magnesium Citrate", "Magnesium Glycinate (highly bioavailable)", "Chlorophyll", "Phytic Acid"],
+    tips: [
+      "Add a handful of pumpkin seeds to your salads or morning oatmeal.",
+      "Blend baby spinach into smoothies for an easy magnesium boost.",
+      "Enjoy a square of high-quality dark chocolate in the evening."
+    ]
+  },
+  melatonin: {
+    foods: [
+      "Tart Cherries or Tart Cherry Juice",
+      "Walnuts (excellent source of melatonin + healthy fats)",
+      "Pistachios (one of the highest melatonin levels in nuts)",
+      "Oats & Barley (complex carbs that assist sleep)",
+      "Warm Cow's Milk (contains tryptophan + melatonin)",
+      "Fatty Fish like Salmon (supports natural melatonin synthesis)"
+    ],
+    ingredients: ["Phytomelatonin", "Tryptophan", "Serotonin precursor", "Vitamin B6"],
+    tips: [
+      "Drink a small glass of unsweetened tart cherry juice 1 hour before bed.",
+      "Snack on a small handful of walnuts or pistachios as a pre-bedtime snack.",
+      "Ensure your bedroom is completely dark to aid natural melatonin production."
+    ]
+  },
+  zinc: {
+    foods: [
+      "Oysters (highest concentration of zinc)",
+      "Red Meat & Poultry (highly bioavailable source)",
+      "Pumpkin Seeds & Sesame Seeds",
+      "Chickpeas & Lentils (must be soaked/cooked to reduce phytates)",
+      "Cashews & Almonds (convenient plant source)",
+      "Greek Yogurt & Cheese (dairy-based zinc)"
+    ],
+    ingredients: ["Zinc Picolinate", "Zinc Gluconate", "Phytic acid inhibitors"],
+    tips: [
+      "Soak beans, seeds, and grains before cooking to improve zinc absorption.",
+      "Mix pumpkin seeds and cashews for an immune-boosting afternoon trail mix.",
+      "Incorporate lean cuts of beef or chicken into your main meals."
+    ]
+  },
+  "omega-3": {
+    foods: [
+      "Wild Salmon (rich in EPA and DHA)",
+      "Chia Seeds (excellent plant-based ALA source)",
+      "Flaxseeds (ground flaxseeds are best for absorption)",
+      "Walnuts (easy snack or salad topping)",
+      "Sardines & Mackerel (highly nutritious small fish)",
+      "Brussels Sprouts (modest plant source of ALA)"
+    ],
+    ingredients: ["EPA (Eicosapentaenoic Acid)", "DHA (Docosahexaenoic Acid)", "ALA (Alpha-Linolenic Acid)"],
+    tips: [
+      "Use ground flaxseeds instead of whole seeds to ensure your body absorbs the nutrients.",
+      "Aim to consume fatty fish like salmon or sardines twice a week.",
+      "Stir chia seeds into yogurt, oatmeal, or puddings and let them swell."
+    ]
+  },
+  calcium: {
+    foods: [
+      "Yogurt & Kefir (highly bioavailable dairy sources)",
+      "Tofu (calcium-set tofu is extremely rich in calcium)",
+      "Sardines (canned with bones contain high calcium)",
+      "Collard Greens & Kale (excellent plant sources)",
+      "Fortified Plant Milks (Almond, Soy, or Oat)",
+      "Almonds & Chia Seeds (nutritious dairy-free choices)"
+    ],
+    ingredients: ["Calcium Carbonate", "Calcium Citrate", "Lactic Acid", "Vitamin D co-factor"],
+    tips: [
+      "Combine calcium-rich foods with Vitamin D (like sunlight or mushrooms) for proper absorption.",
+      "Choose calcium-set tofu for stir-fries and scramble dishes.",
+      "Drink fortified plant milk in your morning cereals or coffee."
+    ]
+  },
+  iron: {
+    foods: [
+      "Red Meat & Organ Meats (highly bioavailable heme iron)",
+      "Spinach & Swiss Chard (non-heme plant iron)",
+      "Lentils & Chickpeas (excellent vegan options)",
+      "Quinoa (gluten-free iron source)",
+      "Pumpkin Seeds (great mineral profile)",
+      "Tofu & Tempeh (soy-based iron sources)"
+    ],
+    ingredients: ["Heme Iron", "Non-Heme Iron", "Ferrous Sulfate", "Vitamin C absorption booster"],
+    tips: [
+      "Consume iron-rich plant foods with Vitamin C (e.g., lemon juice on spinach) to double absorption.",
+      "Avoid drinking tea or coffee during meals, as tannins block iron absorption.",
+      "Cook meals in a cast-iron skillet to naturally increase food iron content."
+    ]
+  },
+  "vitamin c": {
+    foods: [
+      "Citrus fruits like Oranges & Grapefruits",
+      "Red & Green Bell Peppers (extremely high Vitamin C)",
+      "Strawberries & Raspberries",
+      "Kiwi Fruit (two kiwis provide over 100% daily value)",
+      "Broccoli & Brussels Sprouts",
+      "Guava & Papaya (tropical antioxidant powerhouses)"
+    ],
+    ingredients: ["Ascorbic Acid", "Bioflavonoids", "Citric Acid"],
+    tips: [
+      "Eat raw fruits and vegetables, as heat and cooking can destroy Vitamin C.",
+      "Add sliced bell peppers to your lunch wraps or salads.",
+      "Squeeze fresh lime or lemon juice over your cooked vegetables and proteins."
+    ]
+  },
+  "vitamin d": {
+    foods: [
+      "Cod Liver Oil (potent traditional source)",
+      "Wild-caught Salmon & Tuna",
+      "Egg Yolks (pasture-raised eggs contain more Vitamin D)",
+      "Beef Liver (dense micronutrient source)",
+      "Fortified Cereals & Juices",
+      "UV-exposed Mushrooms (natural vegan source)"
+    ],
+    ingredients: ["Vitamin D3 (Cholecalciferol)", "Vitamin D2 (Ergocalciferol)", "Calcitriol"],
+    tips: [
+      "Get 10-15 minutes of direct mid-day sunlight on your skin when possible.",
+      "Always consume Vitamin D with healthy fats (like olive oil or avocado) to aid absorption.",
+      "Consider testing your blood levels annually to adjust dietary intake."
+    ]
+  },
+  potassium: {
+    foods: [
+      "Sweet Potatoes (baked with skin is best)",
+      "Bananas (convenient potassium-rich snack)",
+      "Avocados (more potassium than a banana)",
+      "Spinach & Beet Greens (excellent dark greens)",
+      "Coconut Water (natural electrolyte beverage)",
+      "White Beans & Adzuki Beans (fiber + potassium)"
+    ],
+    ingredients: ["Potassium Chloride", "Electrolyte balance", "Sodium-potassium pump co-factor"],
+    tips: [
+      "Drink coconut water post-workout to quickly replenish potassium electrolytes.",
+      "Bake sweet potatoes whole and eat the nutrient-rich skin.",
+      "Add a sliced banana or avocado to your daily breakfast bowl."
+    ]
+  },
+  protein: {
+    foods: [
+      "Chicken Breast & Turkey (lean animal protein)",
+      "Eggs (high biological value protein source)",
+      "Greek Yogurt & Cottage Cheese",
+      "Lentils, Chickpeas & Edamame (plant-based proteins)",
+      "Quinoa (contains all nine essential amino acids)",
+      "Tofu & Tempeh (fermented/unfermented soy)"
+    ],
+    ingredients: ["Essential Amino Acids", "Branched-Chain Amino Acids (BCAAs)", "Whey", "Casein"],
+    tips: [
+      "Spread your protein intake evenly throughout all meals of the day.",
+      "Combine grains and legumes (like rice and beans) to form a complete protein.",
+      "Opt for Greek yogurt over regular yogurt for double the protein content."
+    ]
+  },
+  fiber: {
+    foods: [
+      "Oats & Oat Bran (rich in soluble beta-glucan)",
+      "Chia Seeds & Flaxseeds (gel-forming soluble fiber)",
+      "Lentils, Split Peas & Black Beans",
+      "Apples & Pears (leave skins on for pectin)",
+      "Avocados (unbelievably high in fiber + healthy fats)",
+      "Broccoli & Brussels Sprouts (insoluble roughage)"
+    ],
+    ingredients: ["Pectin", "Beta-Glucan", "Soluble Fiber", "Insoluble Cellulose"],
+    tips: [
+      "Increase your water intake significantly as you add more fiber to your diet.",
+      "Swap refined white bread and pasta for whole grain varieties.",
+      "Start your morning with a bowl of steel-cut oats topped with berries."
+    ]
+  },
+  probiotics: {
+    foods: [
+      "Greek Yogurt (look for 'live and active cultures')",
+      "Kefir (fermented milk drink with diverse strains)",
+      "Sauerkraut (raw, unpasteurized fermented cabbage)",
+      "Kimchi (spicy fermented Korean vegetables)",
+      "Kombucha (fermented sparkling tea)",
+      "Miso & Tempeh (fermented soybean products)"
+    ],
+    ingredients: ["Lactobacillus", "Bifidobacterium", "Lactic Acid Bacteria", "Prebiotic fiber feed"],
+    tips: [
+      "Check labels to ensure fermented products haven't been pasteurized after fermentation.",
+      "Eat probiotic foods alongside prebiotics (like garlic, onions, oats) to feed beneficial bacteria.",
+      "Add a spoonful of kimchi or sauerkraut as a side condiment to savory dishes."
+    ]
+  }
+};
+
 // ─── MEDITOWN VIEW ─────────────────────────────────────────────────────────────
-function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry }) {
+function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {} }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
@@ -11222,8 +11423,257 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [recommendations, setRecommendations] = useState(null);
   const [medicinesUnlocked, setMedicinesUnlocked] = useState(false);
 
+  // Saved Plans & Nutrients Drawer states
+  const [activeNutrient, setActiveNutrient] = useState(null);
+  const [nutrientDrawerOpen, setNutrientDrawerOpen] = useState(false);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerDetails, setDrawerDetails] = useState(null);
+
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [savedPlansLoading, setSavedPlansLoading] = useState(false);
+  const [viewingSavedPlan, setViewingSavedPlan] = useState(null);
+
+  const fetchSavedPlans = async () => {
+    setSavedPlansLoading(true);
+    try {
+      const data = await apiFetchSavedPlans();
+      setSavedPlans(data || []);
+    } catch (err) {
+      console.error("Failed to fetch saved plans:", err);
+    } finally {
+      setSavedPlansLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSavedPlans();
+  }, []);
+
+  const handleSaveCurrentPlan = async () => {
+    if (!recommendations) return;
+    try {
+      const goalStr = healthGoal ? ` (${healthGoal})` : "";
+      const planName = `Health Plan - ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}${goalStr}`;
+      await apiSavePlan({
+        planName,
+        planData: recommendations
+      });
+      setSavedNotice("Plan saved to database!");
+      setTimeout(() => setSavedNotice(""), 3000);
+      fetchSavedPlans();
+    } catch (err) {
+      console.error("Failed to save plan:", err);
+      alert("Error saving health plan.");
+    }
+  };
+
+  const handleDeletePlanItem = async (id, e) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this saved plan?")) return;
+    try {
+      await apiDeletePlan(id);
+      fetchSavedPlans();
+    } catch (err) {
+      console.error("Failed to delete plan:", err);
+    }
+  };
+
+  const handleClearAllPlans = async () => {
+    if (!confirm("Are you sure you want to delete ALL saved plans? This action cannot be undone.")) return;
+    try {
+      await apiDeleteAllPlans();
+      fetchSavedPlans();
+    } catch (err) {
+      console.error("Failed to clear plans:", err);
+    }
+  };
+
+  const handleViewSavedPlan = (plan) => {
+    setViewingSavedPlan(plan);
+  };
+
+  const handleNutrientClick = async (nutrient) => {
+    setActiveNutrient(nutrient);
+    setNutrientDrawerOpen(true);
+    setDrawerLoading(true);
+    setDrawerDetails(null);
+
+    const cleanName = nutrient.name.toLowerCase().trim();
+    const matchedKey = Object.keys(NUTRIENT_DETAILS_LOOKUP).find(key => 
+      cleanName.includes(key) || key.includes(cleanName)
+    );
+
+    if (matchedKey) {
+      setDrawerDetails(NUTRIENT_DETAILS_LOOKUP[matchedKey]);
+      setDrawerLoading(false);
+    } else {
+      try {
+        const prompt = `You are a medical assistant. For the nutrient/food group "${nutrient.name}", provide:
+1. A list of 4-6 specific food sources.
+2. A list of 3-4 key ingredients/compounds associated with it.
+3. 2-3 practical tips or ways to consume them.
+
+Respond ONLY with a valid JSON object matching this structure (no markdown formatting, backticks, or other text):
+{
+  "foods": ["...", "..."],
+  "ingredients": ["...", "..."],
+  "tips": ["...", "..."]
+}`;
+        const raw = await callClaude([{ role: "user", content: prompt }]);
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const data = JSON.parse(jsonMatch[0]);
+          setDrawerDetails(data);
+        } else {
+          throw new Error("No JSON structure found");
+        }
+      } catch (err) {
+        console.error("AI details fetch failed:", err);
+        setDrawerDetails({
+          foods: ["Green leafy vegetables", "Whole grains", "Nuts and seeds", "Legumes"],
+          ingredients: [nutrient.name],
+          tips: ["Include this in your daily breakfast or lunch.", "Consult a dietitian for personalized dosage."]
+        });
+      } finally {
+        setDrawerLoading(false);
+      }
+    }
+  };
+
+  const exportPlanToPDF = (plan) => {
+    try {
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const data = plan.plan_data || plan;
+
+      // Header Banner
+      doc.setFillColor(15, 23, 42); // slate-900 / navy
+      doc.rect(0, 0, 210, 32, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("MedAI Custom Health Plan", 15, 20);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text("TAILORED WELLNESS ROUTINE & DIET", 15, 26);
+
+      let y = 45;
+
+      // 1. Nutrients & Foods
+      if (data.nutrients && data.nutrients.length > 0) {
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Nutrients & Daily Foods", 15, y);
+        y += 3;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(15, y, 195, y);
+        y += 7;
+
+        data.nutrients.forEach(n => {
+          if (y > 275) { doc.addPage(); y = 20; }
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text(`• ${n.name}`, 15, y);
+          y += 5;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(71, 85, 105);
+          const benefitLines = doc.splitTextToSize(n.benefit, 170);
+          doc.text(benefitLines, 20, y);
+          y += benefitLines.length * 5 + 3;
+          doc.setTextColor(15, 23, 42);
+        });
+        y += 5;
+      }
+
+      // 2. Daily Routines
+      if (data.routines && data.routines.length > 0) {
+        if (y > 250) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Daily Routines", 15, y);
+        y += 3;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(15, y, 195, y);
+        y += 7;
+
+        data.routines.forEach(r => {
+          if (y > 275) { doc.addPage(); y = 20; }
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text(`• ${r.name}`, 15, y);
+          y += 5;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(71, 85, 105);
+          const descLines = doc.splitTextToSize(r.desc, 170);
+          doc.text(descLines, 20, y);
+          y += descLines.length * 5 + 3;
+          doc.setTextColor(15, 23, 42);
+        });
+        y += 5;
+      }
+
+      // 3. Herbal Remedies
+      if (data.herbs && data.herbs.length > 0) {
+        if (y > 250) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Herbal Remedies", 15, y);
+        y += 3;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(15, y, 195, y);
+        y += 7;
+
+        data.herbs.forEach(h => {
+          if (y > 270) { doc.addPage(); y = 20; }
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text(`• ${h.name}`, 15, y);
+          y += 5;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          doc.setTextColor(71, 85, 105);
+          const useLines = doc.splitTextToSize(`Use: ${h.use}`, 170);
+          doc.text(useLines, 20, y);
+          y += useLines.length * 5 + 2;
+          const prepLines = doc.splitTextToSize(`Preparation: ${h.preparation}`, 170);
+          doc.text(prepLines, 20, y);
+          y += prepLines.length * 5 + 4;
+          doc.setTextColor(15, 23, 42);
+        });
+        y += 5;
+      }
+
+      const fileName = plan.plan_name ? plan.plan_name.replace(/\s+/g, "_") : "Custom_Health_Plan";
+      doc.save(`${fileName}.pdf`);
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+      alert("Could not export PDF: " + err.message);
+    }
+  };
+
   useEffect(() => {
     registerInnerBack?.(() => {
+      if (nutrientDrawerOpen) {
+        setNutrientDrawerOpen(false);
+        return true;
+      }
+      if (viewingSavedPlan) {
+        setViewingSavedPlan(null);
+        return true;
+      }
       if (recommendations) {
         setRecommendations(null);
         setMedicinesUnlocked(false);
@@ -11241,7 +11691,7 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
       return false;
     });
     return () => registerInnerBack?.(null);
-  }, [selectedCategory, customNeedActive, recommendations, registerInnerBack]);
+  }, [selectedCategory, customNeedActive, recommendations, registerInnerBack, nutrientDrawerOpen, viewingSavedPlan]);
 
   const selectCategory = (id) => {
     setSelectedCategory(id);
@@ -11395,25 +11845,24 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
     if (recommendations) {
       return (
         <div style={{ animation: "mtSlideIn 0.3s ease both" }}>
-          <button
-            onClick={() => { setRecommendations(null); setMedicinesUnlocked(false); }}
-            style={{
-              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
-              padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
-              cursor: "pointer", marginBottom: 24, display: "flex", alignItems: "center", gap: 6,
-              fontFamily: "var(--font)", transition: "all 0.2s ease"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-            onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
-          >
-            ← Back to Form
-          </button>
-
-          <div style={{ marginBottom: 24, textAlign: "left" }}>
-            <h3 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "var(--navy)" }}>📋 Your Custom Health Plan</h3>
-            <p style={{ margin: "4px 0 0", fontSize: 13.5, color: "var(--text-muted)" }}>
-              Tailored nutritional recommendations, routines, and remedies based on your profile.
-            </p>
+          <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ textAlign: "left" }}>
+              <h3 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: "var(--navy)" }}>📋 Your Custom Health Plan</h3>
+              <p style={{ margin: "4px 0 0", fontSize: 13.5, color: "var(--text-muted)" }}>
+                Tailored nutritional recommendations, routines, and remedies based on your profile.
+              </p>
+            </div>
+            <button
+              onClick={handleSaveCurrentPlan}
+              style={{
+                padding: "10px 20px", background: "linear-gradient(135deg, var(--blue), #1d4ed8)",
+                color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13.5,
+                cursor: "pointer", boxShadow: "0 4px 12px rgba(37,99,235,0.2)",
+                fontFamily: "var(--font)", display: "flex", alignItems: "center", gap: 6
+              }}
+            >
+              💾 Save Plan
+            </button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -11424,7 +11873,15 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               </h4>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 {recommendations.nutrients?.map((n, idx) => (
-                  <div key={idx} style={{ background: "var(--surface-2)", borderRadius: 12, padding: 16, border: "1px solid var(--border)" }}>
+                  <div
+                    key={idx}
+                    onClick={() => handleNutrientClick(n)}
+                    style={{
+                      background: "var(--surface-2)", borderRadius: 12, padding: 16, border: "1px solid var(--border)",
+                      cursor: "pointer", transition: "all 0.2s ease"
+                    }}
+                    className="mt-item-card"
+                  >
                     <div style={{ fontWeight: 700, fontSize: 14, color: "var(--navy)", marginBottom: 4 }}>{n.name}</div>
                     <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>{n.benefit}</div>
                   </div>
@@ -11556,19 +12013,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
 
     return (
       <div style={{ animation: "mtSlideIn 0.3s ease both" }}>
-        <button
-          onClick={() => setCustomNeedActive(false)}
-          style={{
-            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
-            padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
-            cursor: "pointer", marginBottom: 24, display: "flex", alignItems: "center", gap: 6,
-            fontFamily: "var(--font)", transition: "all 0.2s ease"
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-          onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
-        >
-          ← Back to Town
-        </button>
+
 
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "28px 32px", textAlign: "left" }}>
           <h3 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 900, color: "var(--navy)" }}>✨ Custom Health Questionnaire</h3>
@@ -11900,14 +12345,16 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         .mt-save-btn:active { transform: scale(0.95); }
       `}</style>
 
-      <PageBackButton onClick={onBack} label="Go Back" />
-      <div style={{ marginBottom: 32, animation: "fadeUp 0.4s ease both" }}>
-        <h2 style={{ fontSize: 30, fontWeight: 900, color: "var(--navy)", margin: 0, display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
-          <span style={{ fontSize: 36 }}>🏙️</span> MeDiTown
-        </h2>
-        <p style={{ color: "var(--text-muted)", marginTop: 10, fontSize: 15, lineHeight: 1.6, textAlign: "left" }}>
-          Your virtual medical town — explore pharmacies, herbal remedies, nutrition, and first aid essentials.
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, animation: "fadeUp 0.4s ease both", flexWrap: "wrap", gap: 16 }}>
+        <div style={{ textAlign: "left" }}>
+          <h2 style={{ fontSize: 30, fontWeight: 900, color: "var(--navy)", margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 36 }}>🏙️</span> MeDiTown
+          </h2>
+          <p style={{ color: "var(--text-muted)", marginTop: 6, fontSize: 14.5, lineHeight: 1.5, margin: 0 }}>
+            Your virtual medical town — explore pharmacies, herbal remedies, nutrition, and first aid essentials.
+          </p>
+        </div>
+        <PageBackButton onClick={onBack} label="Go to Home" style={{ margin: 0 }} />
       </div>
 
       {/* Saved notice */}
@@ -11991,6 +12438,76 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               Custom Need
             </button>
           </div>
+
+          {/* Saved Health Plans */}
+          {savedPlans && savedPlans.length > 0 && (
+            <div style={{
+              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18,
+              padding: 24, textAlign: "left", display: "flex", flexDirection: "column", gap: 16,
+              animation: "fadeUp 0.4s ease both"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>📂</span> Saved Health Plans ({savedPlans.length})
+                </h3>
+                <button
+                  onClick={handleClearAllPlans}
+                  style={{
+                    padding: "6px 12px", border: "1px solid #ef4444", background: "transparent",
+                    color: "#ef4444", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "var(--font)", transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ef4444"; }}
+                >
+                  Clear All
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {savedPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    onClick={() => handleViewSavedPlan(plan)}
+                    style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      padding: "12px 16px", borderRadius: 10, background: "var(--surface-2)",
+                      border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s ease"
+                    }}
+                    className="mt-item-card"
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 16 }}>💾</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>
+                        {plan.plan_name}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); exportPlanToPDF(plan); }}
+                        style={{
+                          padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)",
+                          background: "var(--surface)", color: "var(--navy)", fontSize: 11.5,
+                          fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                        }}
+                      >
+                        📄 Export PDF
+                      </button>
+                      <button
+                        onClick={(e) => handleDeletePlanItem(plan.id, e)}
+                        style={{
+                          padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239, 68, 68, 0.2)",
+                          background: "rgba(239, 68, 68, 0.05)", color: "#ef4444", fontSize: 11.5,
+                          fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : activeCategory ? (
         /* Category Detail View */
@@ -12084,6 +12601,224 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
           >
             ← Back to Town
           </button>
+        </div>
+      )}
+
+      {/* Nutrient Details Side Drawer */}
+      {nutrientDrawerOpen && activeNutrient && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          zIndex: 10000, display: "flex", justifyContent: "flex-end"
+        }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => setNutrientDrawerOpen(false)}
+            style={{
+              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+              background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)"
+            }}
+          />
+          {/* Drawer Container */}
+          <div style={{
+            position: "relative", width: "100%", maxWidth: 420, height: "100%",
+            background: "var(--surface)", borderLeft: "1px solid var(--border)",
+            boxShadow: "-10px 0 30px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column",
+            animation: "mtSlideIn 0.3s ease both", overflowY: "auto", padding: 32, textAlign: "left"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "var(--navy)" }}>
+                🥦 {activeNutrient.name}
+              </h3>
+              <button
+                onClick={() => setNutrientDrawerOpen(false)}
+                style={{
+                  width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)",
+                  background: "var(--surface-2)", color: "var(--navy)", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {drawerLoading ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 16 }}>
+                <div className="spinner" style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  border: "3px solid rgba(37,99,235,0.1)", borderTopColor: "var(--blue)",
+                  animation: "spin 1s linear infinite"
+                }} />
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Loading food sources...</span>
+              </div>
+            ) : drawerDetails ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div>
+                  <h4 style={{ margin: "0 0 8px", fontSize: 14.5, fontWeight: 800, color: "var(--navy)" }}>Benefit</h4>
+                  <p style={{ margin: 0, fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.5 }}>{activeNutrient.benefit}</p>
+                </div>
+
+                <div>
+                  <h4 style={{ margin: "0 0 10px", fontSize: 14.5, fontWeight: 800, color: "var(--navy)" }}>Recommended Food Sources</h4>
+                  <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {drawerDetails.foods?.map((food, i) => (
+                      <li key={i} style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.4 }}>{food}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 style={{ margin: "0 0 10px", fontSize: 14.5, fontWeight: 800, color: "var(--navy)" }}>Associated Compounds & Ingredients</h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {drawerDetails.ingredients?.map((ing, i) => (
+                      <span key={i} style={{
+                        padding: "5px 10px", borderRadius: 8, background: "var(--surface-2)",
+                        border: "1px solid var(--border)", fontSize: 12, color: "var(--navy)", fontWeight: 600
+                      }}>
+                        {ing}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 style={{ margin: "0 0 10px", fontSize: 14.5, fontWeight: 800, color: "var(--navy)" }}>Practical Consumption Tips</h4>
+                  <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {drawerDetails.tips?.map((tip, i) => (
+                      <li key={i} style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.4 }}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Saved Plan Details Popup Modal */}
+      {viewingSavedPlan && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 24
+        }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => setViewingSavedPlan(null)}
+            style={{
+              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+              background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)"
+            }}
+          />
+          {/* Modal Container */}
+          <div style={{
+            position: "relative", width: "100%", maxWidth: 640, maxHeight: "85vh",
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column",
+            animation: "mtCardIn 0.3s ease both", overflow: "hidden"
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: "24px 32px", borderBottom: "1px solid var(--border)",
+              display: "flex", justifyContent: "space-between", alignItems: "center"
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)", textAlign: "left" }}>
+                  {viewingSavedPlan.plan_name}
+                </h3>
+                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                  Created on {new Date(viewingSavedPlan.created_at).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  onClick={() => exportPlanToPDF(viewingSavedPlan)}
+                  style={{
+                    padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)",
+                    background: "var(--surface-2)", color: "var(--navy)", fontSize: 12,
+                    fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                  }}
+                >
+                  📄 Export PDF
+                </button>
+                <button
+                  onClick={() => setViewingSavedPlan(null)}
+                  style={{
+                    width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)",
+                    background: "var(--surface-2)", color: "var(--navy)", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Content Scroll Area */}
+            <div style={{ padding: 32, overflowY: "auto", display: "flex", flexDirection: "column", gap: 24, textAlign: "left" }}>
+              {/* 1. Nutrients & Foods */}
+              {viewingSavedPlan.plan_data?.nutrients && viewingSavedPlan.plan_data.nutrients.length > 0 && (
+                <div>
+                  <h4 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>🥦</span> Nutrients & Daily Foods
+                  </h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {viewingSavedPlan.plan_data.nutrients.map((n, i) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          setViewingSavedPlan(null);
+                          handleNutrientClick(n);
+                        }}
+                        style={{
+                          background: "var(--surface-2)", borderRadius: 10, padding: 14,
+                          border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s ease"
+                        }}
+                        className="mt-item-card"
+                      >
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--navy)", marginBottom: 2 }}>{n.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{n.benefit}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Daily Routines */}
+              {viewingSavedPlan.plan_data?.routines && viewingSavedPlan.plan_data.routines.length > 0 && (
+                <div>
+                  <h4 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>🏃</span> Daily Routines
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {viewingSavedPlan.plan_data.routines.map((r, i) => (
+                      <div key={i} style={{ borderLeft: "3px solid var(--blue)", paddingLeft: 12 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--navy)", marginBottom: 2 }}>{r.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4 }}>{r.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Herbal Remedies */}
+              {viewingSavedPlan.plan_data?.herbs && viewingSavedPlan.plan_data.herbs.length > 0 && (
+                <div>
+                  <h4 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>🌿</span> Herbal Remedies
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {viewingSavedPlan.plan_data.herbs.map((h, i) => (
+                      <div key={i} style={{ background: "var(--surface-2)", borderRadius: 10, padding: 14, border: "1px solid var(--border)" }}>
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--navy)", marginBottom: 2 }}>{h.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 2 }}><strong>Use:</strong> {h.use}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}><strong>Preparation:</strong> {h.preparation}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -12595,6 +13330,7 @@ export default function App() {
           onBack={navigateBack}
           registerInnerBack={registerInnerBack}
           pushHistoryEntry={pushHistoryEntry}
+          appearance={appearance}
         />
       );
       case "settings": return (
