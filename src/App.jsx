@@ -12380,30 +12380,32 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       ) : activeCategory ? (
         /* Category Detail View */
         <div style={{ animation: "mtSlideIn 0.3s ease both" }}>
-          <button
-            onClick={() => { setSelectedCategory(null); setSearchTerm(""); }}
-            style={{
-              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
-              padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
-              cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", gap: 6,
-              fontFamily: "var(--font)", transition: "all 0.2s ease"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-            onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
-          >
-            ← Back to Town
-          </button>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: `${activeCategory.color}12`, border: `1px solid ${activeCategory.color}25`,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24
-            }}>{activeCategory.icon}</div>
-            <div style={{ textAlign: "left" }}>
-              <h3 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "var(--navy)" }}>{activeCategory.name}</h3>
-              <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-muted)" }}>{activeCategory.desc}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 14,
+                background: `${activeCategory.color}12`, border: `1px solid ${activeCategory.color}25`,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24
+              }}>{activeCategory.icon}</div>
+              <div style={{ textAlign: "left" }}>
+                <h3 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "var(--navy)" }}>{activeCategory.name}</h3>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-muted)" }}>{activeCategory.desc}</p>
+              </div>
             </div>
+
+            <button
+              onClick={() => { setSelectedCategory(null); setSearchTerm(""); }}
+              style={{
+                background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
+                padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                fontFamily: "var(--font)", transition: "all 0.2s ease"
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+              onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
+            >
+              ← Back to Town
+            </button>
           </div>
 
           <div style={{ marginBottom: 20 }}>
@@ -12473,7 +12475,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       )}
 
       {/* Nutrient Details Side Drawer */}
-      {nutrientDrawerOpen && activeNutrient && (
+      {nutrientDrawerOpen && activeNutrient && createPortal(
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           zIndex: 10000, display: "flex", justifyContent: "flex-end"
@@ -12487,26 +12489,35 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             }}
           />
           {/* Drawer Container */}
-          <div style={{
+          <div className="styled-scroll" style={{
             position: "relative", width: "100%", maxWidth: 420, height: "100%",
             background: "var(--surface)", borderLeft: "1px solid var(--border)",
             boxShadow: "-10px 0 30px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column",
             animation: "mtSlideIn 0.3s ease both", overflowY: "auto", padding: 32, textAlign: "left"
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "var(--navy)" }}>
-                🥦 {activeNutrient.name}
-              </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
               <button
                 onClick={() => setNutrientDrawerOpen(false)}
                 style={{
-                  width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)",
-                  background: "var(--surface-2)", color: "var(--navy)", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700
+                  border: "none",
+                  background: "none",
+                  color: "var(--text)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 22,
+                  padding: 0,
+                  marginRight: 4,
+                  transition: "var(--transition)"
                 }}
+                title="Back"
               >
-                ✕
+                ←
               </button>
+              <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "var(--navy)" }}>
+                🥦 {activeNutrient.name}
+              </h3>
             </div>
 
             {drawerLoading ? (
@@ -12559,11 +12570,12 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               </div>
             ) : null}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Saved Plan Details Popup Modal */}
-      {viewingSavedPlan && (
+      {viewingSavedPlan && createPortal(
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center",
@@ -12589,13 +12601,34 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               padding: "24px 32px", borderBottom: "1px solid var(--border)",
               display: "flex", justifyContent: "space-between", alignItems: "center"
             }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)", textAlign: "left" }}>
-                  {viewingSavedPlan.plan_name}
-                </h3>
-                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>
-                  Created on {new Date(viewingSavedPlan.created_at).toLocaleString()}
-                </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  onClick={() => setViewingSavedPlan(null)}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    color: "var(--text)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    padding: 0,
+                    marginRight: 4,
+                    transition: "var(--transition)"
+                  }}
+                  title="Back"
+                >
+                  ←
+                </button>
+                <div style={{ textAlign: "left" }}>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)" }}>
+                    {viewingSavedPlan.plan_name}
+                  </h3>
+                  <span style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                    Created on {new Date(viewingSavedPlan.created_at).toLocaleString()}
+                  </span>
+                </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <button
@@ -12608,21 +12641,11 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 >
                   📄 Export PDF
                 </button>
-                <button
-                  onClick={() => setViewingSavedPlan(null)}
-                  style={{
-                    width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)",
-                    background: "var(--surface-2)", color: "var(--navy)", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700
-                  }}
-                >
-                  ✕
-                </button>
               </div>
             </div>
 
             {/* Content Scroll Area */}
-            <div style={{ padding: 32, overflowY: "auto", display: "flex", flexDirection: "column", gap: 24, textAlign: "left" }}>
+            <div className="styled-scroll" style={{ padding: 32, overflowY: "auto", display: "flex", flexDirection: "column", gap: 24, textAlign: "left" }}>
               {/* 1. Nutrients & Foods */}
               {viewingSavedPlan.plan_data?.nutrients && viewingSavedPlan.plan_data.nutrients.length > 0 && (
                 <div>
@@ -12687,7 +12710,8 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
