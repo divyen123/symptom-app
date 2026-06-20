@@ -56,7 +56,7 @@ const EMERGENCY_SIGNS = [
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const API = "http://localhost:3001/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 const loadReports = () => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
