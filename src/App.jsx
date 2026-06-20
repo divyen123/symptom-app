@@ -4130,7 +4130,7 @@ function FirstAidAccordion({ title, steps }) {
   );
 }
 
-function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], reports = [], appearance = {}, setActive, todos = [], onExportPDF }) {
+function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], reports = [], appearance = {}, setActive, todos = [], onExportPDF, setInitialCategory }) {
   const [called, setCalled] = useState("");
   const [medicalIdOpen, setMedicalIdOpen] = useState(false);
   const [showContactsPopover, setShowContactsPopover] = useState(false);
@@ -4152,6 +4152,9 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
       setMedicalIdOpen(true);
     } else if (index === 2) {
       if (setActive) setActive("hospitals");
+    } else if (index === 3) {
+      if (setInitialCategory) setInitialCategory("firstaid");
+      if (setActive) setActive("meditown");
     } else if (index === 4) {
       setShowTodoPopover(true);
     }
@@ -4236,7 +4239,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
             { icon: "📋", text: "Keep a list of your medications in your wallet or phone." },
             { icon: "👨‍👩‍👧", text: "Teach family members basic first aid including CPR and the Heimlich maneuver." },
           ].map((item, i) => {
-            const isClickable = i === 0 || i === 1 || i === 2 || i === 4;
+            const isClickable = i === 0 || i === 1 || i === 2 || i === 3 || i === 4;
             return (
               <div key={i}
                 onClick={isClickable ? () => handleChecklistItemClick(i) : undefined}
@@ -11260,7 +11263,7 @@ const NUTRIENT_DETAILS_LOOKUP = {
 };
 
 // ─── MEDITOWN VIEW ─────────────────────────────────────────────────────────────
-function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {} }) {
+function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {}, initialCategory, setInitialCategory }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
@@ -12198,6 +12201,16 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
     );
   };
 
+  useEffect(() => {
+    if (initialCategory) {
+      const catObj = categories.find(c => c.id === initialCategory);
+      if (catObj) {
+        setSelectedCategory(catObj);
+      }
+      setInitialCategory(null);
+    }
+  }, [initialCategory, setInitialCategory, categories]);
+
   return (
     <div style={{ padding: "32px 32px 48px", maxWidth: 960, margin: "0 auto" }}>
       <style>{`
@@ -12308,16 +12321,17 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
           </div>
 
           {/* Saved Health Plans */}
-          {savedPlans && savedPlans.length > 0 && (
-            <div style={{
-              background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18,
-              padding: 24, textAlign: "left", display: "flex", flexDirection: "column", gap: 16,
-              animation: "fadeUp 0.4s ease both"
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span>📂</span> Saved Health Plans ({savedPlans.length})
-                </h3>
+          {/* Saved Health Plans */}
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18,
+            padding: 24, textAlign: "left", display: "flex", flexDirection: "column", gap: 16,
+            animation: "fadeUp 0.4s ease both"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>📂</span> Saved Health Plans {savedPlans && savedPlans.length > 0 && `(${savedPlans.length})`}
+              </h3>
+              {savedPlans && savedPlans.length > 0 && (
                 <button
                   onClick={handleClearAllPlans}
                   style={{
@@ -12330,7 +12344,9 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 >
                   Clear All
                 </button>
-              </div>
+              )}
+            </div>
+            {savedPlans && savedPlans.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {savedPlans.map((plan) => (
                   <div
@@ -12374,8 +12390,16 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{
+                textAlign: "center", padding: "24px 16px", color: "var(--text-muted)",
+                fontSize: 13, fontStyle: "italic", background: "var(--surface-2)", borderRadius: 10,
+                border: "1px dashed var(--border)"
+              }}>
+                No saved health plans yet. Fill out the "Custom Need" form below to generate and save one.
+              </div>
+            )}
+          </div>
         </div>
       ) : activeCategory ? (
         /* Category Detail View */
@@ -12741,6 +12765,7 @@ export default function App() {
   const [todos, setTodos] = useState([]);
   const [confirmDeleteChatId, setConfirmDeleteChatId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
 
   const showToast = useCallback((msg, type = "success") => {
     setToast({ msg, type });
@@ -13326,7 +13351,7 @@ export default function App() {
           onDeleteMedicine={handleDeleteMedicine}
         />
       );
-      case "emergency":return <Emergency settings={settings} onSettingsChange={handleSettingsChange} savedMedicines={savedMedicines} reports={reports} appearance={appearance} setActive={navigateTo} todos={todos} onExportPDF={handleExportPDF} />;
+      case "emergency":return <Emergency settings={settings} onSettingsChange={handleSettingsChange} savedMedicines={savedMedicines} reports={reports} appearance={appearance} setActive={navigateTo} todos={todos} onExportPDF={handleExportPDF} setInitialCategory={setMeditownInitialCategory} />;
       case "hospitals":return <Hospitals setActive={navigateTo} />;
       case "chatbot":  return (
         <Chatbot
@@ -13352,6 +13377,8 @@ export default function App() {
           registerInnerBack={registerInnerBack}
           pushHistoryEntry={pushHistoryEntry}
           appearance={appearance}
+          initialCategory={meditownInitialCategory}
+          setInitialCategory={setMeditownInitialCategory}
         />
       );
       case "settings": return (
