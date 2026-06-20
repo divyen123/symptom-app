@@ -622,7 +622,10 @@ const GLOBAL_CSS = `
   .card-hover:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg) !important;
-    border-color: transparent !important;
+    border-color: var(--blue-border) !important;
+    background: color-mix(in srgb, var(--blue) 8%, var(--surface)) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
   }
   .card-hover:hover::before {
     opacity: 0.15;
@@ -6682,16 +6685,20 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                           animation: `fadeUp 0.3s ease ${i * 0.05}s both`,
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.background = "var(--blue-pale)";
+                          e.currentTarget.style.background = "color-mix(in srgb, var(--blue) 8%, var(--surface))";
                           e.currentTarget.style.borderColor = "var(--blue-border)";
                           e.currentTarget.style.transform = "translateY(-2px)";
                           e.currentTarget.style.boxShadow = "var(--shadow)";
+                          e.currentTarget.style.backdropFilter = "blur(12px)";
+                          e.currentTarget.style.webkitBackdropFilter = "blur(12px)";
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.background = "var(--surface)";
                           e.currentTarget.style.borderColor = "var(--border)";
                           e.currentTarget.style.transform = "translateY(0)";
                           e.currentTarget.style.boxShadow = "none";
+                          e.currentTarget.style.backdropFilter = "none";
+                          e.currentTarget.style.webkitBackdropFilter = "none";
                         }}
                       >
                         <div style={{ fontSize: 26, marginBottom: 8 }}>{s.emoji}</div>
