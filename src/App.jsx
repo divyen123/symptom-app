@@ -12250,7 +12250,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
   }, [initialCategory, setInitialCategory, categories]);
 
   return (
-    <div style={{ padding: "32px 32px 48px", maxWidth: 960, margin: "0 auto" }}>
+    <div style={{ padding: "32px 32px 48px", maxWidth: 960, margin: "0 auto", position: "relative" }}>
       <style>{`
         @keyframes mtCardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes mtSlideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
@@ -12264,8 +12264,38 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         .mt-save-btn:active { transform: scale(0.95); }
       `}</style>
 
+      {/* Top-Right Go to Home Button */}
+      <button
+        onClick={onBack}
+        title="Go to Home"
+        style={{
+          position: "absolute",
+          top: 32,
+          right: 32,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: 10,
+          padding: "8px 14px",
+          fontSize: 14,
+          fontWeight: 700,
+          color: "var(--navy)",
+          cursor: "pointer",
+          fontFamily: "var(--font)",
+          transition: "all 0.2s ease",
+          zIndex: 10
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.borderColor = "var(--blue-border)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+      >
+        <span>←</span>
+        <span>🏠</span>
+      </button>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, animation: "fadeUp 0.4s ease both", flexWrap: "wrap", gap: 16 }}>
-        <div style={{ textAlign: "left" }}>
+        <div style={{ textAlign: "left", paddingRight: 80 }}>
           <h2 style={{ fontSize: 30, fontWeight: 900, color: "var(--navy)", margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 36 }}>🏙️</span> MeDiTown
           </h2>
@@ -12273,7 +12303,6 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             Your virtual medical town — explore pharmacies, herbal remedies, nutrition, and first aid essentials.
           </p>
         </div>
-        <PageBackButton onClick={onBack} label="Go to Home" style={{ margin: 0 }} />
       </div>
 
       {/* Saved notice */}
