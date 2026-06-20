@@ -4249,10 +4249,11 @@ function FirstAidAccordion({ title, steps }) {
   );
 }
 
-function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], reports = [], appearance = {}, setActive }) {
+function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], reports = [], appearance = {}, setActive, todos = [], onExportPDF }) {
   const [called, setCalled] = useState("");
   const [medicalIdOpen, setMedicalIdOpen] = useState(false);
   const [showContactsPopover, setShowContactsPopover] = useState(false);
+  const [showTodoPopover, setShowTodoPopover] = useState(false);
   const emergencyNumber = settings.emergencyNumber || "108";
 
   const cp = CONTENT_PALETTES.find(p => p.id === appearance?.contentPalette) || CONTENT_PALETTES[0];
@@ -4270,6 +4271,8 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
       setMedicalIdOpen(true);
     } else if (index === 2) {
       if (setActive) setActive("hospitals");
+    } else if (index === 4) {
+      setShowTodoPopover(true);
     }
   };
 
@@ -4349,10 +4352,10 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
             { icon: "🆔", text: "Keep your Medical ID updated with blood type, allergies, and current medications." },
             { icon: "🏥", text: "Know the nearest hospital and fastest route from home and workplace." },
             { icon: "💊", text: "Maintain a well-stocked first-aid kit with bandages, antiseptic, pain relievers, and prescribed meds." },
-            { icon: "📋", text: "Keep a list of your medications and allergies in your wallet or phone." },
+            { icon: "📋", text: "Keep a list of your medications in your wallet or phone." },
             { icon: "👨‍👩‍👧", text: "Teach family members basic first aid including CPR and the Heimlich maneuver." },
           ].map((item, i) => {
-            const isClickable = i === 0 || i === 1 || i === 2;
+            const isClickable = i === 0 || i === 1 || i === 2 || i === 4;
             return (
               <div key={i}
                 onClick={isClickable ? () => handleChecklistItemClick(i) : undefined}
@@ -4511,6 +4514,123 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
                   background: "var(--bg-modal)", border: "1px solid var(--border)",
                   borderRadius: 8, color: "var(--text)", fontWeight: 700, fontSize: 12,
                   padding: "6px 20px", cursor: "pointer", fontFamily: "var(--font)"
+                }}>Close</button>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      {/* To-Do List Popover */}
+      {showTodoPopover && createPortal(
+        <>
+          <div onClick={() => setShowTodoPopover(false)} style={{
+            position: "fixed", top: 0, bottom: 0, background: "rgba(2, 6, 23, 0.4)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999, animation: "fadeIn 0.2s ease both",
+            ...modalOffsetStyles,
+          }} className="medai-modal-overlay" />
+          <div style={{
+            position: "fixed", top: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 10000, pointerEvents: "none", padding: 20,
+            ...modalOffsetStyles,
+          }} className="medai-modal-container">
+            <div style={{
+              background: "var(--bg-modal, #fff)", borderRadius: 16,
+              width: 360, height: 420, pointerEvents: "all", display: "flex", flexDirection: "column",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.22), 0 0 0 1px var(--border)",
+              animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
+              fontFamily: "var(--font)",
+              overflow: "hidden"
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: "14px 18px", borderBottom: "1px solid var(--border)",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                background: "var(--surface)"
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "var(--navy)", display: "flex", alignItems: "center", gap: 6 }}>
+                  📋 Medications To-Do List
+                </span>
+                <button onClick={() => setShowTodoPopover(false)} style={{ border: "none", background: "none", cursor: "pointer", fontSize: 18, color: "var(--text)", fontWeight: 700 }}>×</button>
+              </div>
+
+              {/* Scrollable List */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {todos.length === 0 ? (
+                  <div style={{
+                    padding: "40px 10px", textAlign: "center", color: "var(--text-faint)",
+                    fontSize: 13, fontStyle: "italic"
+                  }}>
+                    Your To-Do list is empty. Add tasks on your Dashboard first.
+                  </div>
+                ) : (
+                  todos.map((todo, idx) => (
+                    <div key={idx} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 12px",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      opacity: todo.completed ? 0.6 : 1,
+                    }}>
+                      <div style={{
+                        width: 18, height: 18, borderRadius: 4,
+                        border: todo.completed ? "none" : "2px solid var(--blue, #3b82f6)",
+                        background: todo.completed ? "var(--blue, #3b82f6)" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", fontSize: 11, fontWeight: 900,
+                        flexShrink: 0
+                      }}>
+                        {todo.completed && "✓"}
+                      </div>
+                      <span style={{
+                        fontSize: 12.5,
+                        color: "var(--text)",
+                        textDecoration: todo.completed ? "line-through" : "none",
+                        wordBreak: "break-word",
+                        flex: 1
+                      }}>
+                        {todo.text}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                padding: "12px 18px",
+                borderTop: "1px solid var(--border)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "var(--surface)"
+              }}>
+                <button
+                  onClick={() => {
+                    if (onExportPDF) {
+                      onExportPDF();
+                    }
+                  }}
+                  disabled={todos.length === 0}
+                  style={{
+                    background: "var(--blue, #3b82f6)", border: "none", color: "#fff",
+                    borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700,
+                    cursor: todos.length === 0 ? "not-allowed" : "pointer",
+                    fontFamily: "var(--font)", display: "flex", alignItems: "center", gap: 6,
+                    opacity: todos.length === 0 ? 0.5 : 1
+                  }}
+                >
+                  📥 Export PDF
+                </button>
+                <button onClick={() => setShowTodoPopover(false)} style={{
+                  background: "var(--bg-modal)", border: "1px solid var(--border)",
+                  borderRadius: 8, color: "var(--text)", fontWeight: 700, fontSize: 12,
+                  padding: "7px 16px", cursor: "pointer", fontFamily: "var(--font)"
                 }}>Close</button>
               </div>
             </div>
@@ -7269,7 +7389,7 @@ function PPGScannerModal({ onClose, onApply }) {
       const buf = bufRef.current;
 
       // === FINGER DETECTION ===
-      const isFingerCovering = avgR > 140 && avgR / (avgG + avgB + 1) > 1.2;
+      const isFingerCovering = (avgR > 110 && avgR / (avgG + avgB + 1) > 1.1) || (avgR < 35 && avgG < 35 && avgB < 35);
 
       if (phaseRef.current === "waiting" || buf.fingerFrames < 20) {
         if (isFingerCovering) {
@@ -7894,7 +8014,7 @@ function FacePPGScannerModal({ onClose, onApply }) {
       const buf = bufRef.current;
 
       // Face skin calibration detection
-      const isFaceAligned = avgR > avgG + 10 && avgG > avgB && avgG > 40 && avgG < 235;
+      const isFaceAligned = avgR > 35 && avgG > 30 && avgG < 250;
 
       if (phaseRef.current === "waiting" || buf.faceFrames < 20) {
         if (isFaceAligned) {
@@ -12450,7 +12570,7 @@ export default function App() {
           onDeleteMedicine={handleDeleteMedicine}
         />
       );
-      case "emergency":return <Emergency settings={settings} onSettingsChange={handleSettingsChange} savedMedicines={savedMedicines} reports={reports} appearance={appearance} setActive={navigateTo} />;
+      case "emergency":return <Emergency settings={settings} onSettingsChange={handleSettingsChange} savedMedicines={savedMedicines} reports={reports} appearance={appearance} setActive={navigateTo} todos={todos} onExportPDF={handleExportPDF} />;
       case "hospitals":return <Hospitals setActive={navigateTo} />;
       case "chatbot":  return (
         <Chatbot
