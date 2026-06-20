@@ -6559,19 +6559,21 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
       {/* Backdrop */}
       <div onClick={selectedItem ? () => setSelectedItem(null) : onClose} style={{
         position: "fixed", top: 0, bottom: 0,
-        left: "var(--sidebar-width)", right: 0,
+        left: "var(--modal-offset-left)", right: "var(--modal-offset-right)",
         background: "rgba(15,31,92,0.45)",
         zIndex: 2000, backdropFilter: "blur(6px)",
         animation: "fadeIn 0.2s ease both",
+        ...modalOffsetStyles
       }} />
 
       {/* Main tip modal */}
       <div style={{
         position: "fixed", top: 0, bottom: 0,
-        left: "var(--sidebar-width)", right: 0,
+        left: "var(--modal-offset-left)", right: "var(--modal-offset-right)",
         display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 2001, pointerEvents: "none",
         padding: "24px",
+        ...modalOffsetStyles
       }}>
         <div style={{
           background: "var(--white)",
@@ -6711,10 +6713,11 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
       {selectedItem && (
         <div style={{
           position: "fixed", top: 0, bottom: 0,
-          left: "var(--sidebar-width)", right: 0,
+          left: "var(--modal-offset-left)", right: "var(--modal-offset-right)",
           display: "flex", alignItems: "center", justifyContent: "center",
           zIndex: 2100, pointerEvents: "none",
           padding: "24px",
+          ...modalOffsetStyles
         }}>
           <div style={{
             background: "var(--white)",
