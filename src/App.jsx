@@ -10367,7 +10367,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
         <ConfirmDialog
           title="Delete Account?"
           message="This will permanently delete your user account and all logged clinical reports, chats, vitals logs, and medication compliance records. This action cannot be undone."
-          confirmLabel="Yes, Delete My Account"
+          confirmLabel="Delete Account"
           onConfirm={() => { setConfirmDeleteAccount(false); setShowDeleteVerification(true); }}
           onCancel={() => !deleteLoading && setConfirmDeleteAccount(false)}
         />
