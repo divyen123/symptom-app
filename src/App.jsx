@@ -12240,7 +12240,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
     if (initialCategory) {
       const catObj = categories.find(c => c.id === initialCategory);
       if (catObj) {
-        setSelectedCategory(catObj);
+        setSelectedCategory(catObj.id);
       }
       setInitialCategory(null);
     }
