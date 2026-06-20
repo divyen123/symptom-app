@@ -79,7 +79,7 @@ const DEFAULT_APPEARANCE = {
   fontFamily: "Plus Jakarta Sans",
   fontSize: "default",
   navPosition: "left",
-  navbarPalette: "appBlue",
+  navbarPalette: "white",
   contentPalette: "white",
   stickerOpacity: 0.15,
   glassyNavbar: false,
@@ -10573,10 +10573,10 @@ function AuthFlow({ onLoginSuccess }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const handleAuthSuccess = (userData) => {
+  const handleAuthSuccess = (userData, isRegister) => {
     setSuccessData(userData);
     setLoading(false);
-    setTimeout(() => onLoginSuccess(userData), 1400);
+    setTimeout(() => onLoginSuccess(userData, isRegister), 1400);
   };
 
   const handleSubmit = async (e) => {
@@ -10585,13 +10585,14 @@ function AuthFlow({ onLoginSuccess }) {
     setLoading(true);
     try {
       let data;
-      if (tab === "register") {
+      const isRegister = tab === "register";
+      if (isRegister) {
         data = await apiRegister(name, email, password);
       } else {
         data = await apiLogin(email, password);
       }
       localStorage.setItem("MEDAI_TOKEN", data.token);
-      handleAuthSuccess(data.user);
+      handleAuthSuccess(data.user, isRegister);
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -11027,7 +11028,7 @@ function AuthFlow({ onLoginSuccess }) {
                         try {
                           const data = await apiGoogleLogin(account.email, account.name);
                           localStorage.setItem("MEDAI_TOKEN", data.token);
-                          handleAuthSuccess(data.user);
+                          handleAuthSuccess(data.user, data.isNewRegister);
                         } catch (err) {
                           setError(err.message);
                           setLoading(false);
@@ -11064,7 +11065,7 @@ function AuthFlow({ onLoginSuccess }) {
                         setError("");
                         apiGoogleLogin(customEmail, customName).then(data => {
                           localStorage.setItem("MEDAI_TOKEN", data.token);
-                          handleAuthSuccess(data.user);
+                          handleAuthSuccess(data.user, data.isNewRegister);
                         }).catch(err => {
                           setError(err.message);
                           setLoading(false);
@@ -13222,6 +13223,24 @@ export default function App() {
         ]);
         setReports(Array.isArray(dbReports) ? dbReports : []);
         setSettings(dbSettings || {});
+        if (dbSettings && Object.keys(dbSettings).length > 0) {
+          const syncedApp = {
+            theme: dbSettings.theme || "light",
+            fontFamily: dbSettings.fontFamily || "Plus Jakarta Sans",
+            fontSize: dbSettings.fontSize || "default",
+            navPosition: dbSettings.navPosition || "left",
+            navbarPalette: dbSettings.navbarPalette || "white",
+            contentPalette: dbSettings.contentPalette || "white",
+            stickerOpacity: typeof dbSettings.stickerOpacity === 'number' ? dbSettings.stickerOpacity : 0.15,
+            glassyNavbar: dbSettings.glassyNavbar !== undefined ? !!dbSettings.glassyNavbar : false,
+            glassyContainer: dbSettings.glassyContainer !== undefined ? !!dbSettings.glassyContainer : false,
+          };
+          setAppearance(syncedApp);
+          localStorage.setItem(APPEARANCE_KEY, JSON.stringify(syncedApp));
+        } else {
+          const localApp = loadAppearance();
+          apiSaveSettings(localApp).catch(err => console.error("Failed to sync initial local appearance to db:", err));
+        }
         setVitals(Array.isArray(dbVitals) ? dbVitals : []);
         setChatSessions(Array.isArray(dbChats) ? dbChats : []);
         setTodos(Array.isArray(dbTodos) ? dbTodos : []);
@@ -13437,11 +13456,27 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (userData) => {
+  const handleLoginSuccess = (userData, isRegister) => {
     justLoggedInRef.current = true;
     setUser(userData);
     setSplashPhase("enter");
     setDbReady(false);
+    if (isRegister) {
+      const defaultWhiteApp = {
+        theme: "light",
+        fontFamily: "Plus Jakarta Sans",
+        fontSize: "default",
+        navPosition: "left",
+        navbarPalette: "white",
+        contentPalette: "white",
+        stickerOpacity: 0.15,
+        glassyNavbar: false,
+        glassyContainer: false,
+      };
+      setAppearance(defaultWhiteApp);
+      localStorage.setItem(APPEARANCE_KEY, JSON.stringify(defaultWhiteApp));
+      apiSaveSettings(defaultWhiteApp).catch(err => console.error("Failed to save default register settings:", err));
+    }
   };
 
   if (loadingUser) {

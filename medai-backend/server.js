@@ -166,7 +166,9 @@ app.post("/api/auth/google-login", async (req, res) => {
 
     if (findError) throw findError;
 
+    let isNewRegister = false;
     if (!user) {
+      isNewRegister = true;
       const dummyPassword = await bcrypt.hash(Math.random().toString(36), 12);
       const { data: newUser, error: createError } = await supabase
         .from("users")
@@ -182,6 +184,7 @@ app.post("/api/auth/google-login", async (req, res) => {
     res.json({
       token,
       user: { id: user.id, name: user.name, email: user.email },
+      isNewRegister
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
