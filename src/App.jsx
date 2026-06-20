@@ -8575,7 +8575,7 @@ function TapToBeatModal({ onClose, onApply }) {
 }
 
 // ─── VITALS LOG ───────────────────────────────────────────────────────────────
-function VitalsLog({ vitals, setVitals, setActive }) {
+function VitalsLog({ vitals, setVitals, setActive, showToast }) {
   const [systolic, setSystolic] = useState("");
   const [diastolic, setDiastolic] = useState("");
   const [sugar, setSugar] = useState("");
@@ -8668,7 +8668,7 @@ function VitalsLog({ vitals, setVitals, setActive }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!systolic && !sugar && !heartRate && !spo2) return alert("Please fill in at least one vital reading!");
+    if (!systolic && !sugar && !heartRate && !spo2) return showToast ? showToast("Please fill in at least one vital reading!", "error") : alert("Please fill in at least one vital reading!");
     setSaving(true);
 
     const entryId = latest._id || Date.now().toString();
@@ -11993,6 +11993,18 @@ export default function App() {
   const [chatMsgs, setChatMsgs] = useState(() => getNewChatDefaultMessages());
   const [todos, setTodos] = useState([]);
   const [confirmDeleteChatId, setConfirmDeleteChatId] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((msg, type = "success") => {
+    setToast({ msg, type });
+  }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
   const navStackRef = useRef(["home"]);
   const innerBackRef = useRef(null);
@@ -12326,9 +12338,9 @@ export default function App() {
         console.warn("Backend offline, saving to localStorage:", e.message);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       }
-      alert("Report saved!");
+      showToast("Report saved successfully!");
     } else {
-      alert("Report already saved.");
+      showToast("Report already saved.", "error");
     }
   };
 
@@ -12427,7 +12439,7 @@ export default function App() {
         />
       );
       case "analyzer": return <Analyzer initialSymptoms={initialSymptoms} setInitialSymptoms={setInitialSymptoms} onAnalyze={handleAnalyze} />;
-      case "vitals":   return <VitalsLog vitals={vitals} setVitals={setVitals} setActive={navigateTo} />;
+      case "vitals":   return <VitalsLog vitals={vitals} setVitals={setVitals} setActive={navigateTo} showToast={showToast} />;
       case "results":  return (
         <Results
           report={currentReport}
@@ -12887,7 +12899,7 @@ export default function App() {
                           <button
                             onClick={() => {
                               const list = savedMedicines.map((m, i) => `${i + 1}. ${m.name}`).join("\n");
-                              navigator.clipboard?.writeText(list).then(() => alert("Medicine list copied!"));
+                              navigator.clipboard?.writeText(list).then(() => showToast("Medicine list copied!"));
                             }}
                             style={{
                               background: "#1d4ed8", color: "#fff", border: "none",
@@ -12948,6 +12960,44 @@ export default function App() {
               )}
             </button>
           </div>,
+          document.body
+        );
+      })()}
+
+      {/* Global Toast Notification */}
+      {(() => {
+        return createPortal(
+          <AnimatePresence>
+            {toast && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  position: "fixed",
+                  top: 24,
+                  right: 24,
+                  background: toast.type === "error" ? "rgba(239, 68, 68, 0.96)" : "rgba(16, 185, 129, 0.96)",
+                  backdropFilter: "blur(12px)",
+                  color: "#fff",
+                  padding: "14px 28px",
+                  borderRadius: 14,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)",
+                  zIndex: 999999,
+                  fontFamily: "var(--font)",
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{toast.type === "error" ? "✕" : "✓"}</span>
+                <span>{toast.msg}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>,
           document.body
         );
       })()}
