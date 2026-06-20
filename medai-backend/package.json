@@ -1,0 +1,18 @@
+{
+  "name": "medai-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MedAI Express + MongoDB backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "@supabase/supabase-js": "^2.43.0"
+  }
+}

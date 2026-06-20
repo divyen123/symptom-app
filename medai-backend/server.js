@@ -1,0 +1,909 @@
+/* global process */
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
+
+const app = express();
+app.use(cors({ origin: "http://localhost:5173" }));
+app.use(express.json({ limit: "2mb" }));
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY; // Service role key recommended for backend
+const JWT_SECRET = process.env.JWT_SECRET || "medai_super_secret_key_change_in_production";
+const JWT_EXPIRES = "7d";
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error("❌ Missing SUPABASE_URL or SUPABASE_KEY environment variables!");
+  process.exit(1);
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
+
+console.log("✅ Supabase Client initialized successfully");
+
+// ─── Auth Middleware ───────────────────────────────────────────────────────────
+async function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    try {
+      // Find or create default demo user
+      let { data: defaultUser, error: findError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", "default@medai.local")
+        .maybeSingle();
+
+      if (findError) throw findError;
+
+      if (!defaultUser) {
+        const dummyPassword = await bcrypt.hash("default_bypass_password", 12);
+        const { data: newUser, error: createError } = await supabase
+          .from("users")
+          .insert({
+            name: "Default User",
+            email: "default@medai.local",
+            password: dummyPassword
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        defaultUser = newUser;
+      }
+      req.userId = defaultUser.id;
+      return next();
+    } catch (err) {
+      return res.status(500).json({ error: "Database error initializing default user: " + err.message });
+    }
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+// ─── Auth Routes ──────────────────────────────────────────────────────────────
+
+// POST /api/auth/register
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password)
+      return res.status(400).json({ error: "Name, email and password are required" });
+    if (password.length < 6)
+      return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const { data: existing, error: existingError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existing)
+      return res.status(409).json({ error: "An account with this email already exists" });
+
+    const hashed = await bcrypt.hash(password, 12);
+    const { data: user, error: createError } = await supabase
+      .from("users")
+      .insert({ name, email: email.toLowerCase(), password: hashed })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/auth/login
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: "Email and password are required" });
+
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (findError) throw findError;
+    if (!user)
+      return res.status(401).json({ error: "Invalid email or password" });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match)
+      return res.status(401).json({ error: "Invalid email or password" });
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/auth/google-login
+app.post("/api/auth/google-login", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email || !name)
+      return res.status(400).json({ error: "Email and name are required" });
+
+    let { data: user, error: findError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (findError) throw findError;
+
+    if (!user) {
+      const dummyPassword = await bcrypt.hash(Math.random().toString(36), 12);
+      const { data: newUser, error: createError } = await supabase
+        .from("users")
+        .insert({ name, email: email.toLowerCase(), password: dummyPassword })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      user = newUser;
+    }
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/auth/me  — verify token & return user info
+app.get("/api/auth/me", authMiddleware, async (req, res) => {
+  try {
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .eq("id", req.userId)
+      .single();
+
+    if (findError) return res.status(404).json({ error: "User not found" });
+    res.json({ id: user.id, name: user.name, email: user.email });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/auth/change-password
+app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current and new passwords are required" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters" });
+    }
+
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", req.userId)
+      .single();
+
+    if (findError || !user) return res.status(404).json({ error: "User not found" });
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res.status(401).json({ error: "Incorrect current password" });
+    }
+
+    const hashedNew = await bcrypt.hash(newPassword, 12);
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ password: hashedNew })
+      .eq("id", req.userId);
+
+    if (updateError) throw updateError;
+
+    res.json({ message: "Password updated successfully" });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT /api/auth/update-email
+app.put("/api/auth/update-email", authMiddleware, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "A valid email address is required" });
+    }
+    const lowerEmail = email.toLowerCase();
+    
+    // Check if email is already taken by another user
+    const { data: existing, error: existingError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", lowerEmail)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existing && existing.id !== req.userId) {
+      return res.status(400).json({ error: "Email address is already in use by another account" });
+    }
+
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ email: lowerEmail })
+      .eq("id", req.userId);
+
+    if (updateError) throw updateError;
+
+    res.json({ message: "Email updated successfully", email: lowerEmail });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/auth/delete-account — delete account and all user data
+app.delete("/api/auth/delete-account", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (findError) throw findError;
+    if (user && user.email === "default@medai.local") {
+      return res.status(403).json({ error: "Cannot delete the default demo account" });
+    }
+
+    // CASCADE handles reports, settings, vitals, chats, todos, medications deletions
+    const { error: deleteError } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", userId);
+
+    if (deleteError) throw deleteError;
+
+    res.json({ message: "Account and all associated data deleted successfully" });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/auth/reset-profile - delete all user data except account details
+app.delete("/api/auth/reset-profile", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (findError) throw findError;
+    if (user && user.email === "default@medai.local") {
+      return res.status(403).json({ error: "Cannot reset the default demo account" });
+    }
+
+    await Promise.all([
+      supabase.from("settings").delete().eq("user_id", userId),
+      supabase.from("reports").delete().eq("user_id", userId),
+      supabase.from("vitals").delete().eq("user_id", userId),
+      supabase.from("chat_sessions").delete().eq("user_id", userId),
+      supabase.from("todos").delete().eq("user_id", userId),
+      supabase.from("medications").delete().eq("user_id", userId)
+    ]);
+
+    res.json({ message: "Profile data reset successfully" });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Reports API (protected) ──────────────────────────────────────────────────
+
+// GET all reports for the logged-in user
+app.get("/api/reports", authMiddleware, async (req, res) => {
+  try {
+    const { data: reports, error } = await supabase
+      .from("reports")
+      .select(`
+        id:report_id,
+        date,
+        symptoms,
+        duration,
+        painLevel:pain_level,
+        hasFever:has_fever,
+        condition,
+        conditions,
+        severity,
+        severityLevel:severity_level,
+        severityReason:severity_reason,
+        selfCare:self_care,
+        doctorWarning:doctor_warning,
+        simpleExplanation:simple_explanation,
+        recommendedAction:recommended_action
+      `)
+      .eq("user_id", req.userId)
+      .order("report_id", { ascending: true });
+
+    if (error) throw error;
+    res.json(reports || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST single report (upsert)
+app.post("/api/reports", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      report_id: req.body.id,
+      date: req.body.date,
+      symptoms: req.body.symptoms,
+      duration: req.body.duration,
+      pain_level: req.body.painLevel,
+      has_fever: req.body.hasFever,
+      condition: req.body.condition,
+      conditions: req.body.conditions,
+      severity: req.body.severity,
+      severity_level: req.body.severityLevel,
+      severity_reason: req.body.severityReason,
+      self_care: req.body.selfCare,
+      doctor_warning: req.body.doctorWarning,
+      simple_explanation: req.body.simpleExplanation,
+      recommended_action: req.body.recommendedAction
+    };
+
+    const { data: doc, error } = await supabase
+      .from("reports")
+      .upsert(record, { onConflict: "user_id,report_id" })
+      .select(`
+        id:report_id,
+        date,
+        symptoms,
+        duration,
+        painLevel:pain_level,
+        hasFever:has_fever,
+        condition,
+        conditions,
+        severity,
+        severityLevel:severity_level,
+        severityReason:severity_reason,
+        selfCare:self_care,
+        doctorWarning:doctor_warning,
+        simpleExplanation:simple_explanation,
+        recommendedAction:recommended_action
+      `)
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST bulk reports (migration from localStorage)
+app.post("/api/reports/bulk", authMiddleware, async (req, res) => {
+  try {
+    const reports = req.body;
+    if (!Array.isArray(reports) || reports.length === 0) return res.json({ inserted: 0 });
+
+    const records = reports.map((r) => ({
+      user_id: req.userId,
+      report_id: r.id,
+      date: r.date,
+      symptoms: r.symptoms,
+      duration: r.duration,
+      pain_level: r.painLevel,
+      has_fever: r.hasFever,
+      condition: r.condition,
+      conditions: r.conditions,
+      severity: r.severity,
+      severity_level: r.severityLevel,
+      severity_reason: r.severityReason,
+      self_care: r.selfCare,
+      doctor_warning: r.doctorWarning,
+      simple_explanation: r.simpleExplanation,
+      recommended_action: r.recommendedAction
+    }));
+
+    const { data, error } = await supabase
+      .from("reports")
+      .upsert(records, { onConflict: "user_id,report_id" })
+      .select();
+
+    if (error) throw error;
+    res.json({ inserted: data ? data.length : 0 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE one report
+app.delete("/api/reports/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("reports")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("report_id", Number(req.params.id));
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE all reports
+app.delete("/api/reports", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("reports")
+      .delete()
+      .eq("user_id", req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Settings API (protected) ─────────────────────────────────────────────────
+
+// GET settings
+app.get("/api/settings", authMiddleware, async (req, res) => {
+  try {
+    const { data: s, error } = await supabase
+      .from("settings")
+      .select(`
+        name,
+        age,
+        bloodGroup:blood_group,
+        emergencyContacts:emergency_contacts,
+        profilePic:profile_pic,
+        country,
+        state,
+        emergencyNumber:emergency_number,
+        theme,
+        navPosition:nav_position,
+        fontFamily:font_family,
+        fontSize:font_size,
+        navbarPalette:navbar_palette,
+        contentPalette:content_palette,
+        stickerOpacity:sticker_opacity,
+        glassyNavbar:glassy_navbar,
+        glassyContainer:glassy_container
+      `)
+      .eq("user_id", req.userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    res.json(s || {});
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT settings (upsert)
+app.put("/api/settings", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      name: req.body.name,
+      age: req.body.age,
+      blood_group: req.body.bloodGroup,
+      emergency_contacts: req.body.emergencyContacts,
+      profile_pic: req.body.profilePic,
+      country: req.body.country,
+      state: req.body.state,
+      emergency_number: req.body.emergencyNumber,
+      theme: req.body.theme,
+      nav_position: req.body.navPosition,
+      font_family: req.body.fontFamily,
+      font_size: req.body.fontSize,
+      navbar_palette: req.body.navbarPalette,
+      content_palette: req.body.contentPalette,
+      sticker_opacity: req.body.stickerOpacity,
+      glassy_navbar: req.body.glassyNavbar,
+      glassy_container: req.body.glassyContainer
+    };
+
+    const { data: doc, error } = await supabase
+      .from("settings")
+      .upsert(record, { onConflict: "user_id" })
+      .select(`
+        name,
+        age,
+        bloodGroup:blood_group,
+        emergencyContacts:emergency_contacts,
+        profilePic:profile_pic,
+        country,
+        state,
+        emergencyNumber:emergency_number,
+        theme,
+        navPosition:nav_position,
+        fontFamily:font_family,
+        fontSize:font_size,
+        navbarPalette:navbar_palette,
+        contentPalette:content_palette,
+        stickerOpacity:sticker_opacity,
+        glassyNavbar:glassy_navbar,
+        glassyContainer:glassy_container
+      `)
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Vitals API (protected) ───────────────────────────────────────────────────
+
+// GET all vitals logs
+app.get("/api/vitals", authMiddleware, async (req, res) => {
+  try {
+    const { data: logs, error } = await supabase
+      .from("vitals")
+      .select(`
+        id,
+        date,
+        bpSystolic:bp_systolic,
+        bpDiastolic:bp_diastolic,
+        sugar,
+        sugarState:sugar_state,
+        heartRate:heart_rate,
+        spo2
+      `)
+      .eq("user_id", req.userId)
+      .order("date", { ascending: true });
+
+    if (error) throw error;
+    res.json(logs || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new vital log
+app.post("/api/vitals", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      bp_systolic: req.body.bpSystolic,
+      bp_diastolic: req.body.bpDiastolic,
+      sugar: req.body.sugar,
+      sugar_state: req.body.sugarState,
+      heart_rate: req.body.heartRate,
+      spo2: req.body.spo2
+    };
+
+    if (req.body.date) {
+      record.date = req.body.date;
+    }
+
+    const { data: doc, error } = await supabase
+      .from("vitals")
+      .insert(record)
+      .select(`
+        id,
+        date,
+        bpSystolic:bp_systolic,
+        bpDiastolic:bp_diastolic,
+        sugar,
+        sugarState:sugar_state,
+        heartRate:heart_rate,
+        spo2
+      `)
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE a vital log
+app.delete("/api/vitals/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("vitals")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Chat Sessions API (protected) ────────────────────────────────────────────
+
+// GET all chat sessions
+app.get("/api/chats", authMiddleware, async (req, res) => {
+  try {
+    const { data: chats, error } = await supabase
+      .from("chat_sessions")
+      .select("id, title, messages, createdAt:created_at, updatedAt:updated_at")
+      .eq("user_id", req.userId)
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+    res.json(chats || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET single chat session details
+app.get("/api/chats/:id", authMiddleware, async (req, res) => {
+  try {
+    const { data: chat, error } = await supabase
+      .from("chat_sessions")
+      .select("id, title, messages, createdAt:created_at, updatedAt:updated_at")
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id)
+      .single();
+
+    if (error || !chat) return res.status(404).json({ error: "Chat session not found" });
+    res.json(chat);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new chat session
+app.post("/api/chats", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      title: req.body.title || "New Chat",
+      messages: req.body.messages || []
+    };
+
+    const { data: doc, error } = await supabase
+      .from("chat_sessions")
+      .insert(record)
+      .select("id, title, messages, createdAt:created_at, updatedAt:updated_at")
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT update chat session
+app.put("/api/chats/:id", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      title: req.body.title,
+      messages: req.body.messages,
+      updated_at: new Date()
+    };
+
+    const { data: doc, error } = await supabase
+      .from("chat_sessions")
+      .update(record)
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id)
+      .select("id, title, messages, createdAt:created_at, updatedAt:updated_at")
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE a chat session
+app.delete("/api/chats/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("chat_sessions")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Todos API (protected) ────────────────────────────────────────────────────
+
+// GET all todos
+app.get("/api/todos", authMiddleware, async (req, res) => {
+  try {
+    const { data: todos, error } = await supabase
+      .from("todos")
+      .select("id, text, completed, createdAt:created_at, updatedAt:updated_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(todos || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new todo
+app.post("/api/todos", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      text: req.body.text,
+      completed: req.body.completed || false
+    };
+
+    const { data: doc, error } = await supabase
+      .from("todos")
+      .insert(record)
+      .select("id, text, completed, createdAt:created_at, updatedAt:updated_at")
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT update todo
+app.put("/api/todos/:id", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      text: req.body.text,
+      completed: req.body.completed,
+      updated_at: new Date()
+    };
+
+    const { data: doc, error } = await supabase
+      .from("todos")
+      .update(record)
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id)
+      .select("id, text, completed, createdAt:created_at, updatedAt:updated_at")
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE a todo
+app.delete("/api/todos/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("todos")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Medications API (protected) ──────────────────────────────────────────────
+
+// GET all medications
+app.get("/api/medications", authMiddleware, async (req, res) => {
+  try {
+    const { data: meds, error } = await supabase
+      .from("medications")
+      .select("id, name, cause, createdAt:created_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(meds || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new medication
+app.post("/api/medications", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      name: req.body.name,
+      cause: req.body.cause || ""
+    };
+
+    const { data: doc, error } = await supabase
+      .from("medications")
+      .insert(record)
+      .select("id, name, cause, createdAt:created_at")
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE one medication
+app.delete("/api/medications/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("medications")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE all medications
+app.delete("/api/medications", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("medications")
+      .delete()
+      .eq("user_id", req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Listen ───────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 MedAI backend server listening on port ${PORT}`);
+});

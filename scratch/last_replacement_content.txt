@@ -1,0 +1,286 @@
+  const drawWave = (points) => {
+    const canvas = waveRef.current;
+    if (!canvas || points.length < 2) return;
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = "rgba(34,211,238,0.08)";
+    ctx.lineWidth = 0.5;
+    for (let y = 0; y < H; y += 20) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    for (let x = 0; x < W; x += 20) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+
+    // Center line
+    ctx.strokeStyle = "rgba(34,211,238,0.2)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Normalize amplitude
+    const maxAmp = Math.max(1, ...points.map(Math.abs));
+    const scale = (H * 0.35) / maxAmp;
+
+    // Glow effect
+    ctx.shadowColor = "#22d3ee";
+    ctx.shadowBlur = 8;
+
+    // Draw waveform
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, "rgba(34,211,238,0.3)");
+    grad.addColorStop(0.5, "#22d3ee");
+    grad.addColorStop(1, "#06b6d4");
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    const step = W / Math.min(points.length, 300);
+    const start = Math.max(0, points.length - 300);
+    for (let i = start; i < points.length; i++) {
+      const x = (i - start) * step;
+      const y = H / 2 - points[i] * scale;
+      if (i === start) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  };
+
+  // Stop camera
+  const stopCamera = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  function finalizeScan() {
+    const buf = bufRef.current;
+    // Calculate final BPM from crossing intervals
+    let bpm = 0;
+    if (buf.crossings.length >= 3) {
+      const intervals = [];
+      for (let i = 1; i < buf.crossings.length; i++) {
+        intervals.push(buf.crossings[i] - buf.crossings[i - 1]);
+      }
+      // Use median interval for robustness
+      intervals.sort((a, b) => a - b);
+      const medianInterval = intervals[Math.floor(intervals.length / 2)];
+      if (medianInterval > 0) bpm = Math.round(60000 / medianInterval);
+    }
+    if (bpm < 40 || bpm > 200) bpm = buf.bpmHistory.length > 0
+      ? Math.round(buf.bpmHistory.reduce((a, b) => a + b, 0) / buf.bpmHistory.length)
+      : 72;
+
+    // Calculate SpO2 from R/B ratio
+    let spo2 = 98;
+    if (buf.redVals.length > 30 && buf.blueVals.length > 30) {
+      const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+      const std = (arr, m) => Math.sqrt(arr.reduce((a, v) => a + (v - m) ** 2, 0) / arr.length);
+      const avgR = mean(buf.redVals);
+      const avgB = mean(buf.blueVals);
+      const stdR = std(buf.redVals, avgR);
+      const stdB = std(buf.blueVals, avgB);
+      if (avgR > 0 && avgB > 0 && stdB > 0) {
+        const ratio = (stdR / avgR) / (stdB / avgB);
+        spo2 = Math.round(110 - 15 * ratio);
+      }
+    }
+    spo2 = Math.max(90, Math.min(100, spo2));
+
+    setFinalBpm(bpm);
+    setFinalSpo2(spo2);
+    updatePhase("done");
+    stopCamera();
+  }
+
+  function startProcessing() {
+    const process = () => {
+      if (phaseRef.current === "done" || phaseRef.current === "idle") {
+        return;
+      }
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.readyState < 2) {
+        rafRef.current = requestAnimationFrame(process);
+        return;
+      }
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      canvas.width = 10;
+      canvas.height = 10;
+      ctx.drawImage(video, 0, 0, 10, 10);
+      const imgData = ctx.getImageData(0, 0, 10, 10).data;
+
+      // Average RGB
+      let rSum = 0, gSum = 0, bSum = 0;
+      const pixelCount = 10 * 10;
+      for (let i = 0; i < imgData.length; i += 4) {
+        rSum += imgData[i];
+        gSum += imgData[i + 1];
+        bSum += imgData[i + 2];
+      }
+      const avgR = rSum / pixelCount;
+      const avgG = gSum / pixelCount;
+      const avgB = bSum / pixelCount;
+      const now = performance.now();
+
+      const buf = bufRef.current;
+
+      // === FINGER DETECTION ===
+      const isFingerCovering = avgR > 140 && avgR / (avgG + avgB + 1) > 1.2;
+
+      if (phaseRef.current === "waiting" || buf.fingerFrames < 20) {
+        if (isFingerCovering) {
+          buf.fingerFrames++;
+          if (buf.fingerFrames >= 15) {
+            updatePhase("calibrating");
+            setStatusMsg("Finger detected — calibrating signal…");
+            buf.calibFrames = 0;
+            buf.baseline = avgG;
+          }
+        } else {
+          buf.fingerFrames = Math.max(0, buf.fingerFrames - 2);
+        }
+        rafRef.current = requestAnimationFrame(process);
+        return;
+      }
+
+      // === CALIBRATING ===
+      if (phaseRef.current === "calibrating" || buf.calibFrames < 45) {
+        buf.calibFrames++;
+        buf.baseline = 0.92 * buf.baseline + 0.08 * avgG;
+        if (buf.calibFrames >= 45) {
+          updatePhase("scanning");
+          setStatusMsg("Scanning your pulse — hold still…");
+          buf.scanStart = now;
+          buf.redVals = [];
+          buf.greenVals = [];
+          buf.blueVals = [];
+          buf.timestamps = [];
+          buf.crossings = [];
+          buf.bpmHistory = [];
+          buf.wavePoints = [];
+          setCountdown(15);
+        }
+        rafRef.current = requestAnimationFrame(process);
+        return;
+      }
+
+      // === SCANNING ===
+      // Finger lost during scan?
+      if (!isFingerCovering) {
+        updatePhase("waiting");
+        setStatusMsg("Finger lost — place it back on the camera");
+        buf.fingerFrames = 0;
+        rafRef.current = requestAnimationFrame(process);
+        return;
+      }
+
+      // Record raw values
+      buf.redVals.push(avgR);
+      buf.greenVals.push(avgG);
+      buf.blueVals.push(avgB);
+      buf.timestamps.push(now);
+
+      // Moving baseline subtraction (isolate AC component)
+      buf.baseline = 0.95 * buf.baseline + 0.05 * avgG;
+      const acSignal = avgG - buf.baseline;
+
+      // Waveform points for canvas
+      buf.wavePoints.push(acSignal);
+      if (buf.wavePoints.length > 300) buf.wavePoints.shift();
+
+      // Peak detection via zero-crossing (positive slope)
+      const len = buf.wavePoints.length;
+      if (len >= 3) {
+        const prev = buf.wavePoints[len - 2];
+        const curr = buf.wavePoints[len - 1];
+        if (prev <= 0 && curr > 0) {
+          buf.crossings.push(now);
+          // Keep only recent crossings
+          if (buf.crossings.length > 20) buf.crossings.shift();
+          // Calculate instantaneous BPM
+          if (buf.crossings.length >= 2) {
+            const lastTwo = buf.crossings.slice(-4);
+            const intervals = [];
+            for (let i = 1; i < lastTwo.length; i++) {
+              intervals.push(lastTwo[i] - lastTwo[i - 1]);
+            }
+            const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            if (avgInterval > 300 && avgInterval < 2000) {
+              const instantBpm = Math.round(60000 / avgInterval);
+              buf.bpmHistory.push(instantBpm);
+              if (buf.bpmHistory.length > 20) buf.bpmHistory.shift();
+              const smoothBpm = Math.round(
+                buf.bpmHistory.reduce((a, b) => a + b, 0) / buf.bpmHistory.length
+              );
+              setLiveBpm(smoothBpm);
+            }
+          }
+        }
+      }
+
+      // Draw waveform on visible canvas
+      drawWave(buf.wavePoints);
+
+      rafRef.current = requestAnimationFrame(process);
+    };
+    rafRef.current = requestAnimationFrame(process);
+  }
+
+  // Start camera
+  const startCamera = useCallback(async () => {
+    try {
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        },
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+
+      // Try to turn on torch/flash
+      const track = stream.getVideoTracks()[0];
+      try {
+        await track.applyConstraints({ advanced: [{ torch: true }] });
+      } catch (_) { /* torch not supported, proceed without */ }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      updatePhase("waiting");
+      setStatusMsg("Place your finger over the camera lens");
+      startProcessing();
+    } catch (err) {
+      setStatusMsg("Camera access denied. Please allow camera permissions.");
+    }
+  }, []);
+
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
+
+  // Countdown timer for scanning phase
+  useEffect(() => {
+    if (phase !== "scanning") return;
+    if (countdown <= 0) {
+      // Scan complete
+      finalizeScan();
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [phase, countdown]);
