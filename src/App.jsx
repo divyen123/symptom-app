@@ -1389,7 +1389,7 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
               width: 38, height: 38, borderRadius: 10,
               background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20, boxShadow: "0 4px 16px rgba(59,130,246,0.4)",
+              fontSize: 20, boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.3)" : "0 4px 16px rgba(59,130,246,0.4)",
               flexShrink: 0,
             }}>⚕️</div>
             <div>
@@ -12498,6 +12498,8 @@ export default function App() {
     return <AuthFlow onLoginSuccess={handleLoginSuccess} />;
   }
 
+  const cp = CONTENT_PALETTES.find(p => p.id === appearance.contentPalette) || CONTENT_PALETTES[0];
+
   return (
     <>
       <style>{GLOBAL_CSS}</style>
@@ -12913,7 +12915,7 @@ export default function App() {
                   ? "linear-gradient(135deg, #1d4ed8, #2563eb)"
                   : "linear-gradient(135deg, #0f2272, #1d4ed8)",
                 border: "none",
-                boxShadow: settings?.theme === "dark" ? "none" : "0 6px 24px rgba(29,78,216,0.4), 0 2px 8px rgba(0,0,0,0.15)",
+                boxShadow: cp.isDark ? "0 4px 12px rgba(0,0,0,0.3)" : "0 6px 24px rgba(29,78,216,0.4), 0 2px 8px rgba(0,0,0,0.15)",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
