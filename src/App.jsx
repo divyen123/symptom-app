@@ -9877,7 +9877,8 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                               style={{
                                 background: 'var(--surface-2)', borderRadius: 10, padding: '14px',
                                 border: '2px solid var(--blue)', marginBottom: 6, display: 'flex', flexDirection: 'column', gap: 10,
-                                textAlign: "left", animation: "fadeUp 0.2s ease both"
+                                textAlign: "left", animation: "fadeUp 0.2s ease both",
+                                flexShrink: 0
                               }}
                             >
                               <div>
@@ -9937,7 +9938,8 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                 background: 'var(--surface)', borderRadius: 10, padding: '12px 16px',
                                 border: '1px solid var(--border)', marginBottom: 6,
-                                textAlign: "left", animation: "fadeIn 0.2s ease both"
+                                textAlign: "left", animation: "fadeIn 0.2s ease both",
+                                flexShrink: 0
                               }}
                             >
                               <div>
