@@ -10986,7 +10986,7 @@ function AuthFlow({ onLoginSuccess }) {
             <div
               onClick={() => setShowGoogleModal(false)}
               style={{
-                position: "fixed", inset: 0, background: "rgba(0,0,0,0)",
+                position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
                 backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", zIndex: 10000, animation: "fadeIn 0.2s ease both"
               }}
             />
@@ -10995,11 +10995,11 @@ function AuthFlow({ onLoginSuccess }) {
               zIndex: 10001, pointerEvents: "none"
             }}>
               <div style={{
-                background: "var(--bg-modal)", borderRadius: 16, border: "1px solid #e2e8f0",
+                background: "var(--bg-modal)", borderRadius: 16, border: "1px solid var(--border)",
                 width: "min(380px, 90%)", padding: 24, pointerEvents: "all",
                 boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
                 animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both",
-                fontFamily: "var(--font)", color: "#1e293b", textAlign: "center"
+                fontFamily: "var(--font)", color: "var(--navy)", textAlign: "center"
               }}>
                 {/* Google Brand Logo */}
                 <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
@@ -11015,8 +11015,8 @@ function AuthFlow({ onLoginSuccess }) {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", marginBottom: 20 }}>
                   {[
-                    { name: "Divye Sharma", email: "divye.sharma@gmail.com", avatar: "\uD83D\uDC64" },
-                    { name: "MedAI Guest", email: "medai.guest@gmail.com", avatar: "\u2695\uFE0F" }
+                    { name: "Divye Sharma", email: "divye.sharma@gmail.com", avatar: "👤" },
+                    { name: "MedAI Guest", email: "medai.guest@gmail.com", avatar: "⚕️" }
                   ].map((account, i) => (
                     <div
                       key={i}
@@ -11035,18 +11035,19 @@ function AuthFlow({ onLoginSuccess }) {
                       }}
                       style={{
                         display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                        borderRadius: 10, border: "1px solid #e2e8f0", cursor: "pointer",
-                        transition: "var(--transition)"
+                        borderRadius: 10, border: "1px solid var(--border)", cursor: "pointer",
+                        transition: "var(--transition)", background: "transparent"
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.borderColor = "var(--blue)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; }}
                     >
                       <div style={{
-                        width: 36, height: 36, borderRadius: "50%", background: "#f1f5f9",
-                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16
+                        width: 36, height: 36, borderRadius: "50%", background: "var(--surface-2)",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                        color: "var(--navy)"
                       }}>{account.avatar}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 13.5, color: "#1e293b" }}>{account.name}</div>
+                        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--navy)" }}>{account.name}</div>
                         <div style={{ fontSize: 11.5, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{account.email}</div>
                       </div>
                     </div>
@@ -11074,17 +11075,18 @@ function AuthFlow({ onLoginSuccess }) {
                     }}
                     style={{
                       display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                      borderRadius: 10, border: "1px solid #e2e8f0", cursor: "pointer",
-                      transition: "var(--transition)"
+                      borderRadius: 10, border: "1px solid var(--border)", cursor: "pointer",
+                      transition: "var(--transition)", background: "transparent"
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.borderColor = "var(--blue)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "var(--border)"; }}
                   >
                     <div style={{
-                      width: 36, height: 36, borderRadius: "50%", background: "#f1f5f9",
-                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16
-                    }}>&#10133;</div>
-                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "#1e293b" }}>Use another account</div>
+                      width: 36, height: 36, borderRadius: "50%", background: "var(--surface-2)",
+                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+                      color: "var(--navy)"
+                    }}>➕</div>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--navy)" }}>Use another account</div>
                   </div>
                 </div>
 
