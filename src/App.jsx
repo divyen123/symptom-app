@@ -12844,6 +12844,98 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
 
+  // FAB Draggable states
+  const [fabCorner, setFabCorner] = useState(() => {
+    return localStorage.getItem("MEDAI_FAB_CORNER") || (loadAppearance().navPosition === "right" ? "left-bottom" : "right-bottom");
+  });
+  const [isDraggingFab, setIsDraggingFab] = useState(false);
+  const [fabPos, setFabPos] = useState({ x: 0, y: 0 });
+  const dragStartRef = useRef({ startX: 0, startY: 0, clickX: 0, clickY: 0, didMove: false });
+
+  const handleFabMouseMove = useCallback((e) => {
+    if (!dragStartRef.current) return;
+    const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
+    
+    const deltaX = clientX - dragStartRef.current.clickX;
+    const deltaY = clientY - dragStartRef.current.clickY;
+    
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      dragStartRef.current.didMove = true;
+    }
+    
+    const newX = Math.max(10, Math.min(window.innerWidth - 64, dragStartRef.current.startX + deltaX));
+    const newY = Math.max(10, Math.min(window.innerHeight - 64, dragStartRef.current.startY + deltaY));
+    
+    setFabPos({ x: newX, y: newY });
+    if (e.cancelable) e.preventDefault();
+  }, []);
+
+  const handleFabMouseUp = useCallback((e) => {
+    document.removeEventListener("mousemove", handleFabMouseMove);
+    document.removeEventListener("mouseup", handleFabMouseUp);
+    document.removeEventListener("touchmove", handleFabMouseMove);
+    document.removeEventListener("touchend", handleFabMouseUp);
+    
+    setIsDraggingFab(false);
+    
+    if (!dragStartRef.current.didMove) {
+      setShowMedList(v => !v);
+      return;
+    }
+    
+    const clientX = e.type === "touchend" ? (e.changedTouches?.[0]?.clientX || 0) : e.clientX;
+    const clientY = e.type === "touchend" ? (e.changedTouches?.[0]?.clientY || 0) : e.clientY;
+    const deltaX = clientX - dragStartRef.current.clickX;
+    const deltaY = clientY - dragStartRef.current.clickY;
+    const finalX = Math.max(10, Math.min(window.innerWidth - 64, dragStartRef.current.startX + deltaX)) + 27;
+    const finalY = Math.max(10, Math.min(window.innerHeight - 64, dragStartRef.current.startY + deltaY)) + 27;
+    
+    const halfWidth = window.innerWidth / 2;
+    const halfHeight = window.innerHeight / 2;
+    
+    let corner = "right-bottom";
+    if (finalX < halfWidth) {
+      if (finalY < halfHeight) {
+        corner = "left-top";
+      } else {
+        corner = "left-bottom";
+      }
+    } else {
+      if (finalY < halfHeight) {
+        corner = "right-top";
+      } else {
+        corner = "right-bottom";
+      }
+    }
+    
+    setFabCorner(corner);
+    localStorage.setItem("MEDAI_FAB_CORNER", corner);
+  }, [handleFabMouseMove]);
+
+  const handleFabMouseDown = useCallback((e) => {
+    if (e.button !== 0 && e.type !== "touchstart") return;
+    const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    dragStartRef.current = {
+      startX: rect.left,
+      startY: rect.top,
+      clickX: clientX,
+      clickY: clientY,
+      didMove: false,
+    };
+    
+    setIsDraggingFab(true);
+    setFabPos({ x: rect.left, y: rect.top });
+    
+    document.addEventListener("mousemove", handleFabMouseMove);
+    document.addEventListener("mouseup", handleFabMouseUp);
+    document.addEventListener("touchmove", handleFabMouseMove, { passive: false });
+    document.addEventListener("touchend", handleFabMouseUp);
+  }, [handleFabMouseMove, handleFabMouseUp]);
+
   const showToast = useCallback((msg, type = "success") => {
     setToast({ msg, type });
   }, []);
@@ -13754,31 +13846,75 @@ export default function App() {
       </div>
 
       {user && splashPhase === "done" && (() => {
-        const isRightNav = appearance.navPosition === "right";
-        const fabLeft = isRightNav ? 20 : "auto";
-        const fabRight = isRightNav ? "auto" : 20;
-        const popoverLeft = isRightNav ? 0 : "auto";
-        const popoverRight = isRightNav ? "auto" : 0;
-        const popoverTransformOrigin = isRightNav ? "bottom left" : "bottom right";
+        const isLeft = fabCorner.startsWith("left");
+        const isTop = fabCorner.endsWith("top");
+        
+        const containerStyle = {
+          position: "fixed",
+          zIndex: 1200,
+          userSelect: "none",
+          touchAction: "none",
+        };
+        
+        if (isDraggingFab) {
+          containerStyle.left = fabPos.x;
+          containerStyle.top = fabPos.y;
+          containerStyle.right = "auto";
+          containerStyle.bottom = "auto";
+          containerStyle.transition = "none";
+        } else {
+          containerStyle.transition = "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
+          if (isLeft) {
+            containerStyle.left = 24;
+            containerStyle.right = "auto";
+          } else {
+            containerStyle.right = 24;
+            containerStyle.left = "auto";
+          }
+          if (isTop) {
+            containerStyle.top = 24;
+            containerStyle.bottom = "auto";
+          } else {
+            containerStyle.bottom = 32;
+            containerStyle.top = "auto";
+          }
+        }
+        
+        const popoverStyle = {
+          position: "absolute",
+          width: 320,
+          background: "var(--bg-modal)",
+          borderRadius: 16,
+          boxShadow: "0 16px 48px rgba(15,31,92,0.18), 0 2px 8px rgba(0,0,0,0.06)",
+          border: "2px solid var(--blue-border)",
+          overflow: "hidden",
+          animation: "scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
+          zIndex: 1201,
+        };
+        
+        if (isTop) {
+          popoverStyle.top = 66;
+          popoverStyle.bottom = "auto";
+          popoverStyle.transformOrigin = isLeft ? "top left" : "top right";
+        } else {
+          popoverStyle.bottom = 66;
+          popoverStyle.top = "auto";
+          popoverStyle.transformOrigin = isLeft ? "bottom left" : "bottom right";
+        }
+        
+        if (isLeft) {
+          popoverStyle.left = 0;
+          popoverStyle.right = "auto";
+        } else {
+          popoverStyle.right = 0;
+          popoverStyle.left = "auto";
+        }
 
         return createPortal(
-          <div style={{ position: "fixed", bottom: 32, left: fabLeft, right: fabRight, zIndex: 1200 }}>
+          <div style={containerStyle}>
             {/* Popover panel */}
             {showMedList && (
-              <div style={{
-                position: "absolute",
-                bottom: 66,
-                left: popoverLeft,
-                right: popoverRight,
-                width: 320,
-                background: "var(--bg-modal)",
-                borderRadius: 16,
-                boxShadow: "0 16px 48px rgba(15,31,92,0.18), 0 2px 8px rgba(0,0,0,0.06)",
-                border: "2px solid var(--blue-border)",
-                overflow: "hidden",
-                animation: "scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
-                transformOrigin: popoverTransformOrigin,
-              }}>
+              <div style={popoverStyle}>
                 {/* Header */}
                 <div style={{
                   background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
@@ -13967,7 +14103,8 @@ export default function App() {
 
             {/* FAB Button */}
             <button
-              onClick={() => setShowMedList(v => !v)}
+              onMouseDown={handleFabMouseDown}
+              onTouchStart={handleFabMouseDown}
               title="Medicine List"
               style={{
                 width: 54, height: 54,
@@ -13977,16 +14114,16 @@ export default function App() {
                   : "linear-gradient(135deg, #0f2272, #1d4ed8)",
                 border: "none",
                 boxShadow: cp.isDark ? "0 4px 12px rgba(0,0,0,0.3)" : "0 6px 24px rgba(29,78,216,0.4), 0 2px 8px rgba(0,0,0,0.15)",
-                cursor: "pointer",
+                cursor: isDraggingFab ? "grabbing" : "grab",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 22,
-                transition: "all 0.2s ease",
+                transition: isDraggingFab ? "none" : "all 0.2s ease",
                 position: "relative",
               }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              onMouseEnter={e => { if (!isDraggingFab) e.currentTarget.style.transform = "scale(1.08)"; }}
+              onMouseLeave={e => { if (!isDraggingFab) e.currentTarget.style.transform = "scale(1)"; }}
             >
               💊
               {savedMedicines.length > 0 && (
