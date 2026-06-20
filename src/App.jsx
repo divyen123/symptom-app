@@ -1799,7 +1799,7 @@ function Home({
   const handleToggleTodo = async (id, currentCompleted) => {
     try {
       await apiUpdateTodo(id, { completed: !currentCompleted });
-      setTodos(prev => prev.map(t => t._id === id ? { ...t, completed: !currentCompleted } : t));
+      setTodos(prev => prev.map(t => (t.id || t._id) === id ? { ...t, completed: !currentCompleted } : t));
     } catch (err) {
       alert("Failed to update task: " + err.message);
     }
@@ -1808,14 +1808,14 @@ function Home({
   const handleDeleteTodo = async (id) => {
     try {
       await apiDeleteTodo(id);
-      setTodos(prev => prev.filter(t => t._id !== id));
+      setTodos(prev => prev.filter(t => (t.id || t._id) !== id));
     } catch (err) {
       alert("Failed to delete task: " + err.message);
     }
   };
 
   const handleStartEditTodo = (todo) => {
-    setEditingTodoId(todo._id);
+    setEditingTodoId(todo.id || todo._id);
     setEditingTodoText(todo.text);
   };
 
@@ -1823,7 +1823,7 @@ function Home({
     if (!editingTodoText.trim()) return;
     try {
       await apiUpdateTodo(id, { text: editingTodoText.trim() });
-      setTodos(prev => prev.map(t => t._id === id ? { ...t, text: editingTodoText.trim() } : t));
+      setTodos(prev => prev.map(t => (t.id || t._id) === id ? { ...t, text: editingTodoText.trim() } : t));
       setEditingTodoId(null);
     } catch (err) {
       alert("Failed to save task edit: " + err.message);
@@ -2206,9 +2206,10 @@ function Home({
                 </div>
               ) : (
                 todos.map(t => {
-                  const isEditing = editingTodoId === t._id;
+                  const todoId = t.id || t._id;
+                  const isEditing = editingTodoId === todoId;
                   return (
-                    <div key={t._id} style={{
+                    <div key={todoId} style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 10,
@@ -2221,7 +2222,7 @@ function Home({
                       <input
                         type="checkbox"
                         checked={t.completed}
-                        onChange={() => handleToggleTodo(t._id, t.completed)}
+                        onChange={() => handleToggleTodo(todoId, t.completed)}
                         style={{ width: 15, height: 15, cursor: "pointer" }}
                       />
                       
@@ -2230,7 +2231,7 @@ function Home({
                           <input
                             value={editingTodoText}
                             onChange={e => setEditingTodoText(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && handleSaveEditTodo(t._id)}
+                            onKeyDown={e => e.key === "Enter" && handleSaveEditTodo(todoId)}
                             style={{
                               flex: 1, padding: "4px 8px", borderRadius: 4,
                               border: "1px solid var(--blue)", fontSize: 12.5,
@@ -2238,7 +2239,7 @@ function Home({
                             }}
                           />
                           <button
-                            onClick={() => handleSaveEditTodo(t._id)}
+                            onClick={() => handleSaveEditTodo(todoId)}
                             style={{
                               background: "var(--green)", color: "#fff", border: "none",
                               borderRadius: 4, padding: "2px 8px", fontSize: 11, cursor: "pointer"
@@ -2279,7 +2280,7 @@ function Home({
                             ✏️
                           </button>
                           <button
-                            onClick={() => handleDeleteTodo(t._id)}
+                            onClick={() => handleDeleteTodo(todoId)}
                             title="Delete task"
                             style={{
                               background: "none", border: "none", cursor: "pointer",
@@ -4104,11 +4105,15 @@ function MedicalIdModal({ settings, savedMedicines, reports = [], onClose }) {
   );
 }
 
-function FirstAidAccordion({ title, steps }) {
-  const [open, setOpen] = useState(false);
+function FirstAidAccordion({ title, steps, isOpen, onToggle, id }) {
+  const isControlled = isOpen !== undefined;
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = isControlled ? isOpen : localOpen;
+  const toggle = isControlled ? onToggle : () => setLocalOpen(!localOpen);
+
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", marginBottom: 8, background: "var(--surface)", overflow: "hidden" }}>
-      <button onClick={() => setOpen(!open)} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700, color: "var(--navy)", alignItems: "center" }}>
+    <div id={id} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", marginBottom: 8, background: "var(--surface)", overflow: "hidden" }}>
+      <button onClick={toggle} style={{ width: "100%", padding: "14px 16px", background: "transparent", border: "none", display: "flex", justifyContent: "space-between", cursor: "pointer", fontWeight: 700, color: "var(--navy)", alignItems: "center" }}>
         <span>{title}</span> <span style={{ fontSize: 10, transition: "transform 0.25s ease", transform: open ? "rotate(180deg)" : "rotate(0deg)", color: "var(--text-faint)" }}>▼</span>
       </button>
       <AnimatePresence initial={false}>
@@ -4135,6 +4140,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
   const [medicalIdOpen, setMedicalIdOpen] = useState(false);
   const [showContactsPopover, setShowContactsPopover] = useState(false);
   const [showTodoPopover, setShowTodoPopover] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState(null);
   const emergencyNumber = settings.emergencyNumber || "108";
 
   const cp = CONTENT_PALETTES.find(p => p.id === appearance?.contentPalette) || CONTENT_PALETTES[0];
@@ -4157,6 +4163,14 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
       if (setActive) setActive("meditown");
     } else if (index === 4) {
       setShowTodoPopover(true);
+    } else if (index === 5) {
+      setOpenAccordion("cpr");
+      setTimeout(() => {
+        const el = document.getElementById("cpr-accordion");
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     }
   };
 
@@ -4222,10 +4236,31 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
       </div>
 
       <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)", marginBottom: 16 }}>Quick First Aid</h3>
-      <FirstAidAccordion title="🫁 Choking (Heimlich Maneuver)" steps={["Stand behind the person and wrap your arms around their waist.", "Make a fist with one hand and place it just above their navel.", "Grasp your fist with your other hand.", "Perform quick, upward inward thrusts.", "Repeat until the object is dislodged."]} />
-      <FirstAidAccordion title="🩸 Severe Bleeding" steps={["Apply direct pressure to the wound with a clean cloth.", "Maintain pressure and do not remove the cloth.", "If bleeding soaks through, add more cloth on top.", "If on a limb and bleeding is severe, consider applying a tourniquet 2-3 inches above the wound."]} />
-      <FirstAidAccordion title="🔥 Burns" steps={["Cool the burn under cool (not cold) running water for 10-15 minutes.", "Do not apply ice, butter, or ointments immediately.", "Cover loosely with a sterile, non-stick bandage or clean cloth.", "Seek medical help for severe burns or burns larger than 3 inches."]} />
-      <FirstAidAccordion title="🫀 CPR (No Pulse/Breathing)" steps={["Call emergency services immediately.", "Place the heel of one hand on the center of the chest.", "Place your other hand on top and interlock fingers.", "Push hard and fast (100-120 compressions per minute).", "Allow the chest to recoil fully between compressions."]} />
+      <FirstAidAccordion
+        title="🫁 Choking (Heimlich Maneuver)"
+        steps={["Stand behind the person and wrap your arms around their waist.", "Make a fist with one hand and place it just above their navel.", "Grasp your fist with your other hand.", "Perform quick, upward inward thrusts.", "Repeat until the object is dislodged."]}
+        isOpen={openAccordion === "choking"}
+        onToggle={() => setOpenAccordion(openAccordion === "choking" ? null : "choking")}
+      />
+      <FirstAidAccordion
+        title="🩸 Severe Bleeding"
+        steps={["Apply direct pressure to the wound with a clean cloth.", "Maintain pressure and do not remove the cloth.", "If bleeding soaks through, add more cloth on top.", "If on a limb and bleeding is severe, consider applying a tourniquet 2-3 inches above the wound."]}
+        isOpen={openAccordion === "bleeding"}
+        onToggle={() => setOpenAccordion(openAccordion === "bleeding" ? null : "bleeding")}
+      />
+      <FirstAidAccordion
+        title="🔥 Burns"
+        steps={["Cool the burn under cool (not cold) running water for 10-15 minutes.", "Do not apply ice, butter, or ointments immediately.", "Cover loosely with a sterile, non-stick bandage or clean cloth.", "Seek medical help for severe burns or burns larger than 3 inches."]}
+        isOpen={openAccordion === "burns"}
+        onToggle={() => setOpenAccordion(openAccordion === "burns" ? null : "burns")}
+      />
+      <FirstAidAccordion
+        id="cpr-accordion"
+        title="🫀 CPR (No Pulse/Breathing)"
+        steps={["Call emergency services immediately.", "Place the heel of one hand on the center of the chest.", "Place your other hand on top and interlock fingers.", "Push hard and fast (100-120 compressions per minute).", "Allow the chest to recoil fully between compressions."]}
+        isOpen={openAccordion === "cpr"}
+        onToggle={() => setOpenAccordion(openAccordion === "cpr" ? null : "cpr")}
+      />
 
       {/* ── Emergency Preparedness ── */}
       <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)", marginBottom: 16, marginTop: 28 }}>📋 Emergency Checklist</h3>
@@ -4239,7 +4274,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
             { icon: "📋", text: "Keep a list of your medications in your wallet or phone." },
             { icon: "👨‍👩‍👧", text: "Teach family members basic first aid including CPR and the Heimlich maneuver." },
           ].map((item, i) => {
-            const isClickable = i === 0 || i === 1 || i === 2 || i === 3 || i === 4;
+            const isClickable = i === 0 || i === 1 || i === 2 || i === 3 || i === 4 || i === 5;
             return (
               <div key={i}
                 onClick={isClickable ? () => handleChecklistItemClick(i) : undefined}
