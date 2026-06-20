@@ -7,7 +7,13 @@ import jwt from "jsonwebtoken";
 import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-app.use(cors());
+const allowedOrigins = ["http://localhost:5173"];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+app.use(cors({
+  origin: allowedOrigins
+}));
 app.use(express.json({ limit: "2mb" }));
 
 // ─── Config ───────────────────────────────────────────────────────────────────
