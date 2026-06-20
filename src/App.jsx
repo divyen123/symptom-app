@@ -4438,7 +4438,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
               </div>
 
               {/* Scrollable List */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="styled-scroll" style={{ flex: 1, overflowY: "auto", padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
                 {todos.length === 0 ? (
                   <div style={{
                     padding: "40px 10px", textAlign: "center", color: "var(--text-faint)",
@@ -4457,6 +4457,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
                       border: "1px solid var(--border)",
                       borderRadius: 8,
                       opacity: todo.completed ? 0.6 : 1,
+                      flexShrink: 0,
                     }}>
                       <div style={{
                         width: 18, height: 18, borderRadius: 4,
