@@ -13132,8 +13132,27 @@ export default function App() {
     localStorage.setItem(APPEARANCE_KEY, JSON.stringify(appearance));
   }, [appearance]);
 
-  const handleAppearanceChange = (key, val) => {
-    setAppearance(prev => ({ ...prev, [key]: val }));
+  const handleAppearanceChange = async (key, val) => {
+    const updatedApp = { ...appearance, [key]: val };
+    setAppearance(updatedApp);
+    if (user && user.id !== "demo") {
+      try {
+        await apiSaveSettings({
+          ...settings,
+          theme: updatedApp.theme,
+          fontFamily: updatedApp.fontFamily,
+          fontSize: updatedApp.fontSize,
+          navPosition: updatedApp.navPosition,
+          navbarPalette: updatedApp.navbarPalette,
+          contentPalette: updatedApp.contentPalette,
+          stickerOpacity: updatedApp.stickerOpacity,
+          glassyNavbar: updatedApp.glassyNavbar,
+          glassyContainer: updatedApp.glassyContainer,
+        });
+      } catch (err) {
+        console.error("Failed to save appearance change to backend:", err);
+      }
+    }
   };
 
   const checkAuth = async () => {
@@ -13263,19 +13282,34 @@ export default function App() {
         setReports(Array.isArray(dbReports) ? dbReports : []);
         setSettings(dbSettings || {});
         if (dbSettings && Object.keys(dbSettings).length > 0) {
+          const localApp = loadAppearance();
           const syncedApp = {
-            theme: dbSettings.theme || "light",
-            fontFamily: dbSettings.fontFamily || "Plus Jakarta Sans",
-            fontSize: dbSettings.fontSize || "default",
-            navPosition: dbSettings.navPosition || "left",
-            navbarPalette: dbSettings.navbarPalette || "white",
-            contentPalette: dbSettings.contentPalette || "white",
-            stickerOpacity: typeof dbSettings.stickerOpacity === 'number' ? dbSettings.stickerOpacity : 0.15,
-            glassyNavbar: dbSettings.glassyNavbar !== undefined ? !!dbSettings.glassyNavbar : false,
-            glassyContainer: dbSettings.glassyContainer !== undefined ? !!dbSettings.glassyContainer : false,
+            theme: dbSettings.theme || localApp.theme || "light",
+            fontFamily: dbSettings.fontFamily || localApp.fontFamily || "Plus Jakarta Sans",
+            fontSize: dbSettings.fontSize || localApp.fontSize || "default",
+            navPosition: dbSettings.navPosition || localApp.navPosition || "left",
+            navbarPalette: dbSettings.navbarPalette || localApp.navbarPalette || "white",
+            contentPalette: dbSettings.contentPalette || localApp.contentPalette || "white",
+            stickerOpacity: typeof dbSettings.stickerOpacity === 'number' ? dbSettings.stickerOpacity : (typeof localApp.stickerOpacity === 'number' ? localApp.stickerOpacity : 0.15),
+            glassyNavbar: dbSettings.glassyNavbar !== undefined ? !!dbSettings.glassyNavbar : (localApp.glassyNavbar !== undefined ? !!localApp.glassyNavbar : false),
+            glassyContainer: dbSettings.glassyContainer !== undefined ? !!dbSettings.glassyContainer : (localApp.glassyContainer !== undefined ? !!localApp.glassyContainer : false),
           };
           setAppearance(syncedApp);
           localStorage.setItem(APPEARANCE_KEY, JSON.stringify(syncedApp));
+          if (!dbSettings.theme || !dbSettings.navbarPalette || !dbSettings.contentPalette) {
+            apiSaveSettings({
+              ...dbSettings,
+              theme: syncedApp.theme,
+              fontFamily: syncedApp.fontFamily,
+              fontSize: syncedApp.fontSize,
+              navPosition: syncedApp.navPosition,
+              navbarPalette: syncedApp.navbarPalette,
+              contentPalette: syncedApp.contentPalette,
+              stickerOpacity: syncedApp.stickerOpacity,
+              glassyNavbar: syncedApp.glassyNavbar,
+              glassyContainer: syncedApp.glassyContainer,
+            }).catch(err => console.error("Failed to back-sync local appearance to db:", err));
+          }
         } else {
           const localApp = loadAppearance();
           apiSaveSettings(localApp).catch(err => console.error("Failed to sync initial local appearance to db:", err));
