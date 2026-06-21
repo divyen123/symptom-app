@@ -8,6 +8,7 @@ const STORAGE_KEY = "symptom_reports";
 const SETTINGS_KEY = "symptom_settings";
 const VITALS_KEY = "symptom_vitals";
 const MEDICINE_KEY = "symptom_medicines";
+const REMINDERS_KEY = "symptom_reminders";
 const APPEARANCE_KEY = "medai_appearance";
 const MODEL = "llama-3.1-8b-instant";
 const DISCLAIMER = "⚕️ This app is not a medical diagnosis system. Please consult a qualified doctor.";
@@ -72,6 +73,10 @@ const loadVitals = () => {
 };
 const loadMedicines = () => {
   try { return JSON.parse(localStorage.getItem(MEDICINE_KEY) || "[]"); }
+  catch { return []; }
+};
+const loadReminders = () => {
+  try { return JSON.parse(localStorage.getItem(REMINDERS_KEY) || "[]"); }
   catch { return []; }
 };
 const DEFAULT_APPEARANCE = {
@@ -226,6 +231,12 @@ const apiFetchMedications    = () => fetch(`${API}/medications`, { headers: auth
 const apiCreateMedication    = (med) => fetch(`${API}/medications`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) }).then(r => r.json());
 const apiDeleteMedication    = (id) => fetch(`${API}/medications/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
 const apiDeleteAllMedications= () => fetch(`${API}/medications`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+
+const apiFetchReminders      = () => fetch(`${API}/reminders`, { headers: authHeaders() }).then(r => r.json());
+const apiCreateReminder      = (rem) => fetch(`${API}/reminders`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) }).then(r => r.json());
+const apiUpdateReminder      = (id, rem) => fetch(`${API}/reminders/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) }).then(r => r.json());
+const apiDeleteReminder      = (id) => fetch(`${API}/reminders/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiDeleteAllReminders  = () => fetch(`${API}/reminders`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
 
 const apiFetchSavedPlans = () => fetch(`${API}/saved-plans`, { headers: authHeaders() }).then(r => r.json());
 const apiSavePlan        = (plan) => fetch(`${API}/saved-plans`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(plan) }).then(r => r.json());
@@ -2456,6 +2467,152 @@ function Home({
                 })}
               </div>
             )}
+          </Card>
+
+          {/* Self-Care Reminders Card */}
+          <Card className="styled-scroll" style={{ padding: "20px 24px", height: 350, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 20 }}>⏰</span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>Self-Care Reminders</span>
+              </div>
+              {savedReminders.length > 0 && (
+                <button
+                  onClick={handleDeleteAllReminders}
+                  style={{
+                    background: "none", border: "none", color: "var(--red)",
+                    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                  }}
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Quick Add / New Reminder Form */}
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.target;
+              const title = form.elements.title.value.trim();
+              const time = form.elements.time.value;
+              if (!title || !time) return;
+              handleSaveReminder(title, time);
+              form.reset();
+            }} style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+              <input
+                name="title"
+                placeholder="Hydrate, log symptoms..."
+                required
+                style={{
+                  flex: 2, padding: "8px 10px", borderRadius: "var(--radius-sm)",
+                  border: "1.5px solid var(--border)", fontSize: 12.5,
+                  fontFamily: "var(--font)"
+                }}
+              />
+              <input
+                name="time"
+                type="time"
+                required
+                style={{
+                  flex: 1.2, padding: "8px 8px", borderRadius: "var(--radius-sm)",
+                  border: "1.5px solid var(--border)", fontSize: 12.5,
+                  fontFamily: "var(--font)"
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: "var(--blue)", color: "#fff", border: "none",
+                  borderRadius: "var(--radius-sm)", padding: "0 12px",
+                  fontWeight: 700, fontSize: 12.5, cursor: "pointer",
+                  fontFamily: "var(--font)"
+                }}
+              >
+                Add
+              </button>
+            </form>
+
+            {/* Reminders List */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflowY: "auto" }}>
+              {savedReminders.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "20px 10px", flex: 1, justifyContent: "center" }}>
+                  <span style={{ fontSize: 24, opacity: 0.3, marginBottom: 6 }}>⏰</span>
+                  <p style={{ fontSize: 12, color: "var(--text-faint)", fontWeight: 500, margin: 0 }}>
+                    No reminders set. Set one to stay on track!
+                  </p>
+                </div>
+              ) : (
+                savedReminders.map(rem => {
+                  const remId = rem._id || rem.id;
+                  const isActive = rem.active;
+                  return (
+                    <div key={remId} style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 12px",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-sm)",
+                      transition: "var(--transition)",
+                      opacity: isActive ? 1 : 0.65
+                    }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                        <span style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "var(--text)",
+                          textDecoration: isActive ? "none" : "line-through",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: 140
+                        }}>
+                          {rem.title}
+                        </span>
+                        <span style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600 }}>
+                          🔔 {rem.time}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {/* Custom Switch / Toggle Checkbox */}
+                        <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => handleToggleReminder(remId, isActive)}
+                            style={{
+                              width: 32, height: 18, appearance: "none",
+                              backgroundColor: isActive ? "var(--blue)" : "rgba(0,0,0,0.1)",
+                              borderRadius: 9, position: "relative", cursor: "pointer",
+                              transition: "background-color 0.2s ease"
+                            }}
+                          />
+                          <span style={{
+                            width: 14, height: 14, backgroundColor: "#fff",
+                            borderRadius: "50%", position: "absolute", top: 2,
+                            left: isActive ? 16 : 2, transition: "left 0.2s ease",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }} />
+                        </label>
+
+                        <button
+                          onClick={() => handleDeleteReminder(remId)}
+                          title="Delete reminder"
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            fontSize: 13, padding: "2px"
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </Card>
 
           {/* Daily Health Focus */}
@@ -12907,6 +13064,8 @@ export default function App() {
   const [savedMedicines, setSavedMedicines] = useState([]);
   const [showMedList, setShowMedList] = useState(false);
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
+  const [savedReminders, setSavedReminders] = useState([]);
+  const [showReminderList, setShowReminderList] = useState(false);
   const [appearance, setAppearance] = useState(() => loadAppearance());
   const [chatSessions, setChatSessions] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -13384,11 +13543,13 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem("MEDAI_TOKEN");
     localStorage.removeItem("MEDAI_DEMO_MODE");
+    localStorage.removeItem(REMINDERS_KEY);
     setUser(null);
     setReports([]);
     setVitals([]);
     setSettings({});
     setSavedMedicines([]);
+    setSavedReminders([]);
     setChatSessions([]);
     setActiveChatId(null);
     setChatMsgs(getNewChatDefaultMessages());
@@ -13433,6 +13594,59 @@ export default function App() {
     }
   };
 
+  const handleSaveReminder = async (title, time) => {
+    try {
+      const newRem = await apiCreateReminder({ title, time, active: true });
+      setSavedReminders(prev => [newRem, ...prev]);
+    } catch (_e) {
+      // Offline fallback: save to localStorage
+      const offlineRem = { _id: "local_" + Date.now(), id: "local_" + Date.now(), title, time, active: true, createdAt: new Date().toISOString() };
+      const updated = [offlineRem, ...savedReminders];
+      setSavedReminders(updated);
+      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+    }
+  };
+
+  const handleToggleReminder = async (id, currentActive) => {
+    try {
+      const updatedRem = await apiUpdateReminder(id, { active: !currentActive });
+      setSavedReminders(prev => prev.map(r => (r._id === id || r.id === id) ? updatedRem : r));
+    } catch (_e) {
+      // Offline fallback: update in localStorage
+      const updated = savedReminders.map(r => {
+        if (r._id === id || r.id === id) {
+          return { ...r, active: !currentActive };
+        }
+        return r;
+      });
+      setSavedReminders(updated);
+      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+    }
+  };
+
+  const handleDeleteReminder = async (id) => {
+    try {
+      await apiDeleteReminder(id);
+      setSavedReminders(prev => prev.filter(r => r._id !== id && r.id !== id));
+    } catch (_e) {
+      // Offline fallback: remove from localStorage
+      const updated = savedReminders.filter(r => r._id !== id && r.id !== id);
+      setSavedReminders(updated);
+      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+    }
+  };
+
+  const handleDeleteAllReminders = async () => {
+    try {
+      await apiDeleteAllReminders();
+      setSavedReminders([]);
+    } catch (_e) {
+      // Offline fallback
+      setSavedReminders([]);
+      localStorage.removeItem(REMINDERS_KEY);
+    }
+  };
+
   useEffect(() => {
     if (loadingUser) return;
     if (!user) {
@@ -13451,6 +13665,7 @@ export default function App() {
           setChatSessions([]);
           setTodos([]);
           setSavedMedicines(loadMedicines());
+          setSavedReminders(loadReminders());
           setDbReady(true);
           return;
         }
@@ -13469,13 +13684,19 @@ export default function App() {
           await Promise.all(lsVitals.map(v => apiSaveVital(v)));
           localStorage.removeItem(VITALS_KEY);
         }
-        const [dbReports, dbSettings, dbVitals, dbChats, dbTodos, dbMeds] = await Promise.all([
+        const lsReminders = loadReminders();
+        if (lsReminders.length > 0) {
+          await Promise.all(lsReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
+          localStorage.removeItem(REMINDERS_KEY);
+        }
+        const [dbReports, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
           apiFetchReports(),
           apiFetchSettings(),
           apiFetchVitals(),
           apiFetchChats(),
           apiFetchTodos(),
-          apiFetchMedications()
+          apiFetchMedications(),
+          apiFetchReminders()
         ]);
         setReports(Array.isArray(dbReports) ? dbReports : []);
         setSettings(dbSettings || {});
@@ -13516,6 +13737,7 @@ export default function App() {
         setChatSessions(Array.isArray(dbChats) ? dbChats : []);
         setTodos(Array.isArray(dbTodos) ? dbTodos : []);
         setSavedMedicines(Array.isArray(dbMeds) ? dbMeds : []);
+        setSavedReminders(Array.isArray(dbReminders) ? dbReminders : []);
       } catch (e) {
         console.warn("Backend not reachable, using localStorage:", e.message);
         setReports(loadReports());
@@ -13524,6 +13746,7 @@ export default function App() {
         setChatSessions([]);
         setTodos([]);
         setSavedMedicines(loadMedicines());
+        setSavedReminders(loadReminders());
       } finally {
         setDbReady(true);
       }

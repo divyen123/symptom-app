@@ -331,7 +331,8 @@ app.delete("/api/auth/reset-profile", authMiddleware, async (req, res) => {
       supabase.from("vitals").delete().eq("user_id", userId),
       supabase.from("chat_sessions").delete().eq("user_id", userId),
       supabase.from("todos").delete().eq("user_id", userId),
-      supabase.from("medications").delete().eq("user_id", userId)
+      supabase.from("medications").delete().eq("user_id", userId),
+      supabase.from("reminders").delete().eq("user_id", userId)
     ]);
 
     res.json({ message: "Profile data reset successfully" });
@@ -985,6 +986,102 @@ app.delete("/api/saved-plans", authMiddleware, async (req, res) => {
   try {
     const { error } = await supabase
       .from("saved_plans")
+      .delete()
+      .eq("user_id", req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+// ─── Reminders API (protected) ─────────────────────────────────────────────────
+
+// GET all reminders
+app.get("/api/reminders", authMiddleware, async (req, res) => {
+  try {
+    const { data: reminders, error } = await supabase
+      .from("reminders")
+      .select("id, title, time, active, createdAt:created_at")
+      .eq("user_id", req.userId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(reminders || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST new reminder
+app.post("/api/reminders", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      title: req.body.title,
+      time: req.body.time,
+      active: req.body.active !== undefined ? req.body.active : true
+    };
+
+    const { data: doc, error } = await supabase
+      .from("reminders")
+      .insert(record)
+      .select("id, title, time, active, createdAt:created_at")
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT update reminder (toggle active state or update values)
+app.put("/api/reminders/:id", authMiddleware, async (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.title !== undefined) updates.title = req.body.title;
+    if (req.body.time !== undefined) updates.time = req.body.time;
+    if (req.body.active !== undefined) updates.active = req.body.active;
+
+    const { data: doc, error } = await supabase
+      .from("reminders")
+      .update(updates)
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id)
+      .select("id, title, time, active, createdAt:created_at")
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE one reminder
+app.delete("/api/reminders/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("reminders")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE all reminders
+app.delete("/api/reminders", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("reminders")
       .delete()
       .eq("user_id", req.userId);
 

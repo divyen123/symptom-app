@@ -130,3 +130,16 @@ create table if not exists public.saved_plans (
 
 -- Index for saved plans by user_id
 create index if not exists saved_plans_user_id_idx on public.saved_plans (user_id);
+
+-- 9. Create Reminders Table
+create table if not exists public.reminders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  title text not null,
+  time text not null,
+  active boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+-- Index for reminders by user_id
+create index if not exists reminders_user_id_idx on public.reminders (user_id);
