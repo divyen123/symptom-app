@@ -13091,17 +13091,22 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       )}
 
       {/* Nutrient Details Side Drawer */}
-      {nutrientDrawerOpen && activeNutrient && createPortal(
+      {activeNutrient && createPortal(
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          zIndex: 10000, display: "flex", justifyContent: "flex-end"
+          zIndex: 10000, display: "flex", justifyContent: "flex-end",
+          pointerEvents: nutrientDrawerOpen ? "all" : "none",
+          visibility: nutrientDrawerOpen ? "visible" : "hidden",
+          transition: "visibility 0.35s ease"
         }}>
           {/* Backdrop */}
           <div
             onClick={() => setNutrientDrawerOpen(false)}
             style={{
               position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-              background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)"
+              background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)",
+              opacity: nutrientDrawerOpen ? 1 : 0,
+              transition: "opacity 0.35s ease"
             }}
           />
           {/* Drawer Container */}
@@ -13109,7 +13114,9 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             position: "relative", width: "100%", maxWidth: 420, height: "100%",
             background: "var(--surface)", borderLeft: "1px solid var(--border)",
             boxShadow: "-10px 0 30px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column",
-            animation: "mtSlideIn 0.3s ease both", overflowY: "auto", padding: 32, textAlign: "left"
+            transform: nutrientDrawerOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+            overflowY: "auto", padding: 32, textAlign: "left"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
               <button
