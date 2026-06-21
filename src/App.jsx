@@ -1140,6 +1140,32 @@ async function callClaude(messages, system = "") {
   return data.choices?.[0]?.message?.content || "";
 }
 
+function safeParseJSON(raw) {
+  if (!raw) return null;
+  const startIdx = raw.indexOf('{');
+  const endIdx = raw.lastIndexOf('}');
+  if (startIdx === -1 || endIdx === -1) {
+    throw new Error("No JSON object structure found in response");
+  }
+  let jsonStr = raw.substring(startIdx, endIdx + 1);
+  // Remove control characters
+  jsonStr = jsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, " ");
+  try {
+    return JSON.parse(jsonStr);
+  } catch (initialErr) {
+    try {
+      let cleaned = jsonStr
+        .replace(/,\s*([}\mathbf{])/g, '$1') // remove trailing commas
+        .replace(/,\s*([}\]])/g, '$1')
+        .replace(/\r?\n|\r/g, " ");
+      return JSON.parse(cleaned);
+    } catch (secondErr) {
+      console.warn("JSON repair failed, raw content:", raw);
+      throw secondErr;
+    }
+  }
+}
+
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
 function Card({ children, className = "", style = {}, hover = false, onClick, glow = false, ...props }) {
   return (
@@ -6080,11 +6106,11 @@ function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose 
     "--modal-offset-right": navPos === "right" ? "var(--sidebar-width)" : "0",
   };
 
-  // Fetch the main fever guide on mount
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      const prompt = `For a ${fever.temp} (${fever.label}) fever, respond with ONLY valid JSON (no markdown, no backticks):
+  // Standalone fetch function for fever details
+  const fetchFeverData = async () => {
+    setLoading(true);
+    setData(null);
+    const prompt = `For a ${fever.temp} (${fever.label}) fever, respond with ONLY valid JSON (no markdown, no backticks):
 {
   "overview": "2-3 sentence clinical overview of what this fever range means for the body",
   "urgency": "Low" or "Medium" or "High",
@@ -6114,14 +6140,19 @@ function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose 
   "whenToCall": "Clear one-sentence instruction on when to call a doctor"
 }
 Use only OTC medicines appropriate for this fever range. Provide relevant habits, warning signs, and foods for this specific fever range. Be medically accurate.`;
-      try {
-        const raw = await callClaude([{ role: "user", content: prompt }]);
-        const match = raw.match(/\{[\s\S]*\}/);
-        if (match) setData(JSON.parse(match[0]));
-      } catch (e) { console.error(e); }
-      setLoading(false);
+    try {
+      const raw = await callClaude([{ role: "user", content: prompt }]);
+      const parsed = safeParseJSON(raw);
+      if (parsed) setData(parsed);
+      else throw new Error("Could not parse JSON");
+    } catch (e) {
+      console.error("Failed to fetch fever care guide:", e);
     }
-    fetchData();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchFeverData();
   }, [fever.temp]);
 
   // ── NEW: fetch step-by-step cooking/preparation guide for a food ─────────
@@ -6151,9 +6182,12 @@ Respond with ONLY valid JSON (no markdown, no backticks):
 }`;
     try {
       const raw = await callClaude([{ role: "user", content: prompt }]);
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) setFoodDetail(JSON.parse(match[0]));
-    } catch (e) { console.error(e); }
+      const parsed = safeParseJSON(raw);
+      if (parsed) setFoodDetail(parsed);
+      else throw new Error("Could not parse JSON");
+    } catch (e) {
+      console.error("Failed to fetch food details:", e);
+    }
     setLoadingFood(false);
   };
 
@@ -6215,13 +6249,41 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 4, fontWeight: 600 }}>{fever.label} Fever</div>
               </div>
             </div>
-            <button onClick={onClose} style={{
-              background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: "var(--radius-sm)", width: 34, height: 34,
-              cursor: "pointer", fontSize: 20, color: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "var(--font)",
-            }}>×</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                onClick={fetchFeverData}
+                title="Refresh Care Guide"
+                style={{
+                  background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                  cursor: "pointer", fontSize: 15, color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font)",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.28)";
+                  e.currentTarget.style.transform = "rotate(45deg)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.15)";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                🔄
+              </button>
+              <button onClick={onClose} style={{
+                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                cursor: "pointer", fontSize: 20, color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "var(--font)",
+                transition: "all 0.2s ease"
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+              >×</button>
+            </div>
           </div>
 
           {/* Body */}
@@ -6461,16 +6523,43 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setSelectedFood(null)}
-                style={{
-                  background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)",
-                  borderRadius: "var(--radius-sm)", width: 34, height: 34,
-                  cursor: "pointer", fontSize: 20, color: "rgba(255,255,255,0.85)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "var(--font)",
-                }}
-              >×</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => fetchFoodDetail(selectedFood)}
+                  title="Refresh Guide"
+                  style={{
+                    background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                    cursor: "pointer", fontSize: 15, color: "rgba(255,255,255,0.85)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "var(--font)",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.25)";
+                    e.currentTarget.style.transform = "rotate(45deg)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+                    e.currentTarget.style.transform = "none";
+                  }}
+                >
+                  🔄
+                </button>
+                <button
+                  onClick={() => setSelectedFood(null)}
+                  style={{
+                    background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                    cursor: "pointer", fontSize: 20, color: "rgba(255,255,255,0.85)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "var(--font)",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
+                >×</button>
+              </div>
             </div>
 
             {/* Food detail body */}
@@ -6693,11 +6782,10 @@ function TipDetailModal({ tip, onClose }) {
     "--modal-offset-right": navPos === "right" ? "var(--sidebar-width)" : "0",
   };
 
-  // Fetch tip detail on open
-  useEffect(() => {
-    async function fetchDetail() {
-      setLoadingDetail(true);
-      const prompt = `For the wellness tip "${tip.title}", respond with ONLY valid JSON (no markdown, no backticks):
+  const fetchTipDetail = async () => {
+    setLoadingDetail(true);
+    setDetail(null);
+    const prompt = `For the wellness tip "${tip.title}", respond with ONLY valid JSON (no markdown, no backticks):
 {
   "description": "2-3 sentence engaging description of why this matters for health",
   "pros": ["pro 1", "pro 2", "pro 3", "pro 4"],
@@ -6714,14 +6802,20 @@ function TipDetailModal({ tip, onClose }) {
 }
 
 Make suggestions highly specific and practical for "${tip.title}". Use relevant emojis.`;
-      try {
-        const raw = await callClaude([{ role: "user", content: prompt }]);
-        const match = raw.match(/\{[\s\S]*\}/);
-        if (match) setDetail(JSON.parse(match[0]));
-      } catch(e) { console.error(e); }
-      setLoadingDetail(false);
+    try {
+      const raw = await callClaude([{ role: "user", content: prompt }]);
+      const parsed = safeParseJSON(raw);
+      if (parsed) setDetail(parsed);
+      else throw new Error("Could not parse JSON");
+    } catch (err) {
+      console.error("Failed to load tip detail:", err);
     }
-    fetchDetail();
+    setLoadingDetail(false);
+  };
+
+  // Fetch tip detail on open
+  useEffect(() => {
+    fetchTipDetail();
   }, [tip.title]);
 
   // Fetch item steps when user clicks a suggestion
@@ -6744,9 +6838,12 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
 }`;
     try {
       const raw = await callClaude([{ role: "user", content: prompt }]);
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (match) setItemDetail(JSON.parse(match[0]));
-    } catch(e) { console.error(e); }
+      const parsed = safeParseJSON(raw);
+      if (parsed) setItemDetail(parsed);
+      else throw new Error("Could not parse JSON");
+    } catch (e) {
+      console.error("Failed to load item detail:", e);
+    }
     setLoadingItem(false);
   };
 
@@ -6803,17 +6900,41 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                 <div style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 2 }}>Wellness Guide</div>
               </div>
             </div>
-            <button onClick={onClose} style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: "var(--radius-sm)", width: 34, height: 34,
-              cursor: "pointer", fontSize: 20, color: "var(--text-faint)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "var(--font)", flexShrink: 0,
-              transition: "var(--transition)",
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-              onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
-            >×</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                onClick={fetchTipDetail}
+                title="Refresh Wellness Guide"
+                style={{
+                  background: "var(--surface)", border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                  cursor: "pointer", fontSize: 15, color: "var(--text-faint)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font)", flexShrink: 0,
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "var(--surface-2)";
+                  e.currentTarget.style.transform = "rotate(45deg)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "var(--surface)";
+                  e.currentTarget.style.transform = "none";
+                }}
+              >
+                🔄
+              </button>
+              <button onClick={onClose} style={{
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: "var(--radius-sm)", width: 34, height: 34,
+                cursor: "pointer", fontSize: 20, color: "var(--text-faint)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "var(--font)", flexShrink: 0,
+                transition: "all 0.2s ease",
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
+                onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
+              >×</button>
+            </div>
           </div>
 
           {/* Body */}
@@ -6944,13 +7065,41 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                   <div style={{ fontSize: 11.5, color: "rgba(147,197,253,0.7)", marginTop: 2 }}>{tip.title} · Step-by-step guide</div>
                 </div>
               </div>
-              <button onClick={() => setSelectedItem(null)} style={{
-                background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: "var(--radius-sm)", width: 32, height: 32,
-                cursor: "pointer", fontSize: 18, color: "rgba(255,255,255,0.8)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "var(--font)",
-              }}>×</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => fetchItemDetail(selectedItem)}
+                  title="Refresh Guide"
+                  style={{
+                    background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: "var(--radius-sm)", width: 32, height: 32,
+                    cursor: "pointer", fontSize: 14, color: "rgba(255,255,255,0.8)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontFamily: "var(--font)",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.25)";
+                    e.currentTarget.style.transform = "rotate(45deg)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.12)";
+                    e.currentTarget.style.transform = "none";
+                  }}
+                >
+                  🔄
+                </button>
+                <button onClick={() => setSelectedItem(null)} style={{
+                  background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "var(--radius-sm)", width: 32, height: 32,
+                  cursor: "pointer", fontSize: 18, color: "rgba(255,255,255,0.8)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font)",
+                  transition: "all 0.2s ease"
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
+                >×</button>
+              </div>
             </div>
 
             {/* Item body */}
