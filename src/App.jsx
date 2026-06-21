@@ -14137,9 +14137,7 @@ export default function App() {
         const isDarkTheme = cp.isDark;
         
         // Arrow toggle symbol
-        const arrowChar = isLeft 
-          ? (fabMenuExpanded ? "←" : "→") 
-          : (fabMenuExpanded ? "→" : "←");
+        const arrowChar = "➙";
 
         return (
           <div ref={fabContainerRef} style={containerStyle}>
@@ -14608,7 +14606,7 @@ export default function App() {
             >
               <span style={{ 
                 display: "inline-block", 
-                transform: `rotate(${fabMenuExpanded ? (isTop ? "90deg" : "-90deg") : "0deg"})`,
+                transform: `rotate(${isLeft ? (fabMenuExpanded ? "180deg" : "0deg") : (fabMenuExpanded ? "0deg" : "180deg")})`,
                 transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)" 
               }}>
                 {arrowChar}
