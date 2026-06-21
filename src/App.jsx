@@ -6713,8 +6713,8 @@ function FeverCareGuide({ savedMedicines = [], onSaveMedicine }) {
 
   const fevers = [
     { temp: "37–38°C", label: "Low-grade",  action: "Rest and fluids",    color: "#f59e0b", bg: "var(--bg-amber-light)", border: "var(--border-amber)" },
-    { temp: "38–39°C", label: "Moderate",   action: "Paracetamol + rest", color: "var(--text-red-light)", bg: "var(--bg-red-light)", border: "var(--border-red)" },
-    { temp: "39–40°C", label: "High fever", action: "Seek medical care",  color: "var(--text-red)", bg: "var(--bg-red)", border: "var(--border-red-dark)" },
+    { temp: "38–39°C", label: "Moderate",   action: "Paracetamol + rest", color: "#f43f5e", bg: "var(--bg-red-light)", border: "var(--border-red)" },
+    { temp: "39–40°C", label: "High fever", action: "Seek medical care",  color: "#dc2626", bg: "var(--bg-red)", border: "var(--border-red-dark)" },
   ];
 
   return (
