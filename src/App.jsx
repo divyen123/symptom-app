@@ -12991,7 +12991,11 @@ export default function App() {
     setIsDraggingFab(false);
     
     if (!dragStartRef.current.didMove) {
-      setShowMedList(v => !v);
+      if (fabMenuExpanded) {
+        setShowMedList(false);
+        setShowReminderList(false);
+      }
+      setFabMenuExpanded(v => !v);
       return;
     }
     
@@ -13039,7 +13043,7 @@ export default function App() {
     
     setFabCorner(corner);
     localStorage.setItem("MEDAI_FAB_CORNER", corner);
-  }, [handleFabMouseMove]);
+  }, [handleFabMouseMove, fabMenuExpanded]);
 
   const handleFabMouseDown = useCallback((e) => {
     if (e.button !== 0 && e.type !== "touchstart") return;
@@ -14071,7 +14075,7 @@ export default function App() {
           userSelect: "none",
           touchAction: "none",
           display: "flex",
-          flexDirection: isTop ? "column" : "column-reverse",
+          flexDirection: "column",
           alignItems: "center",
           gap: 12,
         };
@@ -14495,9 +14499,10 @@ export default function App() {
                 fontSize: 18,
                 transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.08s" : "0s"}`,
                 opacity: fabMenuExpanded ? 1 : 0,
-                transform: fabMenuExpanded ? "scale(1) translateY(0)" : "scale(0) translateY(12px)",
+                transform: fabMenuExpanded ? "scale(1) translateY(0)" : `scale(0) translateY(${isTop ? "-12px" : "12px"})`,
                 pointerEvents: fabMenuExpanded ? "auto" : "none",
                 position: "relative",
+                order: isTop ? 3 : 1,
               }}
             >
               ⏰
@@ -14544,9 +14549,10 @@ export default function App() {
                 fontSize: 18,
                 transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.04s" : "0s"}`,
                 opacity: fabMenuExpanded ? 1 : 0,
-                transform: fabMenuExpanded ? "scale(1) translateY(0)" : "scale(0) translateY(12px)",
+                transform: fabMenuExpanded ? "scale(1) translateY(0)" : `scale(0) translateY(${isTop ? "-12px" : "12px"})`,
                 pointerEvents: fabMenuExpanded ? "auto" : "none",
                 position: "relative",
+                order: 2,
               }}
             >
               💊
@@ -14576,13 +14582,6 @@ export default function App() {
               onTouchStart={handleFabMouseDown}
               onMouseEnter={() => { if (!isDraggingFab) setIsHoveredFab(true); }}
               onMouseLeave={() => { if (!isDraggingFab) setIsHoveredFab(false); }}
-              onClick={() => {
-                if (fabMenuExpanded) {
-                  setShowMedList(false);
-                  setShowReminderList(false);
-                }
-                setFabMenuExpanded(!fabMenuExpanded);
-              }}
               title={fabMenuExpanded ? "Close Utilities Menu" : "Open Utilities Menu"}
               style={{
                 width: 50, height: 50,
@@ -14606,6 +14605,10 @@ export default function App() {
                 transition: "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 position: "relative",
                 opacity: (isHoveredFab || fabMenuExpanded || isDraggingFab) ? 1 : 0.65,
+                transform: (fabMenuExpanded || isHoveredFab || isDraggingFab) 
+                  ? "none" 
+                  : `translateX(${isLeft ? "-25px" : "25px"})`,
+                order: isTop ? 1 : 3,
               }}
             >
               <span style={{ 
