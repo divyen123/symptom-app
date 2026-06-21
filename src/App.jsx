@@ -1373,6 +1373,7 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
       overflow: "hidden",
       position: "relative",
       borderRight: "var(--sidebar-border)",
+      zIndex: 10,
     }}>
       {/* Background mesh */}
       <div style={{
@@ -13861,8 +13862,6 @@ export default function App() {
             onCancel={() => setConfirmDeleteChatId(null)}
           />
         )}
-      </div>
-
       {user && splashPhase === "done" && (() => {
         const isLeft = fabCorner.startsWith("left");
         const isTop = fabCorner.endsWith("top");
@@ -13874,7 +13873,7 @@ export default function App() {
         
         const containerStyle = {
           position: "fixed",
-          zIndex: 1200,
+          zIndex: 9,
           userSelect: "none",
           touchAction: "none",
         };
@@ -13888,10 +13887,10 @@ export default function App() {
         } else {
           containerStyle.transition = "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
           if (isLeft) {
-            containerStyle.left = sidebarOnLeft ? sidebarWidth + 24 : 24;
+            containerStyle.left = sidebarOnLeft ? sidebarWidth : 0;
             containerStyle.right = "auto";
           } else {
-            containerStyle.right = sidebarOnRight ? sidebarWidth + 24 : 24;
+            containerStyle.right = sidebarOnRight ? sidebarWidth : 0;
             containerStyle.left = "auto";
           }
           if (isTop) {
@@ -13969,7 +13968,7 @@ export default function App() {
           fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
         }
 
-        return createPortal(
+        return (
           <div style={containerStyle}>
             {/* Popover panel */}
             {showMedList && (
@@ -14208,10 +14207,10 @@ export default function App() {
                 }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
               )}
             </button>
-          </div>,
-          document.body
+          </div>
         );
       })()}
+    </div>
 
       {/* Global Toast Notification */}
       {(() => {
