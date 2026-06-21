@@ -55,8 +55,8 @@ const EMERGENCY_SIGNS = [
   "seizure","severe bleeding","paralysis","sudden vision loss","heart attack",
 ];
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl.replace(/\/$/, "")}/api`;
 
 const loadReports = () => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
