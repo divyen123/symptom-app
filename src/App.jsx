@@ -14663,7 +14663,7 @@ export default function App() {
 
             {/* Popover for Self-Care Reminders */}
             {showReminderList && (
-              <div style={popoverStyle}>
+              <div style={{ ...popoverStyle, ...(showSchedulePopup ? { minHeight: 340 } : {}) }}>
                 {/* Header */}
                 <div style={{
                   background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
@@ -14750,6 +14750,7 @@ export default function App() {
                     flexDirection: "column",
                     gap: 12,
                     boxSizing: "border-box",
+                    overflowY: "auto",
                   }}>
                     <div style={{ fontWeight: 800, fontSize: 13, color: "var(--navy)", borderBottom: "1.5px solid var(--border)", paddingBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ color: "var(--text)" }}>📅 Configure Schedule</span>
