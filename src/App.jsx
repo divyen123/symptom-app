@@ -13166,6 +13166,7 @@ export default function App() {
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
   const [savedReminders, setSavedReminders] = useState([]);
   const [showReminderList, setShowReminderList] = useState(false);
+  const [showReminderDeleteConfirm, setShowReminderDeleteConfirm] = useState(false);
   const [fabMenuExpanded, setFabMenuExpanded] = useState(false);
   const [appearance, setAppearance] = useState(() => loadAppearance());
   const [chatSessions, setChatSessions] = useState([]);
@@ -14671,36 +14672,68 @@ export default function App() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  minHeight: 48,
+                  boxSizing: "border-box"
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>⏰</span>
-                    <div>
-                      <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: "-0.2px" }}>Self-Care Reminders</div>
-                      <div style={{ color: "rgba(232,121,249,0.85)", fontSize: 11, fontWeight: 600 }}>{savedReminders.length} active reminders</div>
+                  {showReminderDeleteConfirm ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#fee2e2" }}>Clear all reminders?</span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => {
+                            handleDeleteAllReminders();
+                            setShowReminderDeleteConfirm(false);
+                          }}
+                          style={{
+                            background: "#dc2626", color: "#fff", border: "none",
+                            borderRadius: 6, padding: "4px 10px", fontSize: 11.5, fontWeight: 800, cursor: "pointer"
+                          }}
+                        >Yes</button>
+                        <button
+                          onClick={() => setShowReminderDeleteConfirm(false)}
+                          style={{
+                            background: "rgba(255,255,255,0.2)", color: "#fff", border: "none",
+                            borderRadius: 6, padding: "4px 10px", fontSize: 11.5, fontWeight: 800, cursor: "pointer"
+                          }}
+                        >No</button>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {savedReminders.length > 0 && (
-                      <button
-                        onClick={handleDeleteAllReminders}
-                        style={{
-                          background: "rgba(220,38,38,0.25)", border: "none",
-                          borderRadius: 6, padding: "2px 8px",
-                          cursor: "pointer", color: "#fff", fontSize: 11, fontWeight: 800,
-                          transition: "var(--transition)", fontFamily: "var(--font)"
-                        }}
-                      >Clear All</button>
-                    )}
-                    <button
-                      onClick={() => setShowReminderList(false)}
-                      style={{
-                        background: "rgba(255,255,255,0.15)", border: "none",
-                        borderRadius: "50%", width: 26, height: 26,
-                        cursor: "pointer", color: "#fff", fontSize: 15,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}
-                    >×</button>
-                  </div>
+                  ) : (
+                    <>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 20 }}>⏰</span>
+                        <div>
+                          <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: "-0.2px" }}>Self-Care Reminders</div>
+                          <div style={{ color: "rgba(232,121,249,0.85)", fontSize: 11, fontWeight: 600 }}>{savedReminders.length} active reminders</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {savedReminders.length > 0 && (
+                          <button
+                            onClick={() => setShowReminderDeleteConfirm(true)}
+                            style={{
+                              background: "rgba(220,38,38,0.25)", border: "none",
+                              borderRadius: 6, padding: "2px 8px",
+                              cursor: "pointer", color: "#fff", fontSize: 11, fontWeight: 800,
+                              transition: "var(--transition)", fontFamily: "var(--font)"
+                            }}
+                          >Clear All</button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setShowReminderList(false);
+                            setShowReminderDeleteConfirm(false);
+                          }}
+                          style={{
+                            background: "rgba(255,255,255,0.15)", border: "none",
+                            borderRadius: "50%", width: 26, height: 26,
+                            cursor: "pointer", color: "#fff", fontSize: 15,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}
+                        >×</button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Form to add reminder */}
