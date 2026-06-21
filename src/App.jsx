@@ -13957,13 +13957,17 @@ export default function App() {
         let fabTransform = "none";
         if (isDraggingFab) {
           fabTransform = "none";
+        } else if (isExpanded) {
+          fabTransform = "none";
         } else {
           const scaleVal = isHoveredFab ? 1.08 : 1;
           const isLeftEdge = fabCorner.startsWith("left");
           
           let translateVal = "0px";
-          if (!isHoveredFab && !isExpanded) {
-            translateVal = isLeftEdge ? "-28px" : "28px";
+          if (isHoveredFab) {
+            translateVal = isLeftEdge ? "8px" : "-8px";
+          } else {
+            translateVal = isLeftEdge ? "-27px" : "27px";
           }
           fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
         }
