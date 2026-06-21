@@ -1695,7 +1695,12 @@ function Home({
   setTodos,
   savedMedicines = [],
   onDeleteMedicine: _onDeleteMedicine,
-  onExportPDF
+  onExportPDF,
+  savedReminders = [],
+  handleSaveReminder,
+  handleToggleReminder,
+  handleDeleteReminder,
+  handleDeleteAllReminders
 }) {
   const cp = CONTENT_PALETTES.find(p => p.id === appearance?.contentPalette) || CONTENT_PALETTES[0];
   const isDark = cp.isDark;
@@ -13887,6 +13892,11 @@ export default function App() {
           savedMedicines={savedMedicines}
           onDeleteMedicine={handleDeleteMedicine}
           onExportPDF={handleExportPDF}
+          savedReminders={savedReminders}
+          handleSaveReminder={handleSaveReminder}
+          handleToggleReminder={handleToggleReminder}
+          handleDeleteReminder={handleDeleteReminder}
+          handleDeleteAllReminders={handleDeleteAllReminders}
         />
       );
       case "analyzer": return <Analyzer initialSymptoms={initialSymptoms} setInitialSymptoms={setInitialSymptoms} onAnalyze={handleAnalyze} />;
