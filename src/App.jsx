@@ -1484,6 +1484,41 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
         borderTop: `1px solid ${navPalette.border}`,
         position: "relative", zIndex: 1,
       }}>
+        {showZoomedAvatar && (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowZoomedAvatar(false);
+            }}
+            style={{
+              position: "absolute",
+              bottom: 74,
+              left: 26,
+              width: 110,
+              height: 110,
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: isDark ? "3.5px solid #3b82f6" : "3.5px solid #2563eb",
+              background: isDark ? "#1e293b" : "#fff",
+              animation: "floatAvatar 3s ease-in-out infinite",
+              zIndex: 100,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            {settings.profilePic ? (
+              <img src={settings.profilePic} alt="Profile Zoom" style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover"
+              }} />
+            ) : (
+              <span style={{ fontSize: 50 }}>👤</span>
+            )}
+          </div>
+        )}
         <div style={{
           background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
           borderRadius: "var(--radius)",
@@ -1493,20 +1528,40 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
           alignItems: "center",
           gap: 10,
         }}>
-          {settings.profilePic ? (
-            <img src={settings.profilePic} alt="Profile" style={{
-              width: 36, height: 36, borderRadius: "50%", objectFit: "cover",
-              border: isDark ? "2px solid rgba(147,197,253,0.3)" : "2px solid rgba(59,130,246,0.3)", flexShrink: 0
-            }} />
-          ) : (
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, flexShrink: 0,
-              border: isDark ? "2px solid rgba(147,197,253,0.3)" : "2px solid rgba(59,130,246,0.3)",
-            }}>👤</div>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowZoomedAvatar(v => !v);
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              borderRadius: "50%",
+              outline: "none",
+            }}
+            title="View profile photo"
+          >
+            {settings.profilePic ? (
+              <img src={settings.profilePic} alt="Profile" style={{
+                width: 36, height: 36, borderRadius: "50%", objectFit: "cover",
+                border: isDark ? "2px solid rgba(147,197,253,0.3)" : "2px solid rgba(59,130,246,0.3)", flexShrink: 0
+              }} />
+            ) : (
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%",
+                background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 16, flexShrink: 0,
+                border: isDark ? "2px solid rgba(147,197,253,0.3)" : "2px solid rgba(59,130,246,0.3)",
+              }}>👤</div>
+            )}
+          </button>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
               fontWeight: 700, fontSize: 13, color: navPalette.text,
@@ -12844,6 +12899,7 @@ export default function App() {
   const [confirmDeleteChatId, setConfirmDeleteChatId] = useState(null);
   const [toast, setToast] = useState(null);
   const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
+  const [showZoomedAvatar, setShowZoomedAvatar] = useState(false);
 
   // FAB Draggable states
   const [fabCorner, setFabCorner] = useState(() => {
@@ -12868,6 +12924,13 @@ export default function App() {
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [showMedList]);
+
+  useEffect(() => {
+    if (!showZoomedAvatar) return;
+    const handleCloseZoom = () => setShowZoomedAvatar(false);
+    document.addEventListener("click", handleCloseZoom);
+    return () => document.removeEventListener("click", handleCloseZoom);
+  }, [showZoomedAvatar]);
 
   const handleFabMouseMove = useCallback((e) => {
     if (!dragStartRef.current) return;
@@ -13687,9 +13750,25 @@ export default function App() {
 
   const cp = CONTENT_PALETTES.find(p => p.id === appearance.contentPalette) || CONTENT_PALETTES[0];
 
-  return (
+    return (
     <>
       <style>{GLOBAL_CSS}</style>
+      <style>{`
+        @keyframes floatAvatar {
+          0% {
+            transform: translateY(0px) scale(1);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.25);
+          }
+          50% {
+            transform: translateY(-8px) scale(1.04);
+            box-shadow: 0 16px 36px rgba(37,99,235,0.45);
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.25);
+          }
+        }
+      `}</style>
 
       {/* ── Splash Screen ── */}
       <AnimatePresence>
@@ -14207,7 +14286,7 @@ export default function App() {
               }}
             >
               💊
-              {savedMedicines.length > 0 && (
+              {savedMedicines.length > 0 && (isHoveredFab || isExpanded) && (
                 <div style={{
                   position: "absolute",
                   top: -4, right: -4,
