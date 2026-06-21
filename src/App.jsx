@@ -14765,19 +14765,32 @@ export default function App() {
                             </span>
                           </div>
                           <button
-                            onClick={() => {
-                              setActive("meditown");
-                              setInitialSymptoms(med.name);
-                              setShowMedList(false);
-                            }}
-                            className="btn-primary"
+                            onClick={() => handleDeleteMedicine(med.id || med._id)}
                             style={{
-                              background: "var(--blue-light)", color: "var(--blue)", border: "none",
-                              borderRadius: 6, padding: "3px 8px",
-                              fontSize: 11, fontWeight: 800, cursor: "pointer",
-                              fontFamily: "var(--font)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: 14,
+                              color: "var(--text-red-light)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "4px 8px",
+                              borderRadius: "var(--radius-sm)",
+                              transition: "all 0.2s ease"
                             }}
-                          >Find Store</button>
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = "var(--bg-red-light)";
+                              e.currentTarget.style.color = "var(--text-red)";
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.background = "none";
+                              e.currentTarget.style.color = "var(--text-red-light)";
+                            }}
+                            title="Delete Medicine"
+                          >
+                            🗑️
+                          </button>
                         </div>
                       );
                     })
