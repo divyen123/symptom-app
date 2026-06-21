@@ -14593,14 +14593,14 @@ export default function App() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 22,
+                fontSize: 30,
                 fontWeight: "bold",
                 transition: "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 position: "relative",
                 opacity: (isHoveredFab || fabMenuExpanded || isDraggingFab) ? 1 : 0.65,
                 transform: (fabMenuExpanded || isHoveredFab || isDraggingFab) 
                   ? "none" 
-                  : `translateX(${isLeft ? "-39px" : "39px"})`,
+                  : `translateX(${isLeft ? "-44px" : "44px"})`,
                 order: isTop ? 1 : 3,
               }}
             >
