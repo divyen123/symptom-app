@@ -10546,8 +10546,18 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                         }}
                         style={{
                           padding: "10px 18px", borderRadius: 8,
-                          background: "var(--blue-light)", color: "var(--blue)", border: "none",
-                          fontWeight: 800, fontSize: 13, cursor: "pointer", transition: "var(--transition)"
+                          background: "var(--blue)", color: "#ffffff", border: "none",
+                          fontWeight: 700, fontSize: 13, cursor: "pointer",
+                          transition: "all 0.2s ease",
+                          boxShadow: "0 2px 6px rgba(59, 130, 246, 0.2)"
+                        }}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.35)";
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.transform = "none";
+                          e.currentTarget.style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.2)";
                         }}
                       >
                         🔊 Test Sound
@@ -14759,11 +14769,21 @@ export default function App() {
                         setShowSchedulePopup(true);
                       }}
                       style={{
-                        background: "var(--blue-light)", color: "var(--blue)", border: "none",
-                        borderRadius: "var(--radius-sm)", padding: "0 12px",
-                        fontWeight: 800, fontSize: 11.5, cursor: "pointer",
+                        background: "var(--blue)", color: "#ffffff", border: "none",
+                        borderRadius: 6, padding: "0 14px",
+                        fontWeight: 700, fontSize: 12, cursor: "pointer",
                         fontFamily: "var(--font)", height: 28, display: "flex",
-                        alignItems: "center", justifyContent: "center"
+                        alignItems: "center", justifyContent: "center",
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 2px 6px rgba(59, 130, 246, 0.15)"
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 4px 10px rgba(59, 130, 246, 0.3)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = "0 2px 6px rgba(59, 130, 246, 0.15)";
                       }}
                     >
                       Set
