@@ -14607,7 +14607,7 @@ export default function App() {
                 opacity: (isHoveredFab || fabMenuExpanded || isDraggingFab) ? 1 : 0.65,
                 transform: (fabMenuExpanded || isHoveredFab || isDraggingFab) 
                   ? "none" 
-                  : `translateX(${isLeft ? "-25px" : "25px"})`,
+                  : `translateX(${isLeft ? "-49px" : "49px"})`,
                 order: isTop ? 1 : 3,
               }}
             >
