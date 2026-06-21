@@ -14576,7 +14576,6 @@ export default function App() {
               )}
             </button>
 
-            {/* Primary Arrow Toggle Handle Button */}
             <button
               onMouseDown={handleFabMouseDown}
               onTouchStart={handleFabMouseDown}
@@ -14586,16 +14585,12 @@ export default function App() {
               style={{
                 width: 50, height: 50,
                 borderRadius: "50%",
-                background: fabMenuExpanded
-                  ? "linear-gradient(135deg, rgba(29, 78, 216, 0.95), rgba(37, 99, 235, 0.95))"
-                  : (isDarkTheme ? "rgba(30, 41, 59, 0.95)" : "rgba(255, 255, 255, 0.95)"),
-                color: fabMenuExpanded ? "#fff" : "var(--navy)",
-                border: isDarkTheme ? "1.5px solid rgba(255, 255, 255, 0.16)" : "1.5px solid rgba(29, 78, 216, 0.25)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                boxShadow: isDarkTheme 
-                  ? "0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255,255,255,0.08)" 
-                  : "0 8px 32px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255,255,255,0.4)",
+                background: "none",
+                color: isDarkTheme ? "#fff" : "var(--navy)",
+                border: "none",
+                backdropFilter: "none",
+                WebkitBackdropFilter: "none",
+                boxShadow: "none",
                 cursor: isDraggingFab ? "grabbing" : "grab",
                 display: "flex",
                 alignItems: "center",
@@ -14607,7 +14602,7 @@ export default function App() {
                 opacity: (isHoveredFab || fabMenuExpanded || isDraggingFab) ? 1 : 0.65,
                 transform: (fabMenuExpanded || isHoveredFab || isDraggingFab) 
                   ? "none" 
-                  : `translateX(${isLeft ? "-49px" : "49px"})`,
+                  : `translateX(${isLeft ? "-39px" : "39px"})`,
                 order: isTop ? 1 : 3,
               }}
             >
