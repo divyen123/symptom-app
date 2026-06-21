@@ -1492,41 +1492,51 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
         borderTop: `1px solid ${navPalette.border}`,
         position: "relative", zIndex: 1,
       }}>
-        {showZoomedAvatar && (
-          <div 
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowZoomedAvatar(false);
-            }}
-            style={{
-              position: "absolute",
-              bottom: 74,
-              left: 26,
-              width: 110,
-              height: 110,
-              borderRadius: "50%",
-              overflow: "hidden",
-              border: isDark ? "3.5px solid #3b82f6" : "3.5px solid #2563eb",
-              background: isDark ? "#1e293b" : "#fff",
-              animation: "floatAvatar 3s ease-in-out infinite",
-              zIndex: 100,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            {settings.profilePic ? (
-              <img src={settings.profilePic} alt="Profile Zoom" style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover"
-              }} />
-            ) : (
-              <span style={{ fontSize: 50 }}>👤</span>
-            )}
-          </div>
-        )}
+        <AnimatePresence>
+          {showZoomedAvatar && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.75, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.75, y: 15 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              style={{
+                position: "absolute",
+                bottom: 74,
+                left: 26,
+                width: 110,
+                height: 110,
+                zIndex: 100,
+                pointerEvents: "none",
+              }}
+            >
+              <div 
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: isDark ? "3px solid #3b82f6" : "3px solid #2563eb",
+                  background: isDark ? "#1e293b" : "#fff",
+                  animation: "floatAvatar 3s ease-in-out infinite",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: isDark ? "0 8px 24px rgba(0,0,0,0.5)" : "0 8px 24px rgba(0,0,0,0.15)",
+                }}
+              >
+                {settings.profilePic ? (
+                  <img src={settings.profilePic} alt="Profile Zoom" style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover"
+                  }} />
+                ) : (
+                  <span style={{ fontSize: 50, userSelect: "none" }}>👤</span>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div style={{
           background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
           borderRadius: "var(--radius)",
@@ -1537,10 +1547,8 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
           gap: 10,
         }}>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowZoomedAvatar(v => !v);
-            }}
+            onMouseEnter={() => setShowZoomedAvatar(true)}
+            onMouseLeave={() => setShowZoomedAvatar(false)}
             style={{
               background: "none",
               border: "none",
@@ -1553,7 +1561,7 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
               borderRadius: "50%",
               outline: "none",
             }}
-            title="View profile photo"
+            title="Profile photo"
           >
             {settings.profilePic ? (
               <img src={settings.profilePic} alt="Profile" style={{
@@ -13758,15 +13766,15 @@ export default function App() {
         @keyframes floatAvatar {
           0% {
             transform: translateY(0px) scale(1);
-            box-shadow: 0 8px 24px rgba(37,99,235,0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           }
           50% {
-            transform: translateY(-8px) scale(1.04);
-            box-shadow: 0 16px 36px rgba(37,99,235,0.45);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
           }
           100% {
             transform: translateY(0px) scale(1);
-            box-shadow: 0 8px 24px rgba(37,99,235,0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           }
         }
       `}</style>
@@ -14060,9 +14068,9 @@ export default function App() {
           
           let translateVal = "0px";
           if (isHoveredFab) {
-            translateVal = isLeftEdge ? "8px" : "-8px";
+            translateVal = "0px";
           } else {
-            translateVal = isLeftEdge ? "-38px" : "38px";
+            translateVal = isLeftEdge ? "-51px" : "51px";
           }
           fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
         }
@@ -14283,7 +14291,7 @@ export default function App() {
                 transition: isDraggingFab ? "none" : "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 position: "relative",
                 transform: fabTransform,
-                opacity: (isHoveredFab || isExpanded || isDraggingFab) ? 1 : 0.55,
+                opacity: (isHoveredFab || isExpanded || isDraggingFab) ? 1 : 0.5,
               }}
             >
               💊
