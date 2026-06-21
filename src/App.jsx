@@ -12853,6 +12853,21 @@ export default function App() {
   const [isHoveredFab, setIsHoveredFab] = useState(false);
   const [fabPos, setFabPos] = useState({ x: 0, y: 0 });
   const dragStartRef = useRef({ startX: 0, startY: 0, clickX: 0, clickY: 0, didMove: false });
+  const fabContainerRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (showMedList && fabContainerRef.current && !fabContainerRef.current.contains(event.target)) {
+        setShowMedList(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [showMedList]);
 
   const handleFabMouseMove = useCallback((e) => {
     if (!dragStartRef.current) return;
@@ -12901,19 +12916,19 @@ export default function App() {
     
     const targets = {
       "left-top": {
-        x: (sidebarOnLeft ? sidebarWidth + 24 : 24) + 27,
+        x: (sidebarOnLeft ? sidebarWidth : 0) + 24 + 27,
         y: 24 + 27
       },
       "left-bottom": {
-        x: (sidebarOnLeft ? sidebarWidth + 24 : 24) + 27,
+        x: (sidebarOnLeft ? sidebarWidth : 0) + 24 + 27,
         y: window.innerHeight - 32 - 27
       },
       "right-top": {
-        x: window.innerWidth - (sidebarOnRight ? sidebarWidth + 24 : 24) - 27,
+        x: window.innerWidth - (sidebarOnRight ? sidebarWidth : 0) - 24 - 27,
         y: 24 + 27
       },
       "right-bottom": {
-        x: window.innerWidth - (sidebarOnRight ? sidebarWidth + 24 : 24) - 27,
+        x: window.innerWidth - (sidebarOnRight ? sidebarWidth : 0) - 24 - 27,
         y: window.innerHeight - 32 - 27
       }
     };
@@ -13887,10 +13902,10 @@ export default function App() {
         } else {
           containerStyle.transition = "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
           if (isLeft) {
-            containerStyle.left = sidebarOnLeft ? sidebarWidth : 0;
+            containerStyle.left = (sidebarOnLeft ? sidebarWidth : 0) + 24;
             containerStyle.right = "auto";
           } else {
-            containerStyle.right = sidebarOnRight ? sidebarWidth : 0;
+            containerStyle.right = (sidebarOnRight ? sidebarWidth : 0) + 24;
             containerStyle.left = "auto";
           }
           if (isTop) {
@@ -13967,13 +13982,13 @@ export default function App() {
           if (isHoveredFab) {
             translateVal = isLeftEdge ? "8px" : "-8px";
           } else {
-            translateVal = isLeftEdge ? "-27px" : "27px";
+            translateVal = isLeftEdge ? "-38px" : "38px";
           }
           fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
         }
 
         return (
-          <div style={containerStyle}>
+          <div ref={fabContainerRef} style={containerStyle}>
             {/* Popover panel */}
             {showMedList && (
               <div style={popoverStyle}>
