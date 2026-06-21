@@ -12891,23 +12891,40 @@ export default function App() {
     const finalX = Math.max(10, Math.min(window.innerWidth - 64, dragStartRef.current.startX + deltaX)) + 27;
     const finalY = Math.max(10, Math.min(window.innerHeight - 64, dragStartRef.current.startY + deltaY)) + 27;
     
-    const halfWidth = window.innerWidth / 2;
-    const halfHeight = window.innerHeight / 2;
+    const isRightNav = loadAppearance().navPosition === "right";
+    const hasSidebar = window.innerWidth > 768;
+    const sidebarWidth = hasSidebar ? 236 : 0;
+    const sidebarOnLeft = hasSidebar && !isRightNav;
+    const sidebarOnRight = hasSidebar && isRightNav;
+    
+    const targets = {
+      "left-top": {
+        x: (sidebarOnLeft ? sidebarWidth + 24 : 24) + 27,
+        y: 24 + 27
+      },
+      "left-bottom": {
+        x: (sidebarOnLeft ? sidebarWidth + 24 : 24) + 27,
+        y: window.innerHeight - 32 - 27
+      },
+      "right-top": {
+        x: window.innerWidth - (sidebarOnRight ? sidebarWidth + 24 : 24) - 27,
+        y: 24 + 27
+      },
+      "right-bottom": {
+        x: window.innerWidth - (sidebarOnRight ? sidebarWidth + 24 : 24) - 27,
+        y: window.innerHeight - 32 - 27
+      }
+    };
     
     let corner = "right-bottom";
-    if (finalX < halfWidth) {
-      if (finalY < halfHeight) {
-        corner = "left-top";
-      } else {
-        corner = "left-bottom";
+    let minDistance = Infinity;
+    Object.entries(targets).forEach(([c, coord]) => {
+      const dist = Math.pow(finalX - coord.x, 2) + Math.pow(finalY - coord.y, 2);
+      if (dist < minDistance) {
+        minDistance = dist;
+        corner = c;
       }
-    } else {
-      if (finalY < halfHeight) {
-        corner = "right-top";
-      } else {
-        corner = "right-bottom";
-      }
-    }
+    });
     
     setFabCorner(corner);
     localStorage.setItem("MEDAI_FAB_CORNER", corner);
@@ -13848,6 +13865,11 @@ export default function App() {
       {user && splashPhase === "done" && (() => {
         const isLeft = fabCorner.startsWith("left");
         const isTop = fabCorner.endsWith("top");
+        const isRightNav = appearance.navPosition === "right";
+        const hasSidebar = window.innerWidth > 768;
+        const sidebarWidth = hasSidebar ? 236 : 0;
+        const sidebarOnLeft = hasSidebar && !isRightNav;
+        const sidebarOnRight = hasSidebar && isRightNav;
         
         const containerStyle = {
           position: "fixed",
@@ -13865,10 +13887,10 @@ export default function App() {
         } else {
           containerStyle.transition = "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
           if (isLeft) {
-            containerStyle.left = 24;
+            containerStyle.left = sidebarOnLeft ? sidebarWidth + 24 : 24;
             containerStyle.right = "auto";
           } else {
-            containerStyle.right = 24;
+            containerStyle.right = sidebarOnRight ? sidebarWidth + 24 : 24;
             containerStyle.left = "auto";
           }
           if (isTop) {
