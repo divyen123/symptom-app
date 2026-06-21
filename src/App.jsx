@@ -134,6 +134,110 @@ const loadAppearance = () => {
   catch { return { ...DEFAULT_APPEARANCE }; }
 };
 
+let alarmAudioInterval = null;
+let audioCtx = null;
+
+const startAlarmAudio = () => {
+  if (alarmAudioInterval) return;
+  
+  const ringtone = localStorage.getItem("MEDAI_ALARM_RINGTONE") || "Chime";
+  if (ringtone === "None") return;
+  
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) {
+    console.error("Failed to initialize AudioContext", e);
+    return;
+  }
+  
+  const playTone = () => {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      const now = audioCtx.currentTime;
+      
+      if (ringtone === "Digital") {
+        osc.type = "square";
+        osc.frequency.setValueAtTime(880, now);
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else if (ringtone === "Chime") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1200, now);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.7);
+      } else if (ringtone === "Bell") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(600, now);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        
+        const osc2 = audioCtx.createOscillator();
+        const gainNode2 = audioCtx.createGain();
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(750, now);
+        osc2.connect(gainNode2);
+        gainNode2.connect(audioCtx.destination);
+        gainNode2.gain.setValueAtTime(0.15, now);
+        gainNode2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+        
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 1.3);
+        osc2.stop(now + 1.1);
+      } else if (ringtone === "Beep") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1000, now);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } else if (ringtone === "Nature") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1500, now);
+        osc.frequency.exponentialRampToValueAtTime(3000, now + 0.15);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    } catch (err) {
+      console.error("Tone playback failed", err);
+    }
+  };
+  
+  let delay = 1000;
+  if (ringtone === "Digital") delay = 350;
+  if (ringtone === "Chime") delay = 1200;
+  if (ringtone === "Bell") delay = 1800;
+  if (ringtone === "Beep") delay = 800;
+  if (ringtone === "Nature") delay = 600;
+  
+  playTone();
+  alarmAudioInterval = setInterval(playTone, delay);
+};
+
+const stopAlarmAudio = () => {
+  if (alarmAudioInterval) {
+    clearInterval(alarmAudioInterval);
+    alarmAudioInterval = null;
+  }
+  if (audioCtx) {
+    try {
+      audioCtx.close();
+    } catch (e) {}
+    audioCtx = null;
+  }
+};
+
 const getToken = () => localStorage.getItem("MEDAI_TOKEN");
 
 const authHeaders = () => {
@@ -10340,6 +10444,142 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                   </button>
                 </div>
               </div>
+              {/* Reminder Alert Tone & Snooze Settings */}
+              <div style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 20, textAlign: "left" }}>
+                <label style={{ display: "block", color: "var(--text)", fontWeight: 700, fontSize: 13.5, marginBottom: 14 }}>
+                  🔔 Reminder Audio & Snooze Options
+                </label>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Alarm Tone selection */}
+                  <div>
+                    <label style={{ display: "block", color: "var(--text-muted)", fontWeight: 600, fontSize: 12, marginBottom: 6 }}>
+                      Alarm Ringtone Alert
+                    </label>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <select
+                        value={appearance.alarmTone || "Standard Meds Alert"}
+                        onChange={e => {
+                          onAppearanceChange("alarmTone", e.target.value);
+                          localStorage.setItem("MEDAI_ALARM_TONE", e.target.value);
+                        }}
+                        style={{
+                          flex: 1, padding: "10px 14px", borderRadius: 8,
+                          border: "1px solid var(--border)", fontSize: 13.5, fontFamily: "var(--font)",
+                          background: "var(--surface)", color: "var(--text)"
+                        }}
+                      >
+                        <option value="Standard Meds Alert">Standard Meds Alert 🩺</option>
+                        <option value="Chime Alert">Chime Alert 🔔</option>
+                        <option value="Soft Pulse Alert">Soft Pulse Alert 💖</option>
+                        <option value="Digital Alarm Alert">Digital Alarm Alert ⚡</option>
+                      </select>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tone = appearance.alarmTone || "Standard Meds Alert";
+                          // Temporary play/test tone
+                          const actx = new (window.AudioContext || window.webkitAudioContext)();
+                          if (tone === "Standard Meds Alert") {
+                            // Two pulse heart-like beep
+                            const osc = actx.createOscillator();
+                            const gain = actx.createGain();
+                            osc.type = "sine";
+                            osc.frequency.setValueAtTime(600, actx.currentTime);
+                            gain.gain.setValueAtTime(0.1, actx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.3);
+                            osc.connect(gain);
+                            gain.connect(actx.destination);
+                            osc.start();
+                            osc.stop(actx.currentTime + 0.3);
+                            
+                            setTimeout(() => {
+                              const osc2 = actx.createOscillator();
+                              const gain2 = actx.createGain();
+                              osc2.type = "sine";
+                              osc2.frequency.setValueAtTime(600, actx.currentTime);
+                              gain2.gain.setValueAtTime(0.1, actx.currentTime);
+                              gain2.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.3);
+                              osc2.connect(gain2);
+                              gain2.connect(actx.destination);
+                              osc2.start();
+                              osc2.stop(actx.currentTime + 0.3);
+                            }, 350);
+                          } else if (tone === "Chime Alert") {
+                            // High clear chime bell sound
+                            const osc = actx.createOscillator();
+                            const gain = actx.createGain();
+                            osc.type = "sine";
+                            osc.frequency.setValueAtTime(987.77, actx.currentTime); // B5
+                            gain.gain.setValueAtTime(0.15, actx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.8);
+                            osc.connect(gain);
+                            gain.connect(actx.destination);
+                            osc.start();
+                            osc.stop(actx.currentTime + 0.8);
+                          } else if (tone === "Soft Pulse Alert") {
+                            // Warm ambient pulse
+                            const osc = actx.createOscillator();
+                            const gain = actx.createGain();
+                            osc.type = "triangle";
+                            osc.frequency.setValueAtTime(329.63, actx.currentTime); // E4
+                            gain.gain.setValueAtTime(0.15, actx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.6);
+                            osc.connect(gain);
+                            gain.connect(actx.destination);
+                            osc.start();
+                            osc.stop(actx.currentTime + 0.6);
+                          } else {
+                            // Digital Alarm Alert
+                            const osc = actx.createOscillator();
+                            const gain = actx.createGain();
+                            osc.type = "square";
+                            osc.frequency.setValueAtTime(880, actx.currentTime); // A5
+                            gain.gain.setValueAtTime(0.08, actx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.25);
+                            osc.connect(gain);
+                            gain.connect(actx.destination);
+                            osc.start();
+                            osc.stop(actx.currentTime + 0.25);
+                          }
+                        }}
+                        style={{
+                          padding: "10px 18px", borderRadius: 8,
+                          background: "var(--blue-light)", color: "var(--blue)", border: "none",
+                          fontWeight: 800, fontSize: 13, cursor: "pointer", transition: "var(--transition)"
+                        }}
+                      >
+                        🔊 Test Sound
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Snooze interval selection */}
+                  <div>
+                    <label style={{ display: "block", color: "var(--text-muted)", fontWeight: 600, fontSize: 12, marginBottom: 6 }}>
+                      Snooze Duration
+                    </label>
+                    <select
+                      value={localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5"}
+                      onChange={e => {
+                        localStorage.setItem("MEDAI_SNOOZE_LEVEL", e.target.value);
+                        onAppearanceChange("snoozeLevel", parseInt(e.target.value));
+                      }}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: 8,
+                        border: "1px solid var(--border)", fontSize: 13.5, fontFamily: "var(--font)",
+                        background: "var(--surface)", color: "var(--text)"
+                      }}
+                    >
+                      <option value="1">1 Minute</option>
+                      <option value="2">2 Minutes</option>
+                      <option value="5">5 Minutes</option>
+                      <option value="10">10 Minutes</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </Card>
           )}
 
@@ -12935,6 +13175,12 @@ export default function App() {
   const [confirmDeleteChatId, setConfirmDeleteChatId] = useState(null);
   const [toast, setToast] = useState(null);
   const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
+  const [activeAlarm, setActiveAlarm] = useState(null);
+  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+  const [reminderTitle, setReminderTitle] = useState("");
+  const [reminderDate, setReminderDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [reminderTime, setReminderTime] = useState("08:00");
+  const [reminderRepeat, setReminderRepeat] = useState("only one time");
 
   // FAB Draggable states
   const [fabCorner, setFabCorner] = useState(() => {
@@ -12961,6 +13207,115 @@ export default function App() {
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    const checkReminders = () => {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+      const currentDate = String(now.getDate()).padStart(2, "0");
+      const currentDayString = `${currentYear}-${currentMonth}-${currentDate}`;
+      const currentHrs = String(now.getHours()).padStart(2, "0");
+      const currentMins = String(now.getMinutes()).padStart(2, "0");
+      const currentTimeString = `${currentHrs}:${currentMins}`;
+      const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+      
+      const dayOfWeekMap = {
+        0: "every sunday",
+        1: "every monday",
+        2: "every tuesday",
+        3: "every wednesday",
+        4: "every thursday",
+        5: "every friday",
+        6: "every saturday"
+      };
+      
+      savedReminders.forEach(rem => {
+        if (!rem.active) return;
+        
+        let parsed = { time: "", date: "", repeat: "only one time" };
+        try {
+          if (rem.time.startsWith("{")) {
+            parsed = JSON.parse(rem.time);
+          } else {
+            parsed.time = rem.time;
+          }
+        } catch (e) {
+          parsed.time = rem.time;
+        }
+        
+        if (parsed.time !== currentTimeString) return;
+        
+        let shouldTrigger = false;
+        if (parsed.repeat === "only one time") {
+          if (!parsed.date || parsed.date === currentDayString) {
+            shouldTrigger = true;
+          }
+        } else if (parsed.repeat === "daily remind") {
+          shouldTrigger = true;
+        } else if (parsed.repeat === dayOfWeekMap[currentDayOfWeek]) {
+          shouldTrigger = true;
+        }
+        
+        if (shouldTrigger) {
+          const triggerKey = `${rem.id}_${currentDayString}_${currentTimeString}`;
+          const lastTriggered = localStorage.getItem("MEDAI_LAST_TRIGGERED_ALARM");
+          if (lastTriggered !== triggerKey) {
+            localStorage.setItem("MEDAI_LAST_TRIGGERED_ALARM", triggerKey);
+            
+            setActiveAlarm({
+              ...rem,
+              parsedSchedule: parsed,
+              triggerKey
+            });
+            
+            startAlarmAudio();
+            
+            if (parsed.repeat === "only one time") {
+              handleToggleReminder(rem.id, true);
+            }
+          }
+        }
+      });
+    };
+    
+    const interval = setInterval(checkReminders, 5000);
+    return () => clearInterval(interval);
+  }, [savedReminders]);
+
+  const handleStopAlarm = () => {
+    setActiveAlarm(null);
+    stopAlarmAudio();
+  };
+
+  const handleSnoozeAlarm = () => {
+    if (!activeAlarm) return;
+    const snoozeMinutesSetting = parseInt(localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5");
+    
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + snoozeMinutesSetting);
+    const snoozeHrs = String(now.getHours()).padStart(2, "0");
+    const snoozeMins = String(now.getMinutes()).padStart(2, "0");
+    const snoozeTimeString = `${snoozeHrs}:${snoozeMins}`;
+    
+    const snoozedReminder = {
+      id: `snooze_${Date.now()}`,
+      title: `[Snoozed] ${activeAlarm.title}`,
+      time: JSON.stringify({
+        time: snoozeTimeString,
+        date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`,
+        repeat: "only one time"
+      }),
+      active: true
+    };
+    
+    setSavedReminders(prev => [...prev, snoozedReminder]);
+    
+    setActiveAlarm(null);
+    stopAlarmAudio();
+    showToast(`Alarm snoozed for ${snoozeMinutesSetting} minutes!`);
+  };
+
 
 
   const handleFabMouseMove = useCallback((e) => {
@@ -14350,48 +14705,143 @@ export default function App() {
 
                 {/* Form to add reminder */}
                 <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const form = e.target;
-                    const title = form.elements.title.value.trim();
-                    const time = form.elements.time.value;
-                    if (!title || !time) return;
-                    handleSaveReminder(title, time);
-                    form.reset();
-                  }} style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
                     <input
-                      name="title"
+                      value={reminderTitle}
+                      onChange={e => setReminderTitle(e.target.value)}
                       placeholder="Hydrate, vitals log..."
-                      required
                       style={{
                         flex: 1.8, padding: "6px 10px", borderRadius: "var(--radius-sm)",
                         border: "1.5px solid var(--border)", fontSize: 12,
                         fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
                       }}
                     />
-                    <input
-                      name="time"
-                      type="time"
-                      required
-                      style={{
-                        flex: 1.2, padding: "6px 6px", borderRadius: "var(--radius-sm)",
-                        border: "1.5px solid var(--border)", fontSize: 12,
-                        fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
-                      }}
-                    />
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={() => {
+                        if (!reminderTitle.trim()) {
+                          showToast("Please enter a title for the reminder first!", "error");
+                          return;
+                        }
+                        setShowSchedulePopup(true);
+                      }}
                       style={{
-                        background: "var(--blue)", color: "#fff", border: "none",
-                        borderRadius: "var(--radius-sm)", padding: "0 10px",
-                        fontWeight: 800, fontSize: 11, cursor: "pointer",
-                        fontFamily: "var(--font)"
+                        background: "var(--blue-light)", color: "var(--blue)", border: "none",
+                        borderRadius: "var(--radius-sm)", padding: "0 12px",
+                        fontWeight: 800, fontSize: 11.5, cursor: "pointer",
+                        fontFamily: "var(--font)", height: 28, display: "flex",
+                        alignItems: "center", justifyContent: "center"
                       }}
                     >
-                      Add
+                      Set
                     </button>
-                  </form>
+                  </div>
                 </div>
+
+                {/* Schedule Config overlay */}
+                {showSchedulePopup && (
+                  <div style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "var(--bg-modal)",
+                    zIndex: 10,
+                    padding: "16px 14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    boxSizing: "border-box",
+                  }}>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: "var(--navy)", borderBottom: "1.5px solid var(--border)", paddingBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ color: "var(--text)" }}>📅 Configure Schedule</span>
+                      <button onClick={() => setShowSchedulePopup(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--text)" }}>×</button>
+                    </div>
+                    
+                    {/* Repeat selection */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Repeat Behavior</label>
+                      <select
+                        value={reminderRepeat}
+                        onChange={e => setReminderRepeat(e.target.value)}
+                        style={{
+                          padding: "6px 8px", borderRadius: 8, border: "1.5px solid var(--border)",
+                          fontSize: 12, fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
+                        }}
+                      >
+                        <option value="only one time">Only One Time</option>
+                        <option value="daily remind">Daily Remind</option>
+                        <option value="every monday">Every Monday</option>
+                        <option value="every tuesday">Every Tuesday</option>
+                        <option value="every wednesday">Every Wednesday</option>
+                        <option value="every thursday">Every Thursday</option>
+                        <option value="every friday">Every Friday</option>
+                        <option value="every saturday">Every Saturday</option>
+                        <option value="every sunday">Every Sunday</option>
+                      </select>
+                    </div>
+
+                    {/* Date selection (only for one time) */}
+                    {reminderRepeat === "only one time" && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Date</label>
+                        <input
+                          type="date"
+                          value={reminderDate}
+                          onChange={e => setReminderDate(e.target.value)}
+                          style={{
+                            padding: "6px 8px", borderRadius: 8, border: "1.5px solid var(--border)",
+                            fontSize: 12, fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Time selection */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Time</label>
+                      <input
+                        type="time"
+                        value={reminderTime}
+                        onChange={e => setReminderTime(e.target.value)}
+                        style={{
+                          padding: "6px 8px", borderRadius: 8, border: "1.5px solid var(--border)",
+                          fontSize: 12, fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 8 }}>
+                      <button
+                        onClick={() => setShowSchedulePopup(false)}
+                        type="button"
+                        style={{
+                          flex: 1, padding: "8px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "var(--font)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)"
+                        }}
+                      >Cancel</button>
+                      <button
+                        onClick={() => {
+                          if (!reminderTitle.trim()) {
+                            showToast("Please enter a reminder title first!", "error");
+                            return;
+                          }
+                          const scheduleStr = JSON.stringify({
+                            time: reminderTime,
+                            date: reminderRepeat === "only one time" ? reminderDate : "",
+                            repeat: reminderRepeat
+                          });
+                          handleSaveReminder(reminderTitle, scheduleStr);
+                          setReminderTitle("");
+                          setShowSchedulePopup(false);
+                        }}
+                        type="button"
+                        style={{
+                          flex: 1, padding: "8px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 800,
+                          cursor: "pointer", fontFamily: "var(--font)", background: "var(--blue)", color: "#fff", border: "none"
+                        }}
+                      >Confirm & Set</button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Reminders List Body */}
                 <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, background: "var(--surface)" }}>
@@ -14429,7 +14879,22 @@ export default function App() {
                               {rem.title}
                             </span>
                             <span style={{ fontSize: 10.5, color: "var(--text-faint)", fontWeight: 600 }}>
-                              🔔 {rem.time}
+                              {(() => {
+                                try {
+                                  if (rem.time.startsWith("{")) {
+                                    const parsed = JSON.parse(rem.time);
+                                    if (parsed.repeat === "only one time") {
+                                      return `🔔 ${parsed.time} (${parsed.date})`;
+                                    } else if (parsed.repeat === "daily remind") {
+                                      return `🔔 ${parsed.time} (Daily)`;
+                                    } else {
+                                      const day = parsed.repeat.replace("every ", "");
+                                      return `🔔 ${parsed.time} (Every ${day.charAt(0).toUpperCase() + day.slice(1)})`;
+                                    }
+                                  }
+                                } catch (e) {}
+                                return `🔔 ${rem.time}`;
+                              })()}
                             </span>
                           </div>
 
@@ -14616,6 +15081,102 @@ export default function App() {
         );
       })()}
     </div>
+
+      {/* Active Alarm Modal */}
+      {activeAlarm && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(15, 23, 42, 0.45)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+        }}>
+          <div style={{
+            background: "var(--surface)",
+            border: "2px solid var(--border)",
+            borderRadius: 20,
+            width: "90%",
+            maxWidth: 420,
+            padding: "32px 24px",
+            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.4)",
+            textAlign: "center",
+          }}>
+            <div style={{
+              fontSize: 64,
+              marginBottom: 16,
+            }}>⏰</div>
+            <h2 style={{
+              fontSize: 22,
+              fontWeight: 800,
+              color: "var(--text)",
+              marginBottom: 8,
+              fontFamily: "var(--font)",
+            }}>Self-Care Reminder</h2>
+            <div style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: "var(--text)",
+              background: "var(--surface-2)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              padding: "14px 18px",
+              marginBottom: 24,
+              display: "inline-block",
+              width: "100%",
+              boxSizing: "border-box",
+              fontFamily: "var(--font)",
+            }}>
+              {activeAlarm.title}
+            </div>
+            
+            <div style={{ display: "flex", gap: 14 }}>
+              <button
+                onClick={handleSnoozeAlarm}
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: "14px 18px",
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 14.5,
+                  cursor: "pointer",
+                  fontFamily: "var(--font)",
+                  background: "var(--surface-2)",
+                  border: "1.5px solid var(--border)",
+                  color: "var(--text)",
+                  transition: "var(--transition)",
+                }}
+              >
+                Snooze ({localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5"}m)
+              </button>
+              <button
+                onClick={handleStopAlarm}
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: "14px 18px",
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 14.5,
+                  cursor: "pointer",
+                  fontFamily: "var(--font)",
+                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  border: "none",
+                  color: "#fff",
+                  boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
+                  transition: "var(--transition)",
+                }}
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Toast Notification */}
       {(() => {
