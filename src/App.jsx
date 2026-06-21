@@ -1357,8 +1357,16 @@ const NAV_ITEMS = [
 function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuOpen, setMobileMenuOpen, appearance = {} }) {
   const [hovered, setHovered] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showZoomedAvatar, setShowZoomedAvatar] = useState(false);
   const navPalette = NAVBAR_PALETTES.find(p => p.id === appearance.navbarPalette) || NAVBAR_PALETTES.find(p => p.id === "appBlue") || NAVBAR_PALETTES[0];
   const isDark = navPalette.isDark;
+
+  useEffect(() => {
+    if (!showZoomedAvatar) return;
+    const handleCloseZoom = () => setShowZoomedAvatar(false);
+    document.addEventListener("click", handleCloseZoom);
+    return () => document.removeEventListener("click", handleCloseZoom);
+  }, [showZoomedAvatar]);
 
   return (
     <nav className={`sidebar-nav ${mobileMenuOpen ? "mobile-open" : ""}`} style={{
@@ -12899,7 +12907,6 @@ export default function App() {
   const [confirmDeleteChatId, setConfirmDeleteChatId] = useState(null);
   const [toast, setToast] = useState(null);
   const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
-  const [showZoomedAvatar, setShowZoomedAvatar] = useState(false);
 
   // FAB Draggable states
   const [fabCorner, setFabCorner] = useState(() => {
@@ -12925,12 +12932,6 @@ export default function App() {
     };
   }, [showMedList]);
 
-  useEffect(() => {
-    if (!showZoomedAvatar) return;
-    const handleCloseZoom = () => setShowZoomedAvatar(false);
-    document.addEventListener("click", handleCloseZoom);
-    return () => document.removeEventListener("click", handleCloseZoom);
-  }, [showZoomedAvatar]);
 
   const handleFabMouseMove = useCallback((e) => {
     if (!dragStartRef.current) return;
