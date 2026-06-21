@@ -2474,151 +2474,6 @@ function Home({
             )}
           </Card>
 
-          {/* Self-Care Reminders Card */}
-          <Card className="styled-scroll" style={{ padding: "20px 24px", height: 350, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 20 }}>⏰</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>Self-Care Reminders</span>
-              </div>
-              {savedReminders.length > 0 && (
-                <button
-                  onClick={handleDeleteAllReminders}
-                  style={{
-                    background: "none", border: "none", color: "var(--red)",
-                    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
-                  }}
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
-
-            {/* Quick Add / New Reminder Form */}
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.target;
-              const title = form.elements.title.value.trim();
-              const time = form.elements.time.value;
-              if (!title || !time) return;
-              handleSaveReminder(title, time);
-              form.reset();
-            }} style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-              <input
-                name="title"
-                placeholder="Hydrate, log symptoms..."
-                required
-                style={{
-                  flex: 2, padding: "8px 10px", borderRadius: "var(--radius-sm)",
-                  border: "1.5px solid var(--border)", fontSize: 12.5,
-                  fontFamily: "var(--font)"
-                }}
-              />
-              <input
-                name="time"
-                type="time"
-                required
-                style={{
-                  flex: 1.2, padding: "8px 8px", borderRadius: "var(--radius-sm)",
-                  border: "1.5px solid var(--border)", fontSize: 12.5,
-                  fontFamily: "var(--font)"
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: "var(--blue)", color: "#fff", border: "none",
-                  borderRadius: "var(--radius-sm)", padding: "0 12px",
-                  fontWeight: 700, fontSize: 12.5, cursor: "pointer",
-                  fontFamily: "var(--font)"
-                }}
-              >
-                Add
-              </button>
-            </form>
-
-            {/* Reminders List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflowY: "auto" }}>
-              {savedReminders.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "20px 10px", flex: 1, justifyContent: "center" }}>
-                  <span style={{ fontSize: 24, opacity: 0.3, marginBottom: 6 }}>⏰</span>
-                  <p style={{ fontSize: 12, color: "var(--text-faint)", fontWeight: 500, margin: 0 }}>
-                    No reminders set. Set one to stay on track!
-                  </p>
-                </div>
-              ) : (
-                savedReminders.map(rem => {
-                  const remId = rem._id || rem.id;
-                  const isActive = rem.active;
-                  return (
-                    <div key={remId} style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 12px",
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      transition: "var(--transition)",
-                      opacity: isActive ? 1 : 0.65
-                    }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-                        <span style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "var(--text)",
-                          textDecoration: isActive ? "none" : "line-through",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: 140
-                        }}>
-                          {rem.title}
-                        </span>
-                        <span style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600 }}>
-                          🔔 {rem.time}
-                        </span>
-                      </div>
-                      
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {/* Custom Switch / Toggle Checkbox */}
-                        <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
-                          <input
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={() => handleToggleReminder(remId, isActive)}
-                            style={{
-                              width: 32, height: 18, appearance: "none",
-                              backgroundColor: isActive ? "var(--blue)" : "rgba(0,0,0,0.1)",
-                              borderRadius: 9, position: "relative", cursor: "pointer",
-                              transition: "background-color 0.2s ease"
-                            }}
-                          />
-                          <span style={{
-                            width: 14, height: 14, backgroundColor: "#fff",
-                            borderRadius: "50%", position: "absolute", top: 2,
-                            left: isActive ? 16 : 2, transition: "left 0.2s ease",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                          }} />
-                        </label>
-
-                        <button
-                          onClick={() => handleDeleteReminder(remId)}
-                          title="Delete reminder"
-                          style={{
-                            background: "none", border: "none", cursor: "pointer",
-                            fontSize: 13, padding: "2px"
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </Card>
 
           {/* Daily Health Focus */}
           <Card className="styled-scroll" style={{
@@ -14212,6 +14067,10 @@ export default function App() {
           zIndex: 9,
           userSelect: "none",
           touchAction: "none",
+          display: "flex",
+          flexDirection: isTop ? "column" : "column-reverse",
+          alignItems: "center",
+          gap: 12,
         };
         
         if (isDraggingFab) {
@@ -14251,66 +14110,33 @@ export default function App() {
         };
         
         if (isTop) {
-          popoverStyle.top = 66;
+          popoverStyle.top = 0;
           popoverStyle.bottom = "auto";
           popoverStyle.transformOrigin = isLeft ? "top left" : "top right";
         } else {
-          popoverStyle.bottom = 66;
+          popoverStyle.bottom = 0;
           popoverStyle.top = "auto";
           popoverStyle.transformOrigin = isLeft ? "bottom left" : "bottom right";
         }
         
         if (isLeft) {
-          popoverStyle.left = 0;
+          popoverStyle.left = 64;
           popoverStyle.right = "auto";
         } else {
-          popoverStyle.right = 0;
+          popoverStyle.right = 64;
           popoverStyle.left = "auto";
         }
         
         const isDarkTheme = cp.isDark;
-        const isExpanded = showMedList;
         
-        let fabBackground;
-        if (isExpanded) {
-          fabBackground = "linear-gradient(135deg, rgba(29, 78, 216, 0.85), rgba(37, 99, 235, 0.85))";
-        } else if (isHoveredFab) {
-          fabBackground = isDarkTheme
-            ? "rgba(59, 130, 246, 0.3)"
-            : "rgba(29, 78, 216, 0.22)";
-        } else {
-          fabBackground = isDarkTheme
-            ? "rgba(15, 23, 42, 0.45)"
-            : "rgba(255, 255, 255, 0.45)";
-        }
-        
-        const fabBorder = isExpanded
-          ? "1.5px solid rgba(255, 255, 255, 0.25)"
-          : isDarkTheme
-            ? "1.5px solid rgba(255, 255, 255, 0.16)"
-            : "1.5px solid rgba(29, 78, 216, 0.25)";
-            
-        let fabTransform = "none";
-        if (isDraggingFab) {
-          fabTransform = "none";
-        } else if (isExpanded) {
-          fabTransform = "none";
-        } else {
-          const scaleVal = isHoveredFab ? 1.08 : 1;
-          const isLeftEdge = fabCorner.startsWith("left");
-          
-          let translateVal = "0px";
-          if (isHoveredFab) {
-            translateVal = "0px";
-          } else {
-            translateVal = isLeftEdge ? "-51px" : "51px";
-          }
-          fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
-        }
+        // Arrow toggle symbol
+        const arrowChar = isLeft 
+          ? (fabMenuExpanded ? "←" : "→") 
+          : (fabMenuExpanded ? "→" : "←");
 
         return (
           <div ref={fabContainerRef} style={containerStyle}>
-            {/* Popover panel */}
+            {/* Popover for Medicine List */}
             {showMedList && (
               <div style={popoverStyle}>
                 {/* Header */}
@@ -14358,159 +14184,411 @@ export default function App() {
                 </div>
 
                 {/* Body */}
-                <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px 0" }}>
+                <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, background: "var(--surface)" }}>
                   {savedMedicines.length === 0 ? (
-                    <div style={{ padding: "32px 24px", textAlign: "center" }}>
-                      <div style={{ fontSize: 32, marginBottom: 10, opacity: 0.3 }}>💊</div>
-                      <div style={{ color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
-                        No medicines saved yet.
-                      </div>
-                      <div style={{ color: "var(--text-faint)", fontSize: 12, marginTop: 4 }}>
-                        Go to Wellness → search a condition → save medicines.
-                      </div>
+                    <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-faint)", fontSize: 12.5 }}>
+                      <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>💊</span>
+                      No saved medicines yet. Add one from the Vitals Log or Search!
                     </div>
                   ) : (
-                    savedMedicines.map((med, idx) => (
-                      <div
-                        key={med.id}
-                        style={{
+                    savedMedicines.map(med => {
+                      const medId = med._id || med.id;
+                      return (
+                        <div key={medId} style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: 12,
-                          padding: "10px 18px",
-                          borderBottom: idx < savedMedicines.length - 1 ? "1px solid var(--border)" : "none",
-                          transition: "background 0.15s ease",
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                      >
-                        {/* Icon */}
-                        <div style={{
-                          width: 34, height: 34, borderRadius: 9,
-                          background: "#fef3c7", border: "1.5px solid var(--border-amber)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 16, flexShrink: 0,
-                        }}>💊</div>
-
-                        {/* Text */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontWeight: 700, fontSize: 13, color: "var(--navy)",
-                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                          }}>{med.name}</div>
-                          <div style={{ fontSize: 10.5, color: "var(--text-faint)", marginTop: 1 }}>
-                            Saved {new Date(med.createdAt || med.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                          justifyContent: "space-between",
+                          padding: "8px 10px",
+                          background: "var(--surface-2)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-sm)",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                            <span style={{ fontSize: 14 }}>💊</span>
+                            <span style={{
+                              fontSize: 12.5,
+                              fontWeight: 700,
+                              color: "var(--text)",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: 140
+                            }} title={med.name}>
+                              {med.name}
+                            </span>
                           </div>
+                          <button
+                            onClick={() => {
+                              setActive("meditown");
+                              setInitialSymptoms(med.name);
+                              setShowMedList(false);
+                            }}
+                            className="btn-primary"
+                            style={{
+                              background: "var(--blue-light)", color: "var(--blue)", border: "none",
+                              borderRadius: 6, padding: "3px 8px",
+                              fontSize: 11, fontWeight: 800, cursor: "pointer",
+                              fontFamily: "var(--font)",
+                            }}
+                          >Find Store</button>
                         </div>
-
-                        {/* Delete btn */}
-                        <button
-                          onClick={() => handleDeleteMedicine(med._id || med.id)}
-                          title="Remove from list"
-                          style={{
-                            background: "var(--bg-red)", border: "1px solid var(--border-red)",
-                            borderRadius: 7, width: 28, height: 28,
-                            cursor: "pointer", color: "var(--text-red-light)", fontSize: 13,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            flexShrink: 0, transition: "all 0.15s ease",
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "var(--text-red-light)"; e.currentTarget.style.color = "#fff"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "var(--bg-red)"; e.currentTarget.style.color = "var(--text-red-light)"; }}
-                        >🗑</button>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
                 {/* Footer */}
-                {savedMedicines.length > 0 && (
-                  <div style={{
-                    padding: "10px 18px",
-                    borderTop: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    position: "relative",
-                  }}>
-                    {showMedDeleteConfirm ? (
-                      <div style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
-                        animation: "fadeIn 0.2s ease both"
-                      }}>
-                        <span style={{ fontSize: 11, color: "var(--text-red)", fontWeight: 700 }}>Delete all?</span>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          <button
-                            onClick={() => setShowMedDeleteConfirm(false)}
-                            style={{
-                              background: "var(--bg-modal)", color: "var(--text)", border: "1px solid var(--border)",
-                              borderRadius: 7, padding: "5px 12px",
-                              fontSize: 11, fontWeight: 700, cursor: "pointer",
-                              fontFamily: "var(--font)",
-                            }}
-                          >Cancel</button>
-                          <button
-                            onClick={async () => {
-                              await handleDeleteAllMedicines();
-                              setShowMedDeleteConfirm(false);
-                            }}
-                            style={{
-                              background: "var(--red, #ef4444)", color: "#fff", border: "none",
-                              borderRadius: 7, padding: "5px 12px",
-                              fontSize: 11, fontWeight: 700, cursor: "pointer",
-                              fontFamily: "var(--font)",
-                            }}
-                          >Delete All</button>
-                        </div>
+                <div style={{
+                  padding: "10px 14px",
+                  background: "var(--surface-2)",
+                  borderTop: "1.5px solid var(--border)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}>
+                  {showMedDeleteConfirm ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text-red)" }}>Confirm delete?</span>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button
+                          onClick={() => {
+                            handleDeleteAllMedicines();
+                            setShowMedDeleteConfirm(false);
+                          }}
+                          style={{
+                            background: "var(--bg-red)", color: "var(--text-red)", border: "none",
+                            borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 800, cursor: "pointer"
+                          }}
+                        >Yes</button>
+                        <button
+                          onClick={() => setShowMedDeleteConfirm(false)}
+                          style={{
+                            background: "var(--slate-light)", color: "#fff", border: "none",
+                            borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 800, cursor: "pointer"
+                          }}
+                        >No</button>
                       </div>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: 11, color: "#64748b" }}>Show this list at a pharmacy</span>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button
-                            onClick={() => setShowMedDeleteConfirm(true)}
-                            style={{
-                              background: "var(--bg-red)", color: "var(--text-red)", border: "none",
-                              borderRadius: 7, padding: "5px 12px",
-                              fontSize: 11.5, fontWeight: 700, cursor: "pointer",
-                              fontFamily: "var(--font)",
-                            }}
-                          >🗑 Delete All</button>
-                          <button
-                            onClick={() => {
-                              const list = savedMedicines.map((m, i) => `${i + 1}. ${m.name}`).join("\n");
-                              navigator.clipboard?.writeText(list).then(() => showToast("Medicine list copied!"));
-                            }}
-                            style={{
-                              background: "#1d4ed8", color: "#fff", border: "none",
-                              borderRadius: 7, padding: "5px 12px",
-                              fontSize: 11.5, fontWeight: 700, cursor: "pointer",
-                              fontFamily: "var(--font)",
-                            }}
-                          >📋 Copy</button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 11, color: "#64748b" }}>Show this list at a pharmacy</span>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          onClick={() => setShowMedDeleteConfirm(true)}
+                          style={{
+                            background: "var(--bg-red)", color: "var(--text-red)", border: "none",
+                            borderRadius: 7, padding: "5px 12px",
+                            fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+                            fontFamily: "var(--font)",
+                          }}
+                        >🗑 Delete All</button>
+                        <button
+                          onClick={() => {
+                            const list = savedMedicines.map((m, i) => `${i + 1}. ${m.name}`).join("\n");
+                            navigator.clipboard?.writeText(list).then(() => showToast("Medicine list copied!"));
+                          }}
+                          style={{
+                            background: "#1d4ed8", color: "#fff", border: "none",
+                            borderRadius: 7, padding: "5px 12px",
+                            fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+                            fontFamily: "var(--font)",
+                          }}
+                        >📋 Copy</button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* FAB Button */}
+            {/* Popover for Self-Care Reminders */}
+            {showReminderList && (
+              <div style={popoverStyle}>
+                {/* Header */}
+                <div style={{
+                  background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>⏰</span>
+                    <div>
+                      <div style={{ color: "#fff", fontWeight: 800, fontSize: 14, letterSpacing: "-0.2px" }}>Self-Care Reminders</div>
+                      <div style={{ color: "rgba(232,121,249,0.85)", fontSize: 11, fontWeight: 600 }}>{savedReminders.length} active reminders</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {savedReminders.length > 0 && (
+                      <button
+                        onClick={handleDeleteAllReminders}
+                        style={{
+                          background: "rgba(220,38,38,0.25)", border: "none",
+                          borderRadius: 6, padding: "2px 8px",
+                          cursor: "pointer", color: "#fff", fontSize: 11, fontWeight: 800,
+                          transition: "var(--transition)", fontFamily: "var(--font)"
+                        }}
+                      >Clear All</button>
+                    )}
+                    <button
+                      onClick={() => setShowReminderList(false)}
+                      style={{
+                        background: "rgba(255,255,255,0.15)", border: "none",
+                        borderRadius: "50%", width: 26, height: 26,
+                        cursor: "pointer", color: "#fff", fontSize: 15,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >×</button>
+                  </div>
+                </div>
+
+                {/* Form to add reminder */}
+                <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.target;
+                    const title = form.elements.title.value.trim();
+                    const time = form.elements.time.value;
+                    if (!title || !time) return;
+                    handleSaveReminder(title, time);
+                    form.reset();
+                  }} style={{ display: "flex", gap: 6 }}>
+                    <input
+                      name="title"
+                      placeholder="Hydrate, vitals log..."
+                      required
+                      style={{
+                        flex: 1.8, padding: "6px 10px", borderRadius: "var(--radius-sm)",
+                        border: "1.5px solid var(--border)", fontSize: 12,
+                        fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
+                      }}
+                    />
+                    <input
+                      name="time"
+                      type="time"
+                      required
+                      style={{
+                        flex: 1.2, padding: "6px 6px", borderRadius: "var(--radius-sm)",
+                        border: "1.5px solid var(--border)", fontSize: 12,
+                        fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        background: "var(--blue)", color: "#fff", border: "none",
+                        borderRadius: "var(--radius-sm)", padding: "0 10px",
+                        fontWeight: 800, fontSize: 11, cursor: "pointer",
+                        fontFamily: "var(--font)"
+                      }}
+                    >
+                      Add
+                    </button>
+                  </form>
+                </div>
+
+                {/* Reminders List Body */}
+                <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, background: "var(--surface)" }}>
+                  {savedReminders.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-faint)", fontSize: 12.5 }}>
+                      <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>⏰</span>
+                      No reminders set. Set one above!
+                    </div>
+                  ) : (
+                    savedReminders.map(rem => {
+                      const remId = rem._id || rem.id;
+                      const isActive = rem.active;
+                      return (
+                        <div key={remId} style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 10px",
+                          background: "var(--surface-2)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-sm)",
+                          opacity: isActive ? 1 : 0.65
+                        }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                            <span style={{
+                              fontSize: 12.5,
+                              fontWeight: 700,
+                              color: "var(--text)",
+                              textDecoration: isActive ? "none" : "line-through",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: 140
+                            }} title={rem.title}>
+                              {rem.title}
+                            </span>
+                            <span style={{ fontSize: 10.5, color: "var(--text-faint)", fontWeight: 600 }}>
+                              🔔 {rem.time}
+                            </span>
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {/* Toggle switch */}
+                            <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
+                              <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => handleToggleReminder(remId, isActive)}
+                                style={{
+                                  width: 28, height: 16, appearance: "none",
+                                  backgroundColor: isActive ? "var(--blue)" : "rgba(0,0,0,0.15)",
+                                  borderRadius: 8, position: "relative", cursor: "pointer",
+                                  transition: "background-color 0.2s ease"
+                                }}
+                              />
+                              <span style={{
+                                width: 12, height: 12, backgroundColor: "#fff",
+                                borderRadius: "50%", position: "absolute", top: 2,
+                                left: isActive ? 14 : 2, transition: "left 0.2s ease",
+                                boxShadow: "0 1px 2px rgba(0,0,0,0.2)"
+                              }} />
+                            </label>
+
+                            <button
+                              onClick={() => handleDeleteReminder(remId)}
+                              title="Delete reminder"
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                fontSize: 12, padding: "2px"
+                              }}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Collapsible Action Button 2: Self-Care Reminders (⏰) */}
+            <button
+              onClick={() => {
+                setShowReminderList(!showReminderList);
+                setShowMedList(false);
+              }}
+              title="Self-Care Reminders"
+              style={{
+                width: 46, height: 46,
+                borderRadius: "50%",
+                background: showReminderList 
+                  ? "linear-gradient(135deg, #7c3aed, #8b5cf6)" 
+                  : (isDarkTheme ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.95)"),
+                color: showReminderList ? "#fff" : "var(--navy)",
+                border: isDarkTheme ? "1.5px solid rgba(255,255,255,0.15)" : "1.5px solid rgba(59,130,246,0.25)",
+                boxShadow: "0 8px 32px 0 rgba(15, 23, 42, 0.15)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 18,
+                transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.08s" : "0s"}`,
+                opacity: fabMenuExpanded ? 1 : 0,
+                transform: fabMenuExpanded ? "scale(1) translateY(0)" : "scale(0) translateY(12px)",
+                pointerEvents: fabMenuExpanded ? "auto" : "none",
+                position: "relative",
+              }}
+            >
+              ⏰
+              {savedReminders.filter(r => r.active).length > 0 && (
+                <div style={{
+                  position: "absolute",
+                  top: -4, right: -4,
+                  width: 18, height: 18,
+                  borderRadius: "50%",
+                  background: "#7c3aed",
+                  border: "2px solid #fff",
+                  color: "#fff",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font)",
+                  boxShadow: "0 2px 6px rgba(124,58,237,0.4)",
+                }}>{savedReminders.filter(r => r.active).length}</div>
+              )}
+            </button>
+
+            {/* Collapsible Action Button 1: Medicine List (💊) */}
+            <button
+              onClick={() => {
+                setShowMedList(!showMedList);
+                setShowReminderList(false);
+              }}
+              title="Medicine List"
+              style={{
+                width: 46, height: 46,
+                borderRadius: "50%",
+                background: showMedList 
+                  ? "linear-gradient(135deg, #1d4ed8, #2563eb)" 
+                  : (isDarkTheme ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.95)"),
+                color: showMedList ? "#fff" : "var(--navy)",
+                border: isDarkTheme ? "1.5px solid rgba(255,255,255,0.15)" : "1.5px solid rgba(59,130,246,0.25)",
+                boxShadow: "0 8px 32px 0 rgba(15, 23, 42, 0.15)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 18,
+                transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.04s" : "0s"}`,
+                opacity: fabMenuExpanded ? 1 : 0,
+                transform: fabMenuExpanded ? "scale(1) translateY(0)" : "scale(0) translateY(12px)",
+                pointerEvents: fabMenuExpanded ? "auto" : "none",
+                position: "relative",
+              }}
+            >
+              💊
+              {savedMedicines.length > 0 && (
+                <div style={{
+                  position: "absolute",
+                  top: -4, right: -4,
+                  width: 18, height: 18,
+                  borderRadius: "50%",
+                  background: "var(--text-red-light)",
+                  border: "2px solid #fff",
+                  color: "#fff",
+                  fontSize: 9,
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font)",
+                  boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
+                }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
+              )}
+            </button>
+
+            {/* Primary Arrow Toggle Handle Button */}
             <button
               onMouseDown={handleFabMouseDown}
               onTouchStart={handleFabMouseDown}
               onMouseEnter={() => { if (!isDraggingFab) setIsHoveredFab(true); }}
               onMouseLeave={() => { if (!isDraggingFab) setIsHoveredFab(false); }}
-              title="Medicine List"
+              onClick={() => {
+                if (fabMenuExpanded) {
+                  setShowMedList(false);
+                  setShowReminderList(false);
+                }
+                setFabMenuExpanded(!fabMenuExpanded);
+              }}
+              title={fabMenuExpanded ? "Close Utilities Menu" : "Open Utilities Menu"}
               style={{
-                width: 54, height: 54,
+                width: 50, height: 50,
                 borderRadius: "50%",
-                background: fabBackground,
-                border: fabBorder,
+                background: fabMenuExpanded
+                  ? "linear-gradient(135deg, rgba(29, 78, 216, 0.95), rgba(37, 99, 235, 0.95))"
+                  : (isDarkTheme ? "rgba(30, 41, 59, 0.95)" : "rgba(255, 255, 255, 0.95)"),
+                color: fabMenuExpanded ? "#fff" : "var(--navy)",
+                border: isDarkTheme ? "1.5px solid rgba(255, 255, 255, 0.16)" : "1.5px solid rgba(29, 78, 216, 0.25)",
                 backdropFilter: "blur(12px)",
                 WebkitBackdropFilter: "blur(12px)",
                 boxShadow: isDarkTheme 
@@ -14521,31 +14599,19 @@ export default function App() {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 22,
-                transition: isDraggingFab ? "none" : "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                fontWeight: "bold",
+                transition: "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 position: "relative",
-                transform: fabTransform,
-                opacity: (isHoveredFab || isExpanded || isDraggingFab) ? 1 : 0.5,
+                opacity: (isHoveredFab || fabMenuExpanded || isDraggingFab) ? 1 : 0.65,
               }}
             >
-              💊
-              {savedMedicines.length > 0 && (isHoveredFab || isExpanded) && (
-                <div style={{
-                  position: "absolute",
-                  top: -4, right: -4,
-                  width: 20, height: 20,
-                  borderRadius: "50%",
-                  background: "var(--text-red-light)",
-                  border: "2.5px solid #fff",
-                  color: "#fff",
-                  fontSize: 10,
-                  fontWeight: 800,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: "var(--font)",
-                  boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
-                }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
-              )}
+              <span style={{ 
+                display: "inline-block", 
+                transform: `rotate(${fabMenuExpanded ? (isTop ? "90deg" : "-90deg") : "0deg"})`,
+                transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)" 
+              }}>
+                {arrowChar}
+              </span>
             </button>
           </div>
         );
