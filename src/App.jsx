@@ -12926,6 +12926,7 @@ export default function App() {
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
   const [savedReminders, setSavedReminders] = useState([]);
   const [showReminderList, setShowReminderList] = useState(false);
+  const [fabMenuExpanded, setFabMenuExpanded] = useState(false);
   const [appearance, setAppearance] = useState(() => loadAppearance());
   const [chatSessions, setChatSessions] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -12947,8 +12948,10 @@ export default function App() {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (showMedList && fabContainerRef.current && !fabContainerRef.current.contains(event.target)) {
+      if (fabContainerRef.current && !fabContainerRef.current.contains(event.target)) {
         setShowMedList(false);
+        setShowReminderList(false);
+        setFabMenuExpanded(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -12957,7 +12960,7 @@ export default function App() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [showMedList]);
+  }, []);
 
 
   const handleFabMouseMove = useCallback((e) => {
