@@ -5040,9 +5040,14 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
         }, ...prev]);
       }
     } catch (err) {
-      const errText = err.message?.includes("Groq")
-        ? "AI service unavailable. Please check your API key."
-        : "Network error. Please make sure the backend server is running.";
+      let errText = "Network error. Please make sure the backend server is running.";
+      if (err.message) {
+        if (err.message.includes("AI API error") || err.message.includes("Groq")) {
+          errText = `AI Service Error: ${err.message}`;
+        } else {
+          errText = `Error: ${err.message}`;
+        }
+      }
       setMsgs(prev => [...prev, { role: "assistant", text: errText }]);
     } finally {
       setLoading(false);
@@ -6089,11 +6094,13 @@ function History({ reports, onDelete, onClearAll }) {
 function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ── NEW: nested food-detail state ────────────────────────────────────────
   const [selectedFood, setSelectedFood] = useState(null);
   const [foodDetail, setFoodDetail]   = useState(null);
   const [loadingFood, setLoadingFood] = useState(false);
+  const [errorFood, setErrorFood] = useState(null);
 
   const app = loadAppearance();
   const navPos = app.navPosition || "left";
@@ -6106,6 +6113,7 @@ function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose 
   const fetchFeverData = async () => {
     setLoading(true);
     setData(null);
+    setError(null);
     const prompt = `For a ${fever.temp} (${fever.label}) fever, respond with ONLY valid JSON (no markdown, no backticks):
 {
   "overview": "2-3 sentence clinical overview of what this fever range means for the body",
@@ -6143,6 +6151,7 @@ Use only OTC medicines appropriate for this fever range. Provide relevant habits
       else throw new Error("Could not parse JSON");
     } catch (e) {
       console.error("Failed to fetch fever care guide:", e);
+      setError(e.message);
     }
     setLoading(false);
   };
@@ -6155,6 +6164,7 @@ Use only OTC medicines appropriate for this fever range. Provide relevant habits
   const fetchFoodDetail = async (food) => {
     setSelectedFood(food);
     setFoodDetail(null);
+    setErrorFood(null);
     setLoadingFood(true);
     const prompt = `Give a detailed step-by-step preparation guide for "${food.name}" as a remedy for a ${fever.label} fever (${fever.temp}).
 Respond with ONLY valid JSON (no markdown, no backticks):
@@ -6183,6 +6193,7 @@ Respond with ONLY valid JSON (no markdown, no backticks):
       else throw new Error("Could not parse JSON");
     } catch (e) {
       console.error("Failed to fetch food details:", e);
+      setErrorFood(e.message);
     }
     setLoadingFood(false);
   };
@@ -6470,7 +6481,11 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", color: "var(--text-faint)", padding: 48 }}>Failed to load. Please try again.</div>
+              <div style={{ textAlign: "center", color: "var(--text-red-light)", padding: 48 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>Failed to load care guide.</div>
+                {error && <div style={{ fontSize: 13, opacity: 0.8, fontFamily: "monospace", margin: "8px 0" }}>{error}</div>}
+                <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginTop: 12 }}>Please make sure your backend server is running and configured with a Groq API key.</div>
+              </div>
             )}
           </div>
         </div>
@@ -6677,8 +6692,10 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                   )}
                 </>
               ) : (
-                <div style={{ textAlign: "center", color: "var(--text-faint)", padding: 48 }}>
-                  Failed to load preparation guide. Please try again.
+                <div style={{ textAlign: "center", color: "var(--text-red-light)", padding: 48 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 8 }}>Failed to load preparation guide.</div>
+                  {errorFood && <div style={{ fontSize: 13, opacity: 0.8, fontFamily: "monospace", margin: "8px 0" }}>{errorFood}</div>}
+                  <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginTop: 12 }}>Please verify your backend connection and Groq API key configuration.</div>
                 </div>
               )}
             </div>
@@ -6767,9 +6784,11 @@ function FeverCareGuide({ savedMedicines = [], onSaveMedicine }) {
 function TipDetailModal({ tip, onClose }) {
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemDetail, setItemDetail] = useState(null);
   const [loadingItem, setLoadingItem] = useState(false);
+  const [errorItem, setErrorItem] = useState(null);
 
   const app = loadAppearance();
   const navPos = app.navPosition || "left";
@@ -6781,6 +6800,7 @@ function TipDetailModal({ tip, onClose }) {
   const fetchTipDetail = async () => {
     setLoadingDetail(true);
     setDetail(null);
+    setError(null);
     const prompt = `For the wellness tip "${tip.title}", respond with ONLY valid JSON (no markdown, no backticks):
 {
   "description": "2-3 sentence engaging description of why this matters for health",
@@ -6805,6 +6825,7 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
       else throw new Error("Could not parse JSON");
     } catch (err) {
       console.error("Failed to load tip detail:", err);
+      setError(err.message);
     }
     setLoadingDetail(false);
   };
@@ -6818,6 +6839,7 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
   const fetchItemDetail = async (item) => {
     setSelectedItem(item);
     setItemDetail(null);
+    setErrorItem(null);
     setLoadingItem(true);
     const prompt = `For "${item.name}" as part of the wellness tip "${tip.title}", respond with ONLY valid JSON (no markdown, no backticks):
 {
@@ -6839,6 +6861,7 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
       else throw new Error("Could not parse JSON");
     } catch (e) {
       console.error("Failed to load item detail:", e);
+      setErrorItem(e.message);
     }
     setLoadingItem(false);
   };
@@ -7020,7 +7043,11 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                 </div>
               </>
             ) : (
-              <div style={{ textAlign: "center", color: "var(--text-faint)", padding: 40 }}>Failed to load. Please try again.</div>
+              <div style={{ textAlign: "center", color: "var(--text-red-light)", padding: 40 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>Failed to load wellness guide.</div>
+                {error && <div style={{ fontSize: 13, opacity: 0.8, fontFamily: "monospace", margin: "8px 0" }}>{error}</div>}
+                <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginTop: 12 }}>Please make sure your backend server is running and configured with a Groq API key.</div>
+              </div>
             )}
           </div>
         </div>
@@ -7165,7 +7192,11 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                   )}
                 </>
               ) : (
-                <div style={{ textAlign: "center", color: "var(--text-faint)", padding: 40 }}>Failed to load steps.</div>
+                <div style={{ textAlign: "center", color: "var(--text-red-light)", padding: 40 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 8 }}>Failed to load steps.</div>
+                  {errorItem && <div style={{ fontSize: 13, opacity: 0.8, fontFamily: "monospace", margin: "8px 0" }}>{errorItem}</div>}
+                  <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginTop: 12 }}>Please verify your backend connection and Groq API key configuration.</div>
+                </div>
               )}
             </div>
           </div>
