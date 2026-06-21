@@ -1112,32 +1112,28 @@ const GLOBAL_CSS = `
   }
 `;
 
-// ─── GROQ API CALL ────────────────────────────────────────────────────────────
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
+// ─── AI API CLIENT ────────────────────────────────────────────────────────────
 
 async function callClaude(messages, system = "") {
-  const groqMessages = system
-    ? [{ role: "system", content: system }, ...messages]
-    : messages;
+  const headers = {
+    "Content-Type": "application/json",
+    ...authHeaders(),
+  };
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch(`${rawApiUrl}/ai/chat`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${GROQ_API_KEY}`,
-    },
+    headers,
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1000,
-      messages: groqMessages,
+      messages,
+      system
     }),
   });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Groq API error ${res.status}: ${err}`);
+    throw new Error(`AI API error ${res.status}: ${err}`);
   }
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
+  return data.content || "";
 }
 
 function safeParseJSON(raw) {

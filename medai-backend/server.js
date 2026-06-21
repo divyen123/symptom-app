@@ -1092,6 +1092,50 @@ app.delete("/api/reminders", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/ai/chat
+// Secure proxy route to Groq API using JWT authorization
+app.post("/api/ai/chat", authMiddleware, async (req, res) => {
+  try {
+    const { messages, system } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: "Messages array is required" });
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: "Groq API key not configured on backend server" });
+    }
+
+    const groqMessages = system
+      ? [{ role: "system", content: system }, ...messages]
+      : messages;
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        max_tokens: 1000,
+        messages: groqMessages,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({ error: `Groq API error: ${errText}` });
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    res.json({ content });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Listen ───────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
