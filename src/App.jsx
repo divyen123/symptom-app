@@ -12398,7 +12398,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                       cursor: "pointer", fontFamily: "var(--font)", boxShadow: "0 4px 12px rgba(37,99,235,0.2)"
                     }}
                   >
-                    Done
+                    Proceed
                   </button>
                 </div>
               ) : (
