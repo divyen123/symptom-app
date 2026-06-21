@@ -9,7 +9,9 @@ import { createClient } from "@supabase/supabase-js";
 const app = express();
 const allowedOrigins = ["http://localhost:5173"];
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  process.env.FRONTEND_URL.split(",").forEach(url => {
+    allowedOrigins.push(url.trim().replace(/\/$/, ""));
+  });
 }
 app.use(cors({
   origin: allowedOrigins
