@@ -12849,6 +12849,7 @@ export default function App() {
     return localStorage.getItem("MEDAI_FAB_CORNER") || (loadAppearance().navPosition === "right" ? "left-bottom" : "right-bottom");
   });
   const [isDraggingFab, setIsDraggingFab] = useState(false);
+  const [isHoveredFab, setIsHoveredFab] = useState(false);
   const [fabPos, setFabPos] = useState({ x: 0, y: 0 });
   const dragStartRef = useRef({ startX: 0, startY: 0, clickX: 0, clickY: 0, didMove: false });
 
@@ -13931,6 +13932,42 @@ export default function App() {
           popoverStyle.right = 0;
           popoverStyle.left = "auto";
         }
+        
+        const isDarkTheme = cp.isDark;
+        const isExpanded = showMedList;
+        
+        let fabBackground;
+        if (isExpanded) {
+          fabBackground = "linear-gradient(135deg, rgba(29, 78, 216, 0.85), rgba(37, 99, 235, 0.85))";
+        } else if (isHoveredFab) {
+          fabBackground = isDarkTheme
+            ? "rgba(59, 130, 246, 0.3)"
+            : "rgba(29, 78, 216, 0.22)";
+        } else {
+          fabBackground = isDarkTheme
+            ? "rgba(15, 23, 42, 0.45)"
+            : "rgba(255, 255, 255, 0.45)";
+        }
+        
+        const fabBorder = isExpanded
+          ? "1.5px solid rgba(255, 255, 255, 0.25)"
+          : isDarkTheme
+            ? "1.5px solid rgba(255, 255, 255, 0.16)"
+            : "1.5px solid rgba(29, 78, 216, 0.25)";
+            
+        let fabTransform = "none";
+        if (isDraggingFab) {
+          fabTransform = "none";
+        } else {
+          const scaleVal = isHoveredFab ? 1.08 : 1;
+          const isLeftEdge = fabCorner.startsWith("left");
+          
+          let translateVal = "0px";
+          if (!isHoveredFab && !isExpanded) {
+            translateVal = isLeftEdge ? "-28px" : "28px";
+          }
+          fabTransform = `translateX(${translateVal}) scale(${scaleVal})`;
+        }
 
         return createPortal(
           <div style={containerStyle}>
@@ -14127,25 +14164,29 @@ export default function App() {
             <button
               onMouseDown={handleFabMouseDown}
               onTouchStart={handleFabMouseDown}
+              onMouseEnter={() => { if (!isDraggingFab) setIsHoveredFab(true); }}
+              onMouseLeave={() => { if (!isDraggingFab) setIsHoveredFab(false); }}
               title="Medicine List"
               style={{
                 width: 54, height: 54,
                 borderRadius: "50%",
-                background: showMedList
-                  ? "linear-gradient(135deg, #1d4ed8, #2563eb)"
-                  : "linear-gradient(135deg, #0f2272, #1d4ed8)",
-                border: "none",
-                boxShadow: cp.isDark ? "0 4px 12px rgba(0,0,0,0.3)" : "0 6px 24px rgba(29,78,216,0.4), 0 2px 8px rgba(0,0,0,0.15)",
+                background: fabBackground,
+                border: fabBorder,
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                boxShadow: isDarkTheme 
+                  ? "0 8px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255,255,255,0.08)" 
+                  : "0 8px 32px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255,255,255,0.4)",
                 cursor: isDraggingFab ? "grabbing" : "grab",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 22,
-                transition: isDraggingFab ? "none" : "all 0.2s ease",
+                transition: isDraggingFab ? "none" : "all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 position: "relative",
+                transform: fabTransform,
+                opacity: (isHoveredFab || isExpanded || isDraggingFab) ? 1 : 0.55,
               }}
-              onMouseEnter={e => { if (!isDraggingFab) e.currentTarget.style.transform = "scale(1.08)"; }}
-              onMouseLeave={e => { if (!isDraggingFab) e.currentTarget.style.transform = "scale(1)"; }}
             >
               💊
               {savedMedicines.length > 0 && (
