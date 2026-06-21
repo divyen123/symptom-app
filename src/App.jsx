@@ -1120,7 +1120,7 @@ async function callClaude(messages, system = "") {
     ...authHeaders(),
   };
 
-  const res = await fetch(`${rawApiUrl}/ai/chat`, {
+  const res = await fetch(`${API}/ai/chat`, {
     method: "POST",
     headers,
     body: JSON.stringify({
