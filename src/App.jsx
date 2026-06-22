@@ -12230,12 +12230,22 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       id: "firstaid", name: "First Aid Station", icon: "🏥", color: "#ef4444",
       desc: "Essential first aid supplies and topical treatments.",
       items: [
-        { name: "Antiseptic Solution", use: "Wound cleaning", dosage: "Apply to cleaned wound area" },
-        { name: "Bandage Crepe Roll", use: "Wound dressing & support", dosage: "Wrap affected area securely" },
-        { name: "Burnol Cream", use: "Minor burns treatment", dosage: "Apply thin layer on burn" },
-        { name: "ORS Powder", use: "Dehydration treatment", dosage: "1 sachet in 1L water, sip frequently" },
-        { name: "Calamine Lotion", use: "Itch & rash relief", dosage: "Apply to affected skin as needed" },
-        { name: "Digital Thermometer", use: "Temperature monitoring", dosage: "Use as needed for fever checks" }
+        { name: "Antiseptic Solution", use: "Wound cleaning & disinfecting", dosage: "Apply to cleaned wound area using cotton" },
+        { name: "Bandage Crepe Roll", use: "Wound dressing, support & compression", dosage: "Wrap affected area securely" },
+        { name: "Burnol Cream", use: "Minor burns treatment", dosage: "Apply thin layer on burn area as needed" },
+        { name: "ORS Powder", use: "Dehydration treatment & hydration replenishment", dosage: "1 sachet in 1L water, sip frequently" },
+        { name: "Calamine Lotion", use: "Itch, sunburn & rash relief", dosage: "Apply to affected skin as needed" },
+        { name: "Digital Thermometer", use: "Body temperature monitoring", dosage: "Use as needed for fever checks" },
+        { name: "Adhesive Bandages", use: "Minor cuts, scrapes & blisters protection", dosage: "Apply clean strip to wound after cleaning" },
+        { name: "Sterile Gauze Pads", use: "Wound dressing & protection", dosage: "Place over wound and secure with medical tape" },
+        { name: "Medical Micropore Tape", use: "Securing dressings, gauze & bandages", dosage: "Apply to hold gauze or bandage in place" },
+        { name: "Instant Cold Pack", use: "Reducing swelling & pain from strains", dosage: "Squeeze to activate and apply to affected area for 10-15 mins" },
+        { name: "Pain Relieving Spray", use: "Instant cooling relief from muscular pain & sprains", dosage: "Spray on affected area from a distance of 5cm" },
+        { name: "Tweezers & Scissor Set", use: "Splinter removal & cutting dressings", dosage: "Sanitize tools before and after use" },
+        { name: "Antiseptic Wipes", use: "Skin disinfection around wounds & hand prep", dosage: "Gently wipe skin around the injured area" },
+        { name: "Betadine Ointment", use: "Infection prevention in minor cuts & burns", dosage: "Apply a thin layer 1-3 times daily" },
+        { name: "Cotton Wool Roll", use: "Cleaning wounds & applying liquid antiseptics", dosage: "Use with antiseptic solution as needed" },
+        { name: "Hand Sanitizer Gel", use: "Hand hygiene before treating wounds", dosage: "Rub a coin-sized amount on hands until dry" }
       ]
     }
   ];
@@ -13153,21 +13163,55 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.use}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
                 </div>
-                <button
-                  className="mt-save-btn"
-                  onClick={() => handleSave(item.name)}
-                  disabled={isSaved(item.name)}
-                  style={{
-                    padding: "8px 18px", borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    background: isSaved(item.name)
-                      ? "var(--bg-green-light)" : `linear-gradient(135deg, ${activeCategory.color}, ${activeCategory.color}dd)`,
-                    color: isSaved(item.name) ? "var(--green)" : "#fff",
-                    opacity: isSaved(item.name) ? 0.7 : 1,
-                    boxShadow: isSaved(item.name) ? "none" : `0 4px 12px ${activeCategory.color}40`
-                  }}
-                >
-                  {isSaved(item.name) ? "✓ Saved" : "+ Save"}
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {selectedCategory === 'firstaid' && (
+                    <a
+                      href={`https://pharmeasy.in/search/all?name=${encodeURIComponent(item.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-buy-btn"
+                      style={{
+                        padding: "8px 18px",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 12,
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        color: "#fff",
+                        textDecoration: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        boxShadow: "0 4px 12px rgba(16,185,129,0.2)",
+                        transition: "all 0.2s ease"
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(16,185,129,0.35)";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(16,185,129,0.2)";
+                      }}
+                    >
+                      🛒 Buy Now
+                    </a>
+                  )}
+                  <button
+                    className="mt-save-btn"
+                    onClick={() => handleSave(item.name)}
+                    disabled={isSaved(item.name)}
+                    style={{
+                      padding: "8px 18px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                      background: isSaved(item.name)
+                        ? "var(--bg-green-light)" : `linear-gradient(135deg, ${activeCategory.color}, ${activeCategory.color}dd)`,
+                      color: isSaved(item.name) ? "var(--green)" : "#fff",
+                      opacity: isSaved(item.name) ? 0.7 : 1,
+                      boxShadow: isSaved(item.name) ? "none" : `0 4px 12px ${activeCategory.color}40`
+                    }}
+                  >
+                    {isSaved(item.name) ? "✓ Saved" : "+ Save"}
+                  </button>
+                </div>
               </div>
             ))}
             {filteredItems.length === 0 && (
