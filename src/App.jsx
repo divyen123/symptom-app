@@ -11989,8 +11989,7 @@ const foodIngredients = [
 ];
 
 // ─── MEDITOWN VIEW ─────────────────────────────────────────────────────────────
-function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {}, initialCategory, setInitialCategory }) {
-  const [selectedCategory, setSelectedCategory] = useState(null);
+function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {}, initialCategory, setInitialCategory, selectedCategory, setSelectedCategory }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
   const [isExploringFood, setIsExploringFood] = useState(false);
@@ -13953,6 +13952,7 @@ export default function App() {
   const [savedMedicines, setSavedMedicines] = useState([]);
   const [showMedList, setShowMedList] = useState(false);
   const [selectedMedId, setSelectedMedId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [medListFilter, setMedListFilter] = useState("All");
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
 
@@ -14981,6 +14981,8 @@ export default function App() {
           appearance={appearance}
           initialCategory={meditownInitialCategory}
           setInitialCategory={setMeditownInitialCategory}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
         />
       );
       case "settings": return (
