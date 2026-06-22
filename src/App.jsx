@@ -11991,10 +11991,15 @@ const foodIngredients = [
 // ─── MEDITOWN VIEW ─────────────────────────────────────────────────────────────
 function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {}, initialCategory, setInitialCategory, selectedCategory, setSelectedCategory }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [savedNotice, setSavedNotice] = useState("");
   const [isExploringFood, setIsExploringFood] = useState(false);
   const [activeFoodItem, setActiveFoodItem] = useState(null);
   const [currentFoodStep, setCurrentFoodStep] = useState(0);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, isExploringFood, selectedCategory]);
 
   // Custom Need form & recommendation states
   const [customNeedActive, setCustomNeedActive] = useState(false);
@@ -12293,6 +12298,7 @@ Respond ONLY with a valid JSON object matching this structure (no markdown forma
       if (selectedCategory) {
         setSelectedCategory(null);
         setSearchTerm("");
+        setCurrentPage(1);
         return true;
       }
       return false;
@@ -12302,6 +12308,7 @@ Respond ONLY with a valid JSON object matching this structure (no markdown forma
 
   const selectCategory = (id) => {
     setSelectedCategory(id);
+    setCurrentPage(1);
     pushHistoryEntry?.();
   };
 
@@ -12366,12 +12373,58 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       id: "pharmacy", name: "Pharmacy", icon: "💊", color: "#3b82f6",
       desc: "Essential medicines and supplements for everyday health needs.",
       items: [
+        { name: "ORSL Apple Drink", use: "Rehydration & electrolyte support", dosage: "Drink 1 pack during dehydration or weakness" },
+        { name: "Premium Condoms", use: "Contraception & safe intimacy", dosage: "Use once per sexual intercourse" },
+        { name: "Ketoconazole Anti-Hairfall Shampoo", use: "Dandruff & hairfall control", dosage: "Apply twice weekly to wet scalp, leave for 5 mins" },
+        { name: "Hydrocortisone Skin Rash Ointment", use: "Eczema, rashes & itch relief", dosage: "Apply thin layer to affected skin 2-3 times daily" },
         { name: "Paracetamol 500mg", use: "Fever & pain relief", dosage: "1-2 tablets every 4-6 hours" },
         { name: "Ibuprofen 400mg", use: "Anti-inflammatory & pain", dosage: "1 tablet every 6-8 hours with food" },
         { name: "Cetirizine 10mg", use: "Allergy relief", dosage: "1 tablet daily at bedtime" },
         { name: "Omeprazole 20mg", use: "Acid reflux & gastritis", dosage: "1 capsule before breakfast" },
         { name: "Vitamin D3 1000IU", use: "Bone health & immunity", dosage: "1 tablet daily with meal" },
-        { name: "Probiotics", use: "Gut health & digestion", dosage: "1 capsule daily on empty stomach" }
+        { name: "Probiotics", use: "Gut health & digestion", dosage: "1 capsule daily on empty stomach" },
+        { name: "Pantoprazole 40mg", use: "Acidity & GERD relief", dosage: "1 tablet 30 mins before breakfast" },
+        { name: "Cough Syrup (Dextromethorphan)", use: "Dry cough relief", dosage: "10ml every 6-8 hours" },
+        { name: "Antacid Liquid (Gelusil)", use: "Heartburn & gas relief", dosage: "2 teaspoons after meals" },
+        { name: "Cetirizine Syrup (5mg/5ml)", use: "Childhood allergy relief", dosage: "5ml once daily as directed by doctor" },
+        { name: "Loratadine 10mg", use: "Non-drowsy allergy relief", dosage: "1 tablet daily" },
+        { name: "Ranitidine 150mg", use: "Gastric acid reduction", dosage: "1 tablet twice daily" },
+        { name: "Diclofenac Sodium Gel 1%", use: "Muscle & joint pain relief", dosage: "Gently rub on affected area 3-4 times daily" },
+        { name: "Candid Mouth Paint", use: "Oral thrush/fungal infection", dosage: "Apply to affected areas in mouth 3-4 times daily" },
+        { name: "B-Complex with B12", use: "Nerve wellness & red blood cells", dosage: "1 capsule daily after a meal" },
+        { name: "Loperamide 2mg", use: "Acute diarrhea management", dosage: "1-2 capsules after first loose stool, max 8mg/day" },
+        { name: "Domperidone 10mg", use: "Nausea & vomiting control", dosage: "1 tablet 30 mins before food" },
+        { name: "Metformin 500mg", use: "Blood sugar regulation", dosage: "1 tablet daily with dinner or as prescribed" },
+        { name: "Candid Dusting Powder", use: "Fungal sweat rash prevention", dosage: "Dust over affected skin area after bathing" },
+        { name: "Volini Pain Relief Spray", use: "Instant back & muscle pain relief", dosage: "Spray 3-4 times daily from 5cm distance" },
+        { name: "Isabgol (Psyllium Husk)", use: "Constipation relief & digestion", dosage: "1-2 tablespoons with a glass of warm water before bed" },
+        { name: "Dolo 650mg", use: "Fever & intense body pain", dosage: "1 tablet up to 4 times daily" },
+        { name: "Multivitamin Tablets (Supradyn)", use: "Daily vitamin deficiency cover", dosage: "1 tablet daily after breakfast" },
+        { name: "Vicks Vaporub", use: "Nasal congestion & head cold", dosage: "Rub gently on chest, neck, and back" },
+        { name: "Moov Pain Relief Cream", use: "Backache & joint stiffness relief", dosage: "Apply thin layer to painful area and massage gently" },
+        { name: "Boroline Antiseptic Cream", use: "Dry skin, chapped lips & cuts", dosage: "Apply overnight on affected skin areas" },
+        { name: "Strepsils Lozenges", use: "Sore throat & voice hoarseness", dosage: "Dissolve 1 lozenge slowly in mouth every 2-3 hours" },
+        { name: "Digene Tablets", use: "Acidity & stomach bloating", dosage: "Chew 2-4 tablets after meals" },
+        { name: "Itrakonazole 100mg", use: "Systemic fungal infection relief", dosage: "1 capsule twice daily with meals" },
+        { name: "Saridon Tablets", use: "Quick headache & migraine relief", dosage: "1 tablet as needed, max 3 tablets daily" },
+        { name: "Otrivin Nasal Spray", use: "Nasal congestion & blocked nose", dosage: "1 spray in each nostril up to 3 times daily" },
+        { name: "O2 Tablets (Ofloxacin-Ornidazole)", use: "Bacterial stomach infection", dosage: "1 tablet twice daily or as prescribed" },
+        { name: "Aspirin 75mg", use: "Cardiovascular blood thinner", dosage: "1 tablet daily after lunch or as prescribed" },
+        { name: "Ciprofloxacin Eye/Ear Drops", use: "Bacterial eye/ear infection", dosage: "1-2 drops in affected eye/ear every 4 hours" },
+        { name: "Shatavari Tablets", use: "Female hormonal balance", dosage: "1 tablet twice daily after meals" },
+        { name: "Clotrimazole Vaginal Cream", use: "Yeast infection relief", dosage: "Apply once daily at bedtime using applicator" },
+        { name: "Pudin Hara Capsules", use: "Stomach ache & gas relief", dosage: "1-2 capsules with water after meals" },
+        { name: "Soframycin Skin Cream", use: "Bacterial cuts & burns prevention", dosage: "Apply to affected wound area 2-3 times daily" },
+        { name: "Metrogyl Gel 1%", use: "Inflammatory acne & rosacea", dosage: "Apply thin layer to clean face twice daily" },
+        { name: "Ring Guard Cream", use: "Ringworm & skin itch treatment", dosage: "Apply twice daily to clean, dry skin" },
+        { name: "Eno Fruit Salt", use: "Fast relief from acidity", dosage: "1 sachet in a glass of water, drink immediately" },
+        { name: "Revital H Capsules", use: "Physical stamina & energy booster", dosage: "1 capsule daily with breakfast" },
+        { name: "Dexona Cream", use: "Severe skin inflammation", dosage: "Apply thin layer sparingly as directed" },
+        { name: "Carnosine Eye Drops", use: "Dry eyes & eye fatigue relief", dosage: "1-2 drops in each eye 3 times daily" },
+        { name: "Zincovit Tablets", use: "Immunity & multimineral support", dosage: "1 tablet daily after lunch" },
+        { name: "Crocin Pain Relief", use: "Headache & mild migraine relief", dosage: "1 tablet every 4-6 hours as needed" },
+        { name: "Dulcolax 5mg", use: "Overnight constipation relief", dosage: "1-2 tablets at bedtime with water" },
+        { name: "Betadine Gargle 2%", use: "Throat infection & germ protection", dosage: "Gargle with 10ml diluted gargle for 30 seconds" }
       ]
     },
     {
@@ -12379,11 +12432,57 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       desc: "Natural plant-based remedies backed by traditional medicine systems.",
       items: [
         { name: "Ashwagandha Extract", use: "Stress & anxiety relief", dosage: "300mg twice daily" },
-        { name: "Turmeric Curcumin", use: "Anti-inflammatory", dosage: "500mg with black pepper daily" },
-        { name: "Ginger Root Extract", use: "Nausea & digestion", dosage: "250mg up to 3 times daily" },
-        { name: "Tulsi (Holy Basil)", use: "Immunity & respiratory health", dosage: "2-3 leaves daily or tea" },
-        { name: "Brahmi", use: "Memory & cognitive function", dosage: "300mg twice daily" },
-        { name: "Triphala", use: "Detox & digestive health", dosage: "1 tsp powder before bed" }
+        { name: "Turmeric Curcumin", use: "Anti-inflammatory & antioxidant", dosage: "500mg with black pepper daily" },
+        { name: "Ginger Root Extract", use: "Nausea & digestion wellness", dosage: "250mg up to 3 times daily" },
+        { name: "Tulsi (Holy Basil) Tea", use: "Immunity & respiratory health", dosage: "2-3 leaves daily or brewed as tea" },
+        { name: "Brahmi Extract", use: "Memory & cognitive function booster", dosage: "300mg twice daily" },
+        { name: "Triphala Powder", use: "Detox & digestive tract health", dosage: "1 tsp powder before bed with warm water" },
+        { name: "Neem Leaf Capsules", use: "Blood purifier & skin health", dosage: "1 capsule daily after a meal" },
+        { name: "Amla Fruit Powder (Vitamin C)", use: "Hair, skin, and immune health", dosage: "1 tsp daily with warm water" },
+        { name: "Giloy (Guduchi) Juice", use: "Immune booster & chronic fever relief", dosage: "15-20ml mixed in warm water in morning" },
+        { name: "Shatavari Powder", use: "Female reproductive health support", dosage: "1/2 tsp with warm milk twice daily" },
+        { name: "Arjuna Bark Extract", use: "Heart health & blood circulation", dosage: "250mg twice daily after food" },
+        { name: "Ginkgo Biloba Extract", use: "Brain circulation & focus support", dosage: "120mg daily in the morning" },
+        { name: "Milk Thistle Extract", use: "Liver detoxification & cell health", dosage: "150mg twice daily with meals" },
+        { name: "Aloe Vera Pure Gel", use: "Sunburn cooling & skin hydration", dosage: "Apply topically to clean skin as needed" },
+        { name: "Eucalyptus Essential Oil", use: "Sinus congestion & muscle ease", dosage: "Add 3-5 drops to hot water for steam inhalation" },
+        { name: "Chamomile Flowers", use: "Calming tea for sleep promotion", dosage: "Steep 1 tsp dried flowers in hot water for 10 mins before bed" },
+        { name: "Peppermint Oil Capsules", use: "IBS & abdominal bloating relief", dosage: "1 enteric-coated capsule 30 mins before meals" },
+        { name: "Licorice Root (Mulethi)", use: "Sore throat & acid reflux relief", dosage: "Chew a small root piece or brew as tea" },
+        { name: "Ginseng (Panax) Extract", use: "Physical endurance & vitality booster", dosage: "200mg daily after breakfast" },
+        { name: "Valerian Root Capsules", use: "Deep sleep support & insomnia helper", dosage: "450mg 1 hour before bedtime" },
+        { name: "Echinacea Extract", use: "Cold & flu severity reduction", dosage: "300mg 3 times daily at first sign of cold" },
+        { name: "Garlic Oil Capsules", use: "Cholesterol & immunity wellness", dosage: "1 softgel daily with food" },
+        { name: "Elderberry Extract", use: "Seasonal viral protection", dosage: "150mg daily or 1 tsp syrup" },
+        { name: "Cranberry Fruit Extract", use: "Urinary tract wellness support", dosage: "400mg daily with plenty of water" },
+        { name: "Saw Palmetto Extract", use: "Prostate health & hair thinning", dosage: "320mg daily with a meal" },
+        { name: "Fenugreek Seed Extract", use: "Blood sugar & lactation support", dosage: "500mg twice daily with meals" },
+        { name: "Bitter Melon (Karela)", use: "Natural insulin level support", dosage: "1 capsule or 30ml juice daily on empty stomach" },
+        { name: "Cinnamon Bark Capsules", use: "Insulin sensitivity & warmth", dosage: "250mg twice daily with food" },
+        { name: "Green Tea Extract", use: "Metabolism booster & antioxidants", dosage: "300mg daily after lunch" },
+        { name: "St. John's Wort", use: "Mild depression & mood balance", dosage: "300mg 3 times daily (consult physician)" },
+        { name: "Lavender Essential Oil", use: "Stress reduction & anxiety relief", dosage: "Diffuse 3-4 drops or apply to wrists" },
+        { name: "Rosehip Seed Oil", use: "Anti-aging & scar fade support", dosage: "Apply 2-3 drops to clean face before sleeping" },
+        { name: "Boswellia Serrata (Shallaki)", use: "Joint pain & arthritis relief", dosage: "350mg twice daily with meals" },
+        { name: "Gotu Kola (Centella)", use: "Skin healing & varicose vein support", dosage: "400mg daily with warm water" },
+        { name: "Moringa Leaf Powder", use: "Superfood nutrient replenishment", dosage: "1 tsp mixed in smoothies or water daily" },
+        { name: "Shilajit Purified Resin", use: "Stamina, energy & cellular longevity", dosage: "Pea-sized portion dissolved in warm milk daily" },
+        { name: "Guggul Extract", use: "Cholesterol control & weight balance", dosage: "500mg twice daily after meals" },
+        { name: "Safed Musli Extract", use: "Vitality, strength & immune support", dosage: "250mg twice daily with milk" },
+        { name: "Triphala Guggulu", use: "Joint detox & digestive cleanse", dosage: "1-2 tablets twice daily with water" },
+        { name: "Haritaki Fruit Powder", use: "Colon cleanse & respiratory health", dosage: "1/2 tsp before bed with water" },
+        { name: "Pippali (Long Pepper)", use: "Digestive fire & lung immunity", dosage: "1/2 tsp with honey twice daily" },
+        { name: "Kutki Rhizome Extract", use: "Liver health & bile stimulation", dosage: "150mg twice daily with warm water" },
+        { name: "Punarnava Extract", use: "Kidney detox & fluid retention relief", dosage: "250mg twice daily after food" },
+        { name: "Vasaka (Adhatoda) Syrup", use: "Expectorant for wet cough & asthma", dosage: "10ml twice daily after meals" },
+        { name: "Bhumyamalaki Extract", use: "Liver protection & hepatitis support", dosage: "250mg twice daily on empty stomach" },
+        { name: "Manjistha Root Powder", use: "Lymphatic drainage & skin glow", dosage: "1/2 tsp with warm water twice daily" },
+        { name: "Gokshura Extract", use: "Kidney health & muscle stamina", dosage: "250mg twice daily with meals" },
+        { name: "Kaunch Beej Powder", use: "Nervous system & dopamine balance", dosage: "1/2 tsp daily with milk" },
+        { name: "Bael Fruit Powder", use: "Irritable bowel & dysentery relief", dosage: "1 tsp mixed in water twice daily" },
+        { name: "Chyawanprash Organic", use: "Daily family immunity booster", dosage: "1 tablespoon daily on empty stomach" },
+        { name: "Yastimadhu Lozenges", use: "Throat soothing & gastric comfort", dosage: "Suck 1 lozenge as needed" },
+        { name: "Dashmula Arishta", use: "Post-illness physical recovery", dosage: "15ml with equal water twice daily after food" }
       ]
     },
     {
@@ -12405,29 +12504,101 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Apple Cider Vinegar (ACV)", use: "Healthy digestion & metabolic support", dosage: "2 ACV gummies before meals" },
         { name: "Melatonin 3mg", use: "Sleep quality & sleep cycle regulation", dosage: "1 tablet 30-60 mins before bedtime" },
         { name: "Probiotics Multistrain", use: "Gut microbiome balance & immunity support", dosage: "1 capsule daily on empty stomach" },
-        { name: "Electrolytes Complex", use: "Hydration replenishment & cramp prevention", dosage: "1 tablet dissolved in 300ml water" }
+        { name: "Electrolytes Complex", use: "Hydration replenishment & cramp prevention", dosage: "1 tablet dissolved in 300ml water" },
+        { name: "Vitamin B12 (Methylcobalamin)", use: "Nerve health & energy conversion", dosage: "1500mcg sublingual tablet daily" },
+        { name: "Vitamin A (Beta Carotene)", use: "Vision enhancement & skin renewal", dosage: "10000IU daily with dinner" },
+        { name: "Vitamin K2 (MK-7) 100mcg", use: "Calcium integration into bones", dosage: "1 capsule daily with vitamin D3" },
+        { name: "L-Theanine 200mg", use: "Relaxed focus & anxiety relief", dosage: "1 capsule as needed during stressful periods" },
+        { name: "L-Carnitine 500mg", use: "Fat oxidation & exercise stamina", dosage: "1 capsule 30 mins before workout" },
+        { name: "Creatine Monohydrate", use: "Muscle strength & explosive power", dosage: "5g daily mixed with water or fruit juice" },
+        { name: "Glucosamine + Chondroitin", use: "Joint cartilage cushion & rebuild", dosage: "1 tablet twice daily with food" },
+        { name: "MSM (Methylsulfonylmethane)", use: "Joint inflammation reduction", dosage: "1000mg daily with water" },
+        { name: "Astaxanthin 4mg", use: "Carotenoid skin & eye protection", dosage: "1 softgel daily with lunch" },
+        { name: "Beetroot Powder Organic", use: "Nitric oxide booster for vascular pump", dosage: "1 scoop in pre-workout shake" },
+        { name: "Spirulina Organic Tablets", use: "Alkalizing green superfood booster", dosage: "3 tablets daily with water" },
+        { name: "Chlorella Powder", use: "Heavy metal detox & chlorophyll", dosage: "1 tsp daily mixed in warm water" },
+        { name: "Maca Root Powder", use: "Adrenal support, libido & hormone balance", dosage: "1 tsp daily in warm milk" },
+        { name: "Cold Pressed Flaxseed Oil", use: "Plant-based ALA Omega-3", dosage: "1 softgel daily with food" },
+        { name: "Evening Primrose Oil", use: "PMS symptom ease & skin hydration", dosage: "1000mg daily with dinner" },
+        { name: "Alpha Lipoic Acid (ALA)", use: "Peripheral neuropathy & blood sugar", dosage: "300mg daily before meals" },
+        { name: "Chromium Picolinate", use: "Carb metabolism & sugar cravings", dosage: "200mcg daily with breakfast" },
+        { name: "Potassium Gluconate", use: "Vascular pressure & heart rhythm", dosage: "99mg daily with water" },
+        { name: "Kelp Iodine Supplement", use: "Thyroid hormone synthesis", dosage: "150mcg daily with breakfast" },
+        { name: "Selenium (Selenomethionine)", use: "Thyroid protection & cellular defense", dosage: "200mcg daily with food" },
+        { name: "Manganese Gluconate", use: "Bone cartilage matrix formation", dosage: "10mg daily with breakfast" },
+        { name: "Boron Glycinate", use: "Calcium metabolism & free testosterone", dosage: "3mg daily with dinner" },
+        { name: "Copper Sebacate", use: "Collagen cross-linking & red blood cells", dosage: "2mg daily with food" },
+        { name: "Folic Acid 800mcg", use: "Fetal development & cell division", dosage: "1 tablet daily or as prescribed" },
+        { name: "Vitamin B6 (Pyridoxine)", use: "Neurotransmitter synthesis", dosage: "50mg daily after breakfast" },
+        { name: "Thiamine (Vitamin B1)", use: "Carbohydrate conversion to energy", dosage: "100mg daily with food" },
+        { name: "Riboflavin (Vitamin B2)", use: "Cellular respiration & energy conversion", dosage: "50mg daily with breakfast" },
+        { name: "Niacinamide (Vitamin B3)", use: "Skin barrier repair & NADH cofactor", dosage: "500mg daily with meals" },
+        { name: "Pantothenic Acid (Vitamin B5)", use: "Adrenal hormone synthesis & energy", dosage: "250mg daily after lunch" },
+        { name: "Alpha GPC 300mg", use: "Acetylcholine neurotransmitter boost", dosage: "1 capsule daily in the morning" },
+        { name: "Bacopa Monnieri (Brahmi)", use: "Memory recall & neural connection support", dosage: "300mg daily with food" },
+        { name: "Resveratrol 250mg", use: "Sirtuin gene activator & cellular repair", dosage: "1 capsule daily with red wine or lunch" },
+        { name: "Milk Thistle (Silymarin)", use: "Liver cell regeneration & defense", dosage: "150mg twice daily" },
+        { name: "Glutathione Liposomal", use: "Master cellular antioxidant & detoxifier", dosage: "250mg daily on empty stomach" },
+        { name: "Supergreens Antioxidant Blend", use: "Digestive enzymes & phytonutrients", dosage: "1 scoop in 250ml cold water" },
+        { name: "Chia Seeds Powder", use: "Fiber, protein & mineral source", dosage: "1 tablespoon daily in yogurt" }
       ]
     },
     {
       id: "firstaid", name: "First Aid Station", icon: "🏥", color: "#ef4444",
       desc: "Essential first aid supplies and topical treatments.",
       items: [
-        { name: "Antiseptic Solution", use: "Wound cleaning & disinfecting", dosage: "Apply to cleaned wound area using cotton" },
-        { name: "Bandage Crepe Roll", use: "Wound dressing, support & compression", dosage: "Wrap affected area securely" },
-        { name: "Burnol Cream", use: "Minor burns treatment", dosage: "Apply thin layer on burn area as needed" },
-        { name: "ORS Powder", use: "Dehydration treatment & hydration replenishment", dosage: "1 sachet in 1L water, sip frequently" },
-        { name: "Calamine Lotion", use: "Itch, sunburn & rash relief", dosage: "Apply to affected skin as needed" },
-        { name: "Digital Thermometer", use: "Body temperature monitoring", dosage: "Use as needed for fever checks" },
-        { name: "Adhesive Bandages", use: "Minor cuts, scrapes & blisters protection", dosage: "Apply clean strip to wound after cleaning" },
-        { name: "Sterile Gauze Pads", use: "Wound dressing & protection", dosage: "Place over wound and secure with medical tape" },
+        { name: "ORS Powder Sachet", use: "Dehydration treatment & hydration replenishment", dosage: "1 sachet in 1L water, sip frequently" },
+        { name: "Antiseptic Solution (Dettol)", use: "Wound cleaning & disinfecting", dosage: "Dilute with clean water and apply to affected area" },
+        { name: "Bandage Crepe Roll", use: "Wound dressing, support & compression", dosage: "Wrap affected area securely with light tension" },
+        { name: "Burnol Ointment", use: "Minor burns & scalds treatment", dosage: "Apply thin layer on burn area as needed" },
+        { name: "Calamine Lotion", use: "Itch, sunburn & allergic rash relief", dosage: "Apply to affected skin area as needed" },
+        { name: "Digital Thermometer", use: "Body temperature monitoring", dosage: "Use orally or axillary for fever checks" },
+        { name: "Adhesive Bandages (Band-Aid)", use: "Minor cuts, scrapes & blisters protection", dosage: "Apply clean strip to wound after cleaning" },
+        { name: "Sterile Gauze Pads", use: "Wound dressing & fluid absorption", dosage: "Place over wound and secure with medical tape" },
         { name: "Medical Micropore Tape", use: "Securing dressings, gauze & bandages", dosage: "Apply to hold gauze or bandage in place" },
         { name: "Instant Cold Pack", use: "Reducing swelling & pain from strains", dosage: "Squeeze to activate and apply to affected area for 10-15 mins" },
-        { name: "Pain Relieving Spray", use: "Instant cooling relief from muscular pain & sprains", dosage: "Spray on affected area from a distance of 5cm" },
+        { name: "Pain Relieving Spray (Moov)", use: "Instant cooling relief from muscular pain & sprains", dosage: "Spray on affected area from a distance of 5cm" },
         { name: "Tweezers & Scissor Set", use: "Splinter removal & cutting dressings", dosage: "Sanitize tools before and after use" },
         { name: "Antiseptic Wipes", use: "Skin disinfection around wounds & hand prep", dosage: "Gently wipe skin around the injured area" },
         { name: "Betadine Ointment", use: "Infection prevention in minor cuts & burns", dosage: "Apply a thin layer 1-3 times daily" },
         { name: "Cotton Wool Roll", use: "Cleaning wounds & applying liquid antiseptics", dosage: "Use with antiseptic solution as needed" },
-        { name: "Hand Sanitizer Gel", use: "Hand hygiene before treating wounds", dosage: "Rub a coin-sized amount on hands until dry" }
+        { name: "Hand Sanitizer Gel", use: "Hand hygiene before treating wounds", dosage: "Rub a coin-sized amount on hands until dry" },
+        { name: "Ice Bag for Hot/Cold Therapy", use: "Swell reducing & thermal relief", dosage: "Fill with ice or warm water and apply for 15 mins" },
+        { name: "Hot Water Bag Rubber", use: "Muscle stiffness & cramp relief", dosage: "Fill with hot water, wrap in cloth, and apply" },
+        { name: "Sterile Eye Patch", use: "Corneal scrape protection & eye rest", dosage: "Tape securely over closed injured eye" },
+        { name: "Finger Splint Metal", use: "Broken or jammed finger immobilization", dosage: "Place under finger and secure with micropore tape" },
+        { name: "Safety Pins Set", use: "Securing slings, wraps & triangular bandages", dosage: "Use to pin dressings or wraps in place" },
+        { name: "CPR Face Shield", use: "Barrier protection during mouth-to-mouth", dosage: "Place shield over patient's face before breathing" },
+        { name: "Gauze Dressing Roll (3 inch)", use: "Securing sterile pads on large wounds", dosage: "Wrap around limb to keep gauze pads clean and in place" },
+        { name: "Cotton Swabs (Q-tips)", use: "Precise ointment application & cleaning", dosage: "Apply ointments gently to specific areas" },
+        { name: "Hydrogen Peroxide 3%", use: "Wound bubbling debridement & cleaning", dosage: "Apply dilute solution to wound (foams on contact)" },
+        { name: "Rubbing Alcohol (Isopropyl)", use: "Sterilizing tools & skin preparation", dosage: "Wipe tools or intact skin before procedures" },
+        { name: "Hydrocortisone Cream 1%", use: "Severe allergy itching & insect bites", dosage: "Apply thin layer to itchy area twice daily" },
+        { name: "Soothing Aloe Vera Gel", use: "Sunburn & heat exposure recovery", dosage: "Apply thick layer over red, hot skin" },
+        { name: "Anti-itch Antihistamine Cream", use: "Poison ivy & severe contact dermatitis", dosage: "Apply to itchy skin up to 3 times daily" },
+        { name: "Elastic Compression Wrap", use: "Joint support & swelling prevention", dosage: "Wrap around sprained ankle or wrist" },
+        { name: "Thermometer Plastic Covers", use: "Preventing cross-infection during temperature checks", dosage: "Discard cover after each use" },
+        { name: "Saline Nasal Spray", use: "Nasal passage moisturizing & cleaning", dosage: "1-2 sprays in each nostril as needed" },
+        { name: "Sterile Eye Wash Solution", use: "Flushing debris or chemicals from eyes", dosage: "Flush eye continuously for 10-15 mins" },
+        { name: "Petroleum Jelly (Vaseline)", use: "Chafing prevention & barrier protection", dosage: "Apply to dry skin or friction points" },
+        { name: "Burn Dressing Gel Sheet", use: "Immediate burn cooling & skin shield", dosage: "Apply sterile sheet directly to burn wound" },
+        { name: "Non-stick Pad Dressings", use: "Oozing wound dressing without sticking", dosage: "Place directly over raw wound and tape down" },
+        { name: "Triangular Bandage Sling", use: "Arm/shoulder immobilization & support", dosage: "Fold into sling to support injured arm" },
+        { name: "Disposable Nitrile Gloves", use: "Personal protection during wound care", dosage: "Wear before touching body fluids or open wounds" },
+        { name: "Liquid Bandage Spray", use: "Sealing small cuts & hangnails", dosage: "Spray over clean cut to form water-resistant film" },
+        { name: "Zinc Oxide Cream", use: "Diaper rash & severe chafing protection", dosage: "Apply thick layer to affected areas" },
+        { name: "Insect Bite Relief Wipes", use: "Neutralizing venom itch from mosquitoes/bees", dosage: "Wipe immediately over insect bite site" },
+        { name: "Ammonia Inhalant Ampoules", use: "Reviving someone from fainting spells", dosage: "Crush ampoule and hold near nose briefly" },
+        { name: "Hemostatic Gauze Pad", use: "Stopping heavy arterial or venous bleeding", dosage: "Pack tightly into bleeding wound and apply pressure" },
+        { name: "Combat Application Tourniquet", use: "Stanching critical limb hemorrhage", dosage: "Apply high and tight on limb, twist windlass" },
+        { name: "Emergency Mylar Blanket", use: "Preventing hypothermia & shock", dosage: "Wrap around patient to retain body heat" },
+        { name: "Trauma Shears Heavy Duty", use: "Cutting clothing or thick bandages quickly", dosage: "Use to expose injury site safely" },
+        { name: "Suture Removal Kit", use: "Safe removal of medical stitches", dosage: "Use under professional advice only" },
+        { name: "Splint Roll (SAM Splint)", use: "Rigid immobilization of fractured limbs", dosage: "Mold to fit limb shape and wrap with bandage" },
+        { name: "Antiseptic Spray (No-Sting)", use: "Sting-free skin disinfection", dosage: "Spray directly onto minor scrape from 10cm" },
+        { name: "Benzalkonium Wipes", use: "Alcohol-free skin preparation", dosage: "Wipe skin area before drawing blood or checking vitals" },
+        { name: "Sting Relief Pads", use: "Local anesthetic for wasp & bee stings", dosage: "Press pad against sting site for 1 minute" },
+        { name: "Sterile Saline Wipes", use: "Gentle mechanical wound cleansing", dosage: "Wipe raw skin from center outwards to remove dirt" }
       ]
     }
   ];
@@ -12463,6 +12634,15 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         item.nutrients.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
+
+  const itemsPerPage = 10;
+  const totalPages = isExploringFood
+    ? (Math.ceil(filteredFoodItems.length / itemsPerPage) || 1)
+    : (Math.ceil(filteredItems.length / itemsPerPage) || 1);
+
+  const paginatedItems = isExploringFood
+    ? filteredFoodItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const renderCustomNeedView = () => {
     if (generating) {
@@ -13387,7 +13567,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {isExploringFood ? (
-              filteredFoodItems.map((item, i) => (
+              paginatedItems.map((item, i) => (
                 <div
                   key={i} className="mt-item-card"
                   onClick={() => {
@@ -13430,7 +13610,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 </div>
               ))
             ) : (
-              filteredItems.map((item, i) => (
+              paginatedItems.map((item, i) => (
                 <div
                   key={i} className="mt-item-card"
                   style={{
@@ -13507,6 +13687,50 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   </div>
                 </div>
               ))
+            )}
+            {totalPages > 1 && (
+              <div style={{
+                display: "flex", justifyContent: "center", alignItems: "center", gap: 16,
+                marginTop: 16, padding: "10px 0"
+              }}>
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.max(prev - 1, 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === 1}
+                  className="mt-pag-btn"
+                  style={{
+                    padding: "8px 16px", borderRadius: 8, border: "1px solid var(--border)",
+                    background: "var(--surface)", color: "var(--navy)", fontWeight: 700,
+                    fontSize: 12, cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    opacity: currentPage === 1 ? 0.5 : 1, transition: "all 0.2s ease",
+                    fontFamily: "var(--font)"
+                  }}
+                >
+                  ← Prev
+                </button>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => {
+                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  disabled={currentPage === totalPages}
+                  className="mt-pag-btn"
+                  style={{
+                    padding: "8px 16px", borderRadius: 8, border: "1px solid var(--border)",
+                    background: "var(--surface)", color: "var(--navy)", fontWeight: 700,
+                    fontSize: 12, cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                    opacity: currentPage === totalPages ? 0.5 : 1, transition: "all 0.2s ease",
+                    fontFamily: "var(--font)"
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
             )}
             {((!isExploringFood && filteredItems.length === 0) || (isExploringFood && filteredFoodItems.length === 0)) && (
               <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>
