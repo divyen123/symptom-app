@@ -12062,6 +12062,51 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [isExploringFood, setIsExploringFood] = useState(false);
   const [activeFoodItem, setActiveFoodItem] = useState(null);
   const [currentFoodStep, setCurrentFoodStep] = useState(0);
+  const [particles, setParticles] = useState([]);
+
+  const triggerSplash = () => {
+    if (!activeFoodItem) return;
+    const dishName = activeFoodItem.name.toLowerCase();
+    let pool = ["🥬", "🥕", "🥦", "🧄", "🧅", "🍋", "🥑", "🍅", "🍄", "🌶️", "🫑"];
+    if (dishName.includes("salmon")) {
+      pool = ["🐟", "🧄", "🌿", "🥦", "🍋", "🥬", "🍚"];
+    } else if (dishName.includes("salad") || dishName.includes("spinach")) {
+      pool = ["🥬", "🍊", "🍋", "🥗", "🧅", "🥑"];
+    } else if (dishName.includes("toast") || dishName.includes("avocado")) {
+      pool = ["🥑", "🥚", "🍞", "🧂", "🌿", "🍅"];
+    } else if (dishName.includes("yogurt") || dishName.includes("parfait")) {
+      pool = ["🫐", "🥛", "🍨", "🍓", "🍯", "🥣"];
+    }
+
+    const newParticles = Array.from({ length: 14 }).map((_, idx) => {
+      const angle = (idx / 14) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+      const distance = 80 + Math.random() * 120;
+      const targetX = Math.cos(angle) * distance;
+      const targetY = Math.sin(angle) * distance - (30 + Math.random() * 40);
+      const size = 18 + Math.random() * 14;
+      const duration = 0.6 + Math.random() * 0.5;
+
+      return {
+        id: Date.now() + "-" + idx + "-" + Math.random(),
+        emoji: pool[Math.floor(Math.random() * pool.length)],
+        targetX,
+        targetY,
+        size,
+        duration,
+        rotation: Math.random() * 360 - 180
+      };
+    });
+    setParticles(newParticles);
+  };
+
+  useEffect(() => {
+    if (activeFoodItem) {
+      triggerSplash();
+    } else {
+      setParticles([]);
+      setCurrentFoodStep(0);
+    }
+  }, [activeFoodItem, currentFoodStep]);
 
   const [pharmacySubcat, setPharmacySubcat] = useState("all");
   const [herbsSubcat, setHerbsSubcat] = useState("all");
@@ -14279,126 +14324,202 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       )}
 
       {/* Step-by-Step Food Ingredient Modal */}
-      {activeFoodItem && createPortal(
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(10,25,47,0.85)", backdropFilter: "blur(8px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 10001, padding: 20
-        }}>
-          <div style={{
-            background: "var(--surface)", border: "1px solid var(--border)",
-            borderRadius: 20, width: "100%", maxWidth: 500, padding: 30,
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5)", position: "relative",
-            animation: "mtCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-          }}>
-            {/* Close / Wrong Icon */}
-            <button
-              onClick={() => setActiveFoodItem(null)}
+      <AnimatePresence>
+        {activeFoodItem && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(10,25,47,0.85)", backdropFilter: "blur(8px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 10001, padding: 20
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 250 }}
               style={{
-                position: "absolute", top: 20, right: 20,
-                background: "none", border: "none", color: "var(--text-muted)",
-                fontSize: 22, cursor: "pointer", display: "flex",
-                alignItems: "center", justifyContent: "center", width: 32, height: 32,
-                borderRadius: "50%", transition: "all 0.2s"
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "var(--surface-2)";
-                e.currentTarget.style.color = "var(--navy)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "none";
-                e.currentTarget.style.color = "var(--text-muted)";
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: 20, width: "100%", maxWidth: 500, padding: 30,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.3), 0 0 30px rgba(16,185,129,0.05)",
+                position: "relative",
+                overflow: "hidden"
               }}
             >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <span style={{ fontSize: 32 }}>{activeFoodItem.image}</span>
-              <div style={{ textAlign: "left" }}>
-                <h4 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)" }}>{activeFoodItem.name}</h4>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-muted)" }}>Step-by-Step Cooking Guide</p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div style={{ height: 6, background: "var(--border)", borderRadius: 3, marginBottom: 24, overflow: "hidden" }}>
+              {/* Soft decorative background glows */}
               <div style={{
-                height: "100%", background: "linear-gradient(90deg, #10b981, #059669)",
-                width: `${((currentFoodStep + 1) / activeFoodItem.steps.length) * 100}%`,
-                transition: "width 0.3s ease"
+                position: "absolute", top: "-20%", right: "-20%", width: "50%", height: "50%",
+                background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0) 70%)",
+                borderRadius: "50%", pointerEvents: "none"
               }} />
-            </div>
+              <div style={{
+                position: "absolute", bottom: "-20%", left: "-20%", width: "50%", height: "50%",
+                background: "radial-gradient(circle, rgba(5,150,105,0.06) 0%, rgba(5,150,105,0) 70%)",
+                borderRadius: "50%", pointerEvents: "none"
+              }} />
 
-            {/* Step Content */}
-            <div style={{ minHeight: 140, textAlign: "left", marginBottom: 30 }}>
-              <span style={{
-                display: "inline-block", padding: "4px 10px", borderRadius: 20,
-                background: "rgba(16,185,129,0.1)", color: "#10b981",
-                fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
-                marginBottom: 12
-              }}>
-                Step {currentFoodStep + 1} of {activeFoodItem.steps.length}
-              </span>
-              <h5 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
-                {activeFoodItem.steps[currentFoodStep].title}
-              </h5>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>
-                {activeFoodItem.steps[currentFoodStep].desc}
-              </p>
-            </div>
-
-            {/* Navigation Buttons */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              {/* Close / Wrong Icon */}
               <button
-                disabled={currentFoodStep === 0}
-                onClick={() => setCurrentFoodStep(prev => prev - 1)}
-                className="mt-buy-btn"
+                onClick={() => setActiveFoodItem(null)}
                 style={{
-                  flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
-                  background: currentFoodStep === 0 ? "var(--border)" : "var(--surface)",
-                  color: currentFoodStep === 0 ? "var(--text-faint)" : "var(--navy)",
-                  border: "1px solid var(--border)",
-                  cursor: currentFoodStep === 0 ? "not-allowed" : "pointer",
-                  opacity: currentFoodStep === 0 ? 0.5 : 1
+                  position: "absolute", top: 20, right: 20,
+                  background: "none", border: "none", color: "var(--text-muted)",
+                  fontSize: 22, cursor: "pointer", display: "flex",
+                  alignItems: "center", justifyContent: "center", width: 32, height: 32,
+                  borderRadius: "50%", transition: "all 0.2s", zIndex: 10
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "var(--surface-2)";
+                  e.currentTarget.style.color = "var(--navy)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "none";
+                  e.currentTarget.style.color = "var(--text-muted)";
                 }}
               >
-                Previous
+                ✕
               </button>
-              {currentFoodStep < activeFoodItem.steps.length - 1 ? (
+
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, position: "relative" }}>
+                <div style={{ 
+                  position: "relative", width: 56, height: 56, display: "flex", 
+                  alignItems: "center", justifyContent: "center", background: "var(--surface-2)", 
+                  borderRadius: "50%", border: "1px solid var(--border)", boxShadow: "0 4px 10px rgba(0,0,0,0.15)"
+                }}>
+                  <span style={{ fontSize: 32, zIndex: 2 }}>{activeFoodItem.image}</span>
+                  
+                  {/* Splashing Particles container */}
+                  <div style={{ position: "absolute", top: "50%", left: "50%", pointerEvents: "none", zIndex: 1 }}>
+                    {particles.map(p => (
+                      <motion.span
+                        key={p.id}
+                        initial={{ x: 0, y: 0, scale: 0, opacity: 1, rotate: 0 }}
+                        animate={{
+                          x: p.targetX,
+                          y: p.targetY,
+                          scale: [0, 1.3, 1.1, 0.9, 0],
+                          opacity: [1, 1, 1, 0.7, 0],
+                          rotate: p.rotation
+                        }}
+                        transition={{
+                          duration: p.duration,
+                          ease: "easeOut"
+                        }}
+                        style={{
+                          position: "absolute",
+                          fontSize: p.size,
+                          width: p.size,
+                          height: p.size,
+                          marginLeft: -p.size / 2,
+                          marginTop: -p.size / 2,
+                          lineHeight: 1,
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {p.emoji}
+                      </motion.span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <h4 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)" }}>{activeFoodItem.name}</h4>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-muted)" }}>Step-by-Step Cooking Guide</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div style={{ height: 6, background: "var(--border)", borderRadius: 3, marginBottom: 24, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", background: "linear-gradient(90deg, #10b981, #059669)",
+                  width: `${((currentFoodStep + 1) / activeFoodItem.steps.length) * 100}%`,
+                  transition: "width 0.3s ease"
+                }} />
+              </div>
+
+              {/* Step Content with crossfade slide transition */}
+              <div style={{ minHeight: 140, textAlign: "left", marginBottom: 30, position: "relative" }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentFoodStep}
+                    initial={{ x: 25, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -25, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: "easeInOut" }}
+                  >
+                    <span style={{
+                      display: "inline-block", padding: "4px 10px", borderRadius: 20,
+                      background: "rgba(16,185,129,0.1)", color: "#10b981",
+                      fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
+                      marginBottom: 12
+                    }}>
+                      Step {currentFoodStep + 1} of {activeFoodItem.steps.length}
+                    </span>
+                    <h5 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
+                      {activeFoodItem.steps[currentFoodStep].title}
+                    </h5>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>
+                      {activeFoodItem.steps[currentFoodStep].desc}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                 <button
-                  onClick={() => setCurrentFoodStep(prev => prev + 1)}
+                  disabled={currentFoodStep === 0}
+                  onClick={() => setCurrentFoodStep(prev => prev - 1)}
                   className="mt-buy-btn"
                   style={{
                     flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    background: "linear-gradient(135deg, #10b981, #059669)",
-                    color: "#fff", border: "none", cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(16,185,129,0.15)"
+                    background: currentFoodStep === 0 ? "var(--border)" : "var(--surface)",
+                    color: currentFoodStep === 0 ? "var(--text-faint)" : "var(--navy)",
+                    border: "1px solid var(--border)",
+                    cursor: currentFoodStep === 0 ? "not-allowed" : "pointer",
+                    opacity: currentFoodStep === 0 ? 0.5 : 1
                   }}
                 >
-                  Next
+                  Previous
                 </button>
-              ) : (
-                <button
-                  onClick={() => setActiveFoodItem(null)}
-                  className="mt-buy-btn"
-                  style={{
-                    flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    background: "linear-gradient(135deg, #059669, #047857)",
-                    color: "#fff", border: "none", cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(5,150,105,0.15)"
-                  }}
-                >
-                  Done
-                </button>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+                {currentFoodStep < activeFoodItem.steps.length - 1 ? (
+                  <button
+                    onClick={() => setCurrentFoodStep(prev => prev + 1)}
+                    className="mt-buy-btn"
+                    style={{
+                      flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                      color: "#fff", border: "none", cursor: "pointer",
+                      boxShadow: "0 2px 6px rgba(16,185,129,0.15)"
+                    }}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setActiveFoodItem(null)}
+                    className="mt-buy-btn"
+                    style={{
+                      flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                      background: "linear-gradient(135deg, #059669, #047857)",
+                      color: "#fff", border: "none", cursor: "pointer",
+                      boxShadow: "0 2px 6px rgba(5,150,105,0.15)"
+                    }}
+                  >
+                    Done
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>,
+          document.body
+        )}
+      </AnimatePresence>
     </div>
   );
 }
