@@ -13953,7 +13953,18 @@ export default function App() {
   const [savedMedicines, setSavedMedicines] = useState([]);
   const [showMedList, setShowMedList] = useState(false);
   const [selectedMedId, setSelectedMedId] = useState(null);
+  const [medListFilter, setMedListFilter] = useState("All");
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (showMedList) {
+      if (selectedCategory === "pharmacy") setMedListFilter("Pharmacy");
+      else if (selectedCategory === "herbs") setMedListFilter("Herbal Remedies");
+      else if (selectedCategory === "nutrition") setMedListFilter("Nutrition Center");
+      else if (selectedCategory === "firstaid") setMedListFilter("First Aid Station");
+      else setMedListFilter("All");
+    }
+  }, [showMedList, selectedCategory]);
   const [savedReminders, setSavedReminders] = useState([]);
   const [showReminderList, setShowReminderList] = useState(false);
   const [showReminderDeleteConfirm, setShowReminderDeleteConfirm] = useState(false);
@@ -15388,20 +15399,64 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Category Filter Tabs */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "8px 14px",
+                  background: "var(--surface-3, var(--surface-2))",
+                  borderBottom: "1px solid var(--border)",
+                  gap: 6,
+                  overflowX: "auto",
+                  scrollbarWidth: "none"
+                }}>
+                  {["All", "Pharmacy", "Herbal Remedies", "Nutrition Center", "First Aid Station"].map(cat => {
+                    const isSelected = medListFilter === cat;
+                    let label = cat === "All" ? "✨ All" : cat;
+                    if (cat === "Pharmacy") label = "💊 Pharmacy";
+                    if (cat === "Herbal Remedies") label = "🌿 Herbal";
+                    if (cat === "Nutrition Center") label = "🥗 Nutrition";
+                    if (cat === "First Aid Station") label = "🏥 First Aid";
+                    
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setMedListFilter(cat)}
+                        style={{
+                          background: isSelected ? "var(--accent, #3b82f6)" : "var(--surface)",
+                          border: "1px solid var(--border)",
+                          borderRadius: 20,
+                          color: isSelected ? "#fff" : "var(--text)",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: "4px 10px",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {/* Category Selector on Top */}
                 {savedMedicines.length > 0 && activeMed && (
                   <div style={{
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: "column",
                     padding: "10px 14px",
                     background: "var(--surface-2)",
                     borderBottom: "1.5px solid var(--border)",
-                    gap: 8
+                    gap: 6
                   }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      Change Category for <strong style={{ color: "var(--text)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={activeMed.name}>{activeMed.name}</strong>:
-                    </span>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span>Change Category for:</span>
+                      <strong style={{ color: "var(--accent, #3b82f6)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={activeMed.name}>
+                        {activeMed.name}
+                      </strong>
+                    </div>
                     <select
                       value={activeMed.category || "Pharmacy"}
                       onChange={(e) => handleChangeMedicineCategory(activeMedId, e.target.value)}
@@ -15410,19 +15465,19 @@ export default function App() {
                         border: "1px solid var(--border)",
                         borderRadius: "var(--radius-sm)",
                         color: "var(--text)",
-                        fontSize: 11,
-                        padding: "3px 6px",
+                        fontSize: 12,
+                        padding: "6px 10px",
                         cursor: "pointer",
                         fontFamily: "var(--font)",
                         outline: "none",
-                        flex: 1,
-                        maxWidth: 140
+                        width: "100%",
+                        boxSizing: "border-box"
                       }}
                     >
                       <option value="Pharmacy">💊 Pharmacy</option>
-                      <option value="Herbal Remedies">🌿 Herbal</option>
-                      <option value="Nutrition Center">🥗 Nutrition</option>
-                      <option value="First Aid Station">🏥 First Aid</option>
+                      <option value="Herbal Remedies">🌿 Herbal Remedies</option>
+                      <option value="Nutrition Center">🥗 Nutrition Center</option>
+                      <option value="First Aid Station">🏥 First Aid Station</option>
                     </select>
                   </div>
                 )}
@@ -15434,8 +15489,23 @@ export default function App() {
                       <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>💊</span>
                       No saved medicines yet. Add one from the Vitals Log or Search!
                     </div>
-                  ) : (
-                    Object.keys(categorized).map(catName => {
+                  ) : (() => {
+                    const filteredCount = Object.keys(categorized).reduce((acc, catName) => {
+                      if (medListFilter !== "All" && catName !== medListFilter) return acc;
+                      return acc + (categorized[catName] ? categorized[catName].length : 0);
+                    }, 0);
+
+                    if (filteredCount === 0) {
+                      return (
+                        <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-faint)", fontSize: 12.5 }}>
+                          <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>🔍</span>
+                          No medicines saved in this category yet.
+                        </div>
+                      );
+                    }
+
+                    return Object.keys(categorized).map(catName => {
+                      if (medListFilter !== "All" && catName !== medListFilter) return null;
                       const list = categorized[catName];
                       if (list.length === 0) return null;
                       const meta = categoryMeta[catName];
@@ -15536,8 +15606,8 @@ export default function App() {
                           </div>
                         </div>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </div>
 
                 {/* Footer */}
