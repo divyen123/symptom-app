@@ -12831,6 +12831,9 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         .mt-save-btn { transition: all 0.2s ease; border: none; cursor: pointer; font-family: var(--font); }
         .mt-save-btn:hover { transform: scale(1.05); }
         .mt-save-btn:active { transform: scale(0.95); }
+        .mt-buy-btn { transition: all 0.2s ease; border: none; cursor: pointer; font-family: var(--font); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .mt-buy-btn:hover { transform: scale(1.05); }
+        .mt-buy-btn:active { transform: scale(0.95); }
       `}</style>
 
       {/* Top-Right Go to Home Button */}
@@ -13175,22 +13178,11 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                         borderRadius: 10,
                         fontWeight: 700,
                         fontSize: 12,
+                        lineHeight: 1.2,
                         background: "linear-gradient(135deg, #10b981, #059669)",
                         color: "#fff",
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        boxShadow: "0 4px 12px rgba(16,185,129,0.2)",
-                        transition: "all 0.2s ease"
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.transform = "translateY(-1px)";
-                        e.currentTarget.style.boxShadow = "0 6px 16px rgba(16,185,129,0.35)";
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.transform = "none";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(16,185,129,0.2)";
+                        boxShadow: "0 2px 6px rgba(16,185,129,0.15)",
+                        gap: 6
                       }}
                     >
                       🛒 Buy Now
