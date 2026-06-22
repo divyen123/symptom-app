@@ -12065,6 +12065,7 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [savedPlansLoading, setSavedPlansLoading] = useState(false);
   const [viewingSavedPlan, setViewingSavedPlan] = useState(null);
   const [showPlansClearConfirm, setShowPlansClearConfirm] = useState(false);
+  const [savedPlansPage, setSavedPlansPage] = useState(1);
 
   const fetchSavedPlans = async () => {
     setSavedPlansLoading(true);
@@ -12106,6 +12107,11 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
     try {
       await apiDeletePlan(id);
       fetchSavedPlans();
+      const nextTotal = savedPlans.length - 1;
+      const totalPages = Math.ceil(nextTotal / 10) || 1;
+      if (savedPlansPage > totalPages) {
+        setSavedPlansPage(totalPages);
+      }
     } catch (err) {
       console.error("Failed to delete plan:", err);
     }
@@ -12116,6 +12122,7 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
     try {
       await apiDeleteAllPlans();
       fetchSavedPlans();
+      setSavedPlansPage(1);
     } catch (err) {
       console.error("Failed to clear plans:", err);
     }
@@ -13194,6 +13201,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                       onClick={() => {
                         apiDeleteAllPlans().then(() => {
                           fetchSavedPlans();
+                          setSavedPlansPage(1);
                           setShowPlansClearConfirm(false);
                         }).catch(err => {
                           console.error("Failed to clear plans:", err);
@@ -13235,49 +13243,89 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               )}
             </div>
             {savedPlans && savedPlans.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {savedPlans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    onClick={() => handleViewSavedPlan(plan)}
-                    style={{
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
-                      padding: "12px 16px", borderRadius: 10, background: "var(--surface-2)",
-                      border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s ease"
-                    }}
-                    className="mt-item-card"
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 16 }}>💾</span>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>
-                        {plan.plan_name}
-                      </span>
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {savedPlans.slice((savedPlansPage - 1) * 10, savedPlansPage * 10).map((plan) => (
+                    <div
+                      key={plan.id}
+                      onClick={() => handleViewSavedPlan(plan)}
+                      style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "12px 16px", borderRadius: 10, background: "var(--surface-2)",
+                        border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s ease"
+                      }}
+                      className="mt-item-card"
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 16 }}>💾</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>
+                          {plan.plan_name}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); exportPlanToPDF(plan); }}
+                          style={{
+                            padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)",
+                            background: "var(--surface)", color: "var(--navy)", fontSize: 11.5,
+                            fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                          }}
+                        >
+                          📄 Export PDF
+                        </button>
+                        <button
+                          onClick={(e) => handleDeletePlanItem(plan.id, e)}
+                          style={{
+                            padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239, 68, 68, 0.2)",
+                            background: "rgba(239, 68, 68, 0.05)", color: "#ef4444", fontSize: 11.5,
+                            fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
+                          }}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); exportPlanToPDF(plan); }}
-                        style={{
-                          padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)",
-                          background: "var(--surface)", color: "var(--navy)", fontSize: 11.5,
-                          fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
-                        }}
-                      >
-                        📄 Export PDF
-                      </button>
-                      <button
-                        onClick={(e) => handleDeletePlanItem(plan.id, e)}
-                        style={{
-                          padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(239, 68, 68, 0.2)",
-                          background: "rgba(239, 68, 68, 0.05)", color: "#ef4444", fontSize: 11.5,
-                          fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {savedPlans.length > 10 && (
+                  <div style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "12px 4px 4px", borderTop: "1px solid var(--border)", marginTop: 8
+                  }}>
+                    <button
+                      disabled={savedPlansPage === 1}
+                      onClick={() => setSavedPlansPage(prev => Math.max(1, prev - 1))}
+                      style={{
+                        background: "var(--surface-2)", border: "1px solid var(--border)",
+                        borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700,
+                        color: savedPlansPage === 1 ? "var(--text-faint)" : "var(--navy)",
+                        cursor: savedPlansPage === 1 ? "not-allowed" : "pointer",
+                        opacity: savedPlansPage === 1 ? 0.5 : 1, transition: "all 0.2s ease"
+                      }}
+                    >
+                      ← Previous
+                    </button>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>
+                      Page {savedPlansPage} of {Math.ceil(savedPlans.length / 10)}
+                    </span>
+                    <button
+                      disabled={savedPlansPage >= Math.ceil(savedPlans.length / 10)}
+                      onClick={() => setSavedPlansPage(prev => Math.min(Math.ceil(savedPlans.length / 10), prev + 1))}
+                      style={{
+                        background: "var(--surface-2)", border: "1px solid var(--border)",
+                        borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700,
+                        color: savedPlansPage >= Math.ceil(savedPlans.length / 10) ? "var(--text-faint)" : "var(--navy)",
+                        cursor: savedPlansPage >= Math.ceil(savedPlans.length / 10) ? "not-allowed" : "pointer",
+                        opacity: savedPlansPage >= Math.ceil(savedPlans.length / 10) ? 0.5 : 1, transition: "all 0.2s ease"
+                      }}
+                    >
+                      Next →
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             ) : (
               <div style={{
                 textAlign: "center", padding: "24px 16px", color: "var(--text-muted)",
