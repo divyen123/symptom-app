@@ -1044,12 +1044,14 @@ const GLOBAL_CSS = `
       gap: 10px !important;
     }
 
-    .emergency-card-flex {
+    .emergency-card-flex,
+    .essentials-card-flex {
       flex-direction: column !important;
       gap: 14px !important;
       align-items: stretch !important;
     }
-    .emergency-card-flex button {
+    .emergency-card-flex button,
+    .essentials-card-flex button {
       width: 100% !important;
     }
 
@@ -2212,43 +2214,95 @@ function Home({
       </div>
 
       {/* Emergency card */}
-      <Card style={{
-        background: "linear-gradient(135deg, var(--bg-red-light), var(--bg-red))",
-        border: "1px solid var(--border-red)",
+      {/* Quick Action Banners */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+        gap: 16,
         marginBottom: 24,
-        animation: "fadeUp 0.4s ease 0.28s both",
-      }}>
-        <div className="emergency-card-flex" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: "var(--bg-red)",
-              border: "2px solid var(--border-red)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 22,
-            }}>🚨</div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-red)" }}>Emergency Services</div>
-              <div style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 2 }}>
-                Chest pain, difficulty breathing, severe bleeding? Call now.
+      }} className="quick-actions-banners-grid">
+        {/* Emergency card */}
+        <Card style={{
+          background: "linear-gradient(135deg, var(--bg-red-light), var(--bg-red))",
+          border: "1px solid var(--border-red)",
+          margin: 0,
+          animation: "fadeUp 0.4s ease 0.28s both",
+        }}>
+          <div className="emergency-card-flex" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "100%", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: "var(--bg-red)",
+                border: "2px solid var(--border-red)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22,
+                flexShrink: 0,
+              }}>🚨</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-red)" }}>Emergency Services</div>
+                <div style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 2 }}>
+                  Chest pain, difficulty breathing, severe bleeding? Call now.
+                </div>
               </div>
             </div>
+            <button
+              onClick={() => setActive("emergency")}
+              className="btn-primary"
+              style={{
+                background: "var(--red-dark)", color: "#fff",
+                border: "none", borderRadius: "var(--radius)",
+                padding: "10px 20px", fontWeight: 700,
+                cursor: "pointer", fontSize: 13.5,
+                fontFamily: "var(--font)",
+                boxShadow: "0 4px 16px rgba(220,38,38,0.25)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >Call 108</button>
           </div>
-          <button
-            onClick={() => setActive("emergency")}
-            className="btn-primary"
-            style={{
-              background: "var(--red-dark)", color: "#fff",
-              border: "none", borderRadius: "var(--radius)",
-              padding: "10px 20px", fontWeight: 700,
-              cursor: "pointer", fontSize: 13.5,
-              fontFamily: "var(--font)",
-              boxShadow: "0 4px 16px rgba(220,38,38,0.25)",
-              whiteSpace: "nowrap",
-            }}
-          >Call 108</button>
-        </div>
-      </Card>
+        </Card>
+
+        {/* Buy Essentials (MediTown) card */}
+        <Card style={{
+          background: "linear-gradient(135deg, var(--bg-blue-light), var(--bg-blue-pale))",
+          border: "1px solid var(--blue-border)",
+          margin: 0,
+          animation: "fadeUp 0.4s ease 0.32s both",
+        }}>
+          <div className="essentials-card-flex" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "100%", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: "var(--bg-blue-pale)",
+                border: "2px solid var(--blue-border)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 22,
+                flexShrink: 0,
+              }}>🛍️</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-blue)" }}>Buy Essentials</div>
+                <div style={{ color: "var(--text-muted)", fontSize: 12.5, marginTop: 2 }}>
+                  Need supplements, first aid, or medicines? Explore MediTown.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActive("meditown")}
+              className="btn-primary"
+              style={{
+                background: "var(--blue)", color: "#fff",
+                border: "none", borderRadius: "var(--radius)",
+                padding: "10px 20px", fontWeight: 700,
+                cursor: "pointer", fontSize: 13.5,
+                fontFamily: "var(--font)",
+                boxShadow: "0 4px 16px rgba(59,130,246,0.25)",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >Explore Store</button>
+          </div>
+        </Card>
+      </div>
 
       {/* Main dashboard content container */}
       <div style={{
