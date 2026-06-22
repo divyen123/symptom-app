@@ -885,6 +885,28 @@ app.post("/api/medications", authMiddleware, async (req, res) => {
   }
 });
 
+// PUT update medication
+app.put("/api/medications/:id", authMiddleware, async (req, res) => {
+  try {
+    const { data: doc, error } = await supabase
+      .from("medications")
+      .update({
+        category: req.body.category,
+        name: req.body.name,
+        cause: req.body.cause
+      })
+      .eq("user_id", req.userId)
+      .eq("id", req.params.id)
+      .select("id, name, cause, category, createdAt:created_at")
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // DELETE one medication
 app.delete("/api/medications/:id", authMiddleware, async (req, res) => {
   try {

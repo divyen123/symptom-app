@@ -308,44 +308,59 @@ const apiDeleteAccount = () =>
     return data;
   });
 
-const apiFetchReports  = () => fetch(`${API}/reports`, { headers: authHeaders() }).then(r => r.json());
-const apiSaveReport    = (report) => fetch(`${API}/reports`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(report) }).then(r => r.json());
-const apiDeleteReport  = (id) => fetch(`${API}/reports/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
-const apiDeleteAllReports = () => fetch(`${API}/reports`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
-const apiBulkReports   = (arr) => fetch(`${API}/reports/bulk`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(arr) }).then(r => r.json());
-const apiFetchSettings = () => fetch(`${API}/settings`, { headers: authHeaders() }).then(r => r.json());
-const apiSaveSettings  = (s) => fetch(`${API}/settings`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(s) }).then(r => r.json());
+const apiFetch = async (url, options = {}) => {
+  const r = await fetch(url, options);
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    let errMsg = `HTTP error ${r.status}`;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.error) errMsg = parsed.error;
+    } catch (_) {}
+    throw new Error(errMsg);
+  }
+  return r.json();
+};
 
-const apiFetchVitals   = () => fetch(`${API}/vitals`, { headers: authHeaders() }).then(r => r.json());
-const apiSaveVital     = (v) => fetch(`${API}/vitals`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(v) }).then(r => r.json());
-const apiDeleteVital   = (id) => fetch(`${API}/vitals/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchReports  = () => apiFetch(`${API}/reports`, { headers: authHeaders() });
+const apiSaveReport    = (report) => apiFetch(`${API}/reports`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(report) });
+const apiDeleteReport  = (id) => apiFetch(`${API}/reports/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllReports = () => apiFetch(`${API}/reports`, { method: "DELETE", headers: authHeaders() });
+const apiBulkReports   = (arr) => apiFetch(`${API}/reports/bulk`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(arr) });
+const apiFetchSettings = () => apiFetch(`${API}/settings`, { headers: authHeaders() });
+const apiSaveSettings  = (s) => apiFetch(`${API}/settings`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(s) });
 
-const apiFetchChats    = () => fetch(`${API}/chats`, { headers: authHeaders() }).then(r => r.json());
-const apiGetChat       = (id) => fetch(`${API}/chats/${id}`, { headers: authHeaders() }).then(r => r.json());
-const apiCreateChat    = (chat) => fetch(`${API}/chats`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(chat) }).then(r => r.json());
-const apiUpdateChat    = (id, chat) => fetch(`${API}/chats/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(chat) }).then(r => r.json());
-const apiDeleteChat    = (id) => fetch(`${API}/chats/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchVitals   = () => apiFetch(`${API}/vitals`, { headers: authHeaders() });
+const apiSaveVital     = (v) => apiFetch(`${API}/vitals`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(v) });
+const apiDeleteVital   = (id) => apiFetch(`${API}/vitals/${id}`, { method: "DELETE", headers: authHeaders() });
 
-const apiFetchTodos    = () => fetch(`${API}/todos`, { headers: authHeaders() }).then(r => r.json());
-const apiCreateTodo    = (todo) => fetch(`${API}/todos`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(todo) }).then(r => r.json());
-const apiUpdateTodo    = (id, todo) => fetch(`${API}/todos/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(todo) }).then(r => r.json());
-const apiDeleteTodo    = (id) => fetch(`${API}/todos/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchChats    = () => apiFetch(`${API}/chats`, { headers: authHeaders() });
+const apiGetChat       = (id) => apiFetch(`${API}/chats/${id}`, { headers: authHeaders() });
+const apiCreateChat    = (chat) => apiFetch(`${API}/chats`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(chat) });
+const apiUpdateChat    = (id, chat) => apiFetch(`${API}/chats/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(chat) });
+const apiDeleteChat    = (id) => apiFetch(`${API}/chats/${id}`, { method: "DELETE", headers: authHeaders() });
 
-const apiFetchMedications    = () => fetch(`${API}/medications`, { headers: authHeaders() }).then(r => r.json());
-const apiCreateMedication    = (med) => fetch(`${API}/medications`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) }).then(r => r.json());
-const apiDeleteMedication    = (id) => fetch(`${API}/medications/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
-const apiDeleteAllMedications= () => fetch(`${API}/medications`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchTodos    = () => apiFetch(`${API}/todos`, { headers: authHeaders() });
+const apiCreateTodo    = (todo) => apiFetch(`${API}/todos`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(todo) });
+const apiUpdateTodo    = (id, todo) => apiFetch(`${API}/todos/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(todo) });
+const apiDeleteTodo    = (id) => apiFetch(`${API}/todos/${id}`, { method: "DELETE", headers: authHeaders() });
 
-const apiFetchReminders      = () => fetch(`${API}/reminders`, { headers: authHeaders() }).then(r => r.json());
-const apiCreateReminder      = (rem) => fetch(`${API}/reminders`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) }).then(r => r.json());
-const apiUpdateReminder      = (id, rem) => fetch(`${API}/reminders/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) }).then(r => r.json());
-const apiDeleteReminder      = (id) => fetch(`${API}/reminders/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
-const apiDeleteAllReminders  = () => fetch(`${API}/reminders`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchMedications    = () => apiFetch(`${API}/medications`, { headers: authHeaders() });
+const apiCreateMedication    = (med) => apiFetch(`${API}/medications`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
+const apiUpdateMedication    = (id, med) => apiFetch(`${API}/medications/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
+const apiDeleteMedication    = (id) => apiFetch(`${API}/medications/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllMedications= () => apiFetch(`${API}/medications`, { method: "DELETE", headers: authHeaders() });
 
-const apiFetchSavedPlans = () => fetch(`${API}/saved-plans`, { headers: authHeaders() }).then(r => r.json());
-const apiSavePlan        = (plan) => fetch(`${API}/saved-plans`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(plan) }).then(r => r.json());
-const apiDeletePlan      = (id) => fetch(`${API}/saved-plans/${id}`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
-const apiDeleteAllPlans  = () => fetch(`${API}/saved-plans`, { method: "DELETE", headers: authHeaders() }).then(r => r.json());
+const apiFetchReminders      = () => apiFetch(`${API}/reminders`, { headers: authHeaders() });
+const apiCreateReminder      = (rem) => apiFetch(`${API}/reminders`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) });
+const apiUpdateReminder      = (id, rem) => apiFetch(`${API}/reminders/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) });
+const apiDeleteReminder      = (id) => apiFetch(`${API}/reminders/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllReminders  = () => apiFetch(`${API}/reminders`, { method: "DELETE", headers: authHeaders() });
+
+const apiFetchSavedPlans = () => apiFetch(`${API}/saved-plans`, { headers: authHeaders() });
+const apiSavePlan        = (plan) => apiFetch(`${API}/saved-plans`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(plan) });
+const apiDeletePlan      = (id) => apiFetch(`${API}/saved-plans/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllPlans  = () => apiFetch(`${API}/saved-plans`, { method: "DELETE", headers: authHeaders() });
 
 const apiResetProfile = () =>
   fetch(`${API}/auth/reset-profile`, { method: "DELETE", headers: authHeaders() }).then(async r => {
@@ -14580,6 +14595,25 @@ export default function App() {
     }
   };
 
+  const handleChangeMedicineCategory = async (id, newCategory) => {
+    try {
+      if (String(id).startsWith("local_")) {
+        const updated = savedMedicines.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m);
+        setSavedMedicines(updated);
+        localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
+      } else {
+        await apiUpdateMedication(id, { category: newCategory });
+        setSavedMedicines(prev => prev.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m));
+      }
+      showToast(`Category updated to ${newCategory}`);
+    } catch (_e) {
+      const updated = savedMedicines.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m);
+      setSavedMedicines(updated);
+      localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
+      showToast("Category updated locally");
+    }
+  };
+
   const handleDeleteAllMedicines = async () => {
     try {
       await apiDeleteAllMedications();
@@ -14687,13 +14721,13 @@ export default function App() {
           localStorage.removeItem(REMINDERS_KEY);
         }
         const [dbReports, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
-          apiFetchReports(),
-          apiFetchSettings(),
-          apiFetchVitals(),
-          apiFetchChats(),
-          apiFetchTodos(),
-          apiFetchMedications(),
-          apiFetchReminders()
+          apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
+          apiFetchSettings().catch(err => { console.error("Settings fetch failed:", err); return {}; }),
+          apiFetchVitals().catch(err => { console.error("Vitals fetch failed:", err); return []; }),
+          apiFetchChats().catch(err => { console.error("Chats fetch failed:", err); return []; }),
+          apiFetchTodos().catch(err => { console.error("Todos fetch failed:", err); return []; }),
+          apiFetchMedications().catch(err => { console.error("Medications fetch failed:", err); return null; }),
+          apiFetchReminders().catch(err => { console.error("Reminders fetch failed:", err); return []; })
         ]);
         setReports(Array.isArray(dbReports) ? dbReports : []);
         setSettings(dbSettings || {});
@@ -14733,7 +14767,11 @@ export default function App() {
         setVitals(Array.isArray(dbVitals) ? dbVitals : []);
         setChatSessions(Array.isArray(dbChats) ? dbChats : []);
         setTodos(Array.isArray(dbTodos) ? dbTodos : []);
-        setSavedMedicines(Array.isArray(dbMeds) ? dbMeds : []);
+        if (dbMeds === null) {
+          setSavedMedicines(loadMedicines());
+        } else {
+          setSavedMedicines(Array.isArray(dbMeds) ? dbMeds : []);
+        }
         setSavedReminders(Array.isArray(dbReminders) ? dbReminders : []);
       } catch (e) {
         console.warn("Backend not reachable, using localStorage:", e.message);
@@ -15396,7 +15434,7 @@ export default function App() {
                                   border: "1px solid var(--border)",
                                   borderRadius: "var(--radius-sm)",
                                 }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
                                     <span style={{ fontSize: 14 }}>{meta.icon}</span>
                                     <span style={{
                                       fontSize: 12.5,
@@ -15405,38 +15443,60 @@ export default function App() {
                                       whiteSpace: "nowrap",
                                       overflow: "hidden",
                                       textOverflow: "ellipsis",
-                                      maxWidth: 140
+                                      maxWidth: 120
                                     }} title={med.name}>
                                       {med.name}
                                     </span>
                                   </div>
-                                  <button
-                                    onClick={() => handleDeleteMedicine(med.id || med._id)}
-                                    style={{
-                                      background: "none",
-                                      border: "none",
-                                      cursor: "pointer",
-                                      fontSize: 14,
-                                      color: "var(--text-red-light)",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      padding: "4px 8px",
-                                      borderRadius: "var(--radius-sm)",
-                                      transition: "all 0.2s ease"
-                                    }}
-                                    onMouseEnter={e => {
-                                      e.currentTarget.style.background = "var(--bg-red-light)";
-                                      e.currentTarget.style.color = "var(--text-red)";
-                                    }}
-                                    onMouseLeave={e => {
-                                      e.currentTarget.style.background = "none";
-                                      e.currentTarget.style.color = "var(--text-red-light)";
-                                    }}
-                                    title="Delete Item"
-                                  >
-                                    🗑️
-                                  </button>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                    <select
+                                      value={med.category || "Pharmacy"}
+                                      onChange={(e) => handleChangeMedicineCategory(medId, e.target.value)}
+                                      style={{
+                                        background: "var(--surface)",
+                                        border: "1px solid var(--border)",
+                                        borderRadius: "var(--radius-sm)",
+                                        color: "var(--text)",
+                                        fontSize: 11,
+                                        padding: "2px 4px",
+                                        cursor: "pointer",
+                                        fontFamily: "var(--font)",
+                                        outline: "none"
+                                      }}
+                                    >
+                                      <option value="Pharmacy">💊 Pharmacy</option>
+                                      <option value="Herbal Remedies">🌿 Herbal</option>
+                                      <option value="Nutrition Center">🥗 Nutrition</option>
+                                      <option value="First Aid Station">🏥 First Aid</option>
+                                    </select>
+                                    <button
+                                      onClick={() => handleDeleteMedicine(med.id || med._id)}
+                                      style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: 14,
+                                        color: "var(--text-red-light)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: "4px 8px",
+                                        borderRadius: "var(--radius-sm)",
+                                        transition: "all 0.2s ease"
+                                      }}
+                                      onMouseEnter={e => {
+                                        e.currentTarget.style.background = "var(--bg-red-light)";
+                                        e.currentTarget.style.color = "var(--text-red)";
+                                      }}
+                                      onMouseLeave={e => {
+                                        e.currentTarget.style.background = "none";
+                                        e.currentTarget.style.color = "var(--text-red-light)";
+                                      }}
+                                      title="Delete Item"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
                                 </div>
                               );
                             })}
