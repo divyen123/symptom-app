@@ -1110,6 +1110,41 @@ const GLOBAL_CSS = `
       margin: 0 auto !important;
     }
   }
+
+  /* Desktop layout sidebar position transitions */
+  @media (min-width: 769px) {
+    .app-layout {
+      position: relative !important;
+      transition: padding-left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), padding-right 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+    }
+    .app-layout.nav-left {
+      padding-left: var(--sidebar-width) !important;
+      padding-right: 0 !important;
+    }
+    .app-layout.nav-right {
+      padding-left: 0 !important;
+      padding-right: var(--sidebar-width) !important;
+    }
+    .sidebar-nav {
+      position: absolute !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      width: var(--sidebar-width) !important;
+      transition: left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), border-right 0.5s, border-left 0.5s !important;
+    }
+    .app-layout.nav-left .sidebar-nav {
+      left: 0 !important;
+      right: auto !important;
+      border-right: var(--sidebar-border) !important;
+      border-left: none !important;
+    }
+    .app-layout.nav-right .sidebar-nav {
+      left: calc(100% - var(--sidebar-width)) !important;
+      right: 0 !important;
+      border-left: var(--sidebar-border) !important;
+      border-right: none !important;
+    }
+  }
 `;
 
 // ─── AI API CLIENT ────────────────────────────────────────────────────────────
@@ -15163,13 +15198,12 @@ export default function App() {
       )}
 
       {/* ── Main App ── */}
-      <div className="app-layout" style={{
+      <div className={`app-layout nav-${appearance.navPosition === "right" ? "right" : "left"}`} style={{
         display: "flex", height: "100%", width: "100%",
         overflow: "hidden", background: "var(--surface-2)",
         fontFamily: "var(--font)",
         opacity: splashPhase === "done" ? 1 : 0,
         transition: "opacity 0.45s ease",
-        flexDirection: appearance.navPosition === "right" ? "row-reverse" : "row",
         position: "relative",
       }}>
         {/* Ambient hex background */}
