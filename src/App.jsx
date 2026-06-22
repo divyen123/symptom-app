@@ -11866,6 +11866,7 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [savedPlans, setSavedPlans] = useState([]);
   const [savedPlansLoading, setSavedPlansLoading] = useState(false);
   const [viewingSavedPlan, setViewingSavedPlan] = useState(null);
+  const [showPlansClearConfirm, setShowPlansClearConfirm] = useState(false);
 
   const fetchSavedPlans = async () => {
     setSavedPlansLoading(true);
@@ -12924,18 +12925,51 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 <span>📂</span> Saved Health Plans {savedPlans && savedPlans.length > 0 && `(${savedPlans.length})`}
               </h3>
               {savedPlans && savedPlans.length > 0 && (
-                <button
-                  onClick={handleClearAllPlans}
-                  style={{
-                    padding: "6px 12px", border: "1px solid #ef4444", background: "transparent",
-                    color: "#ef4444", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                    cursor: "pointer", fontFamily: "var(--font)", transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ef4444"; }}
-                >
-                  Clear All
-                </button>
+                showPlansClearConfirm ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-red)" }}>Confirm clear all?</span>
+                    <button
+                      onClick={() => {
+                        apiDeleteAllPlans().then(() => {
+                          fetchSavedPlans();
+                          setShowPlansClearConfirm(false);
+                        }).catch(err => {
+                          console.error("Failed to clear plans:", err);
+                        });
+                      }}
+                      style={{
+                        padding: "4px 10px", background: "var(--text-red)", color: "#fff",
+                        border: "none", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                        cursor: "pointer", fontFamily: "var(--font)"
+                      }}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setShowPlansClearConfirm(false)}
+                      style={{
+                        padding: "4px 10px", background: "var(--surface-2)", color: "var(--text)",
+                        border: "1px solid var(--border)", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                        cursor: "pointer", fontFamily: "var(--font)"
+                      }}
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowPlansClearConfirm(true)}
+                    style={{
+                      padding: "6px 12px", border: "1px solid #ef4444", background: "transparent",
+                      color: "#ef4444", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                      cursor: "pointer", fontFamily: "var(--font)", transition: "all 0.2s ease"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ef4444"; }}
+                  >
+                    Clear All
+                  </button>
+                )
               )}
             </div>
             {savedPlans && savedPlans.length > 0 ? (
