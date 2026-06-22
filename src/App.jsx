@@ -13952,6 +13952,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedMedicines, setSavedMedicines] = useState([]);
   const [showMedList, setShowMedList] = useState(false);
+  const [selectedMedId, setSelectedMedId] = useState(null);
   const [showMedDeleteConfirm, setShowMedDeleteConfirm] = useState(false);
   const [savedReminders, setSavedReminders] = useState([]);
   const [showReminderList, setShowReminderList] = useState(false);
@@ -15335,6 +15336,9 @@ export default function App() {
           "First Aid Station": { icon: "🏥", color: "#ef4444", rgb: "239,68,68" }
         };
 
+        const activeMedId = selectedMedId || (savedMedicines[0] ? (savedMedicines[0]._id || savedMedicines[0].id) : null);
+        const activeMed = savedMedicines.find(m => (m._id === activeMedId || m.id === activeMedId));
+
         return (
           <div ref={fabContainerRef} style={containerStyle}>
             {/* Popover for Medicine List */}
@@ -15384,6 +15388,45 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Category Selector on Top */}
+                {savedMedicines.length > 0 && activeMed && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    background: "var(--surface-2)",
+                    borderBottom: "1.5px solid var(--border)",
+                    gap: 8
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      Change Category for <strong style={{ color: "var(--text)", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={activeMed.name}>{activeMed.name}</strong>:
+                    </span>
+                    <select
+                      value={activeMed.category || "Pharmacy"}
+                      onChange={(e) => handleChangeMedicineCategory(activeMedId, e.target.value)}
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-sm)",
+                        color: "var(--text)",
+                        fontSize: 11,
+                        padding: "3px 6px",
+                        cursor: "pointer",
+                        fontFamily: "var(--font)",
+                        outline: "none",
+                        flex: 1,
+                        maxWidth: 140
+                      }}
+                    >
+                      <option value="Pharmacy">💊 Pharmacy</option>
+                      <option value="Herbal Remedies">🌿 Herbal</option>
+                      <option value="Nutrition Center">🥗 Nutrition</option>
+                      <option value="First Aid Station">🏥 First Aid</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Body */}
                 <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10, background: "var(--surface)" }}>
                   {savedMedicines.length === 0 ? (
@@ -15424,53 +15467,43 @@ export default function App() {
                           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {list.map(med => {
                               const medId = med._id || med.id;
+                              const isSelected = medId === activeMedId;
                               return (
-                                <div key={medId} style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
-                                  padding: "8px 10px",
-                                  background: "var(--surface-2)",
-                                  border: "1px solid var(--border)",
-                                  borderRadius: "var(--radius-sm)",
-                                }}>
+                                <div 
+                                  key={medId} 
+                                  onClick={() => setSelectedMedId(medId)}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "8px 10px",
+                                    background: isSelected ? "var(--bg-accent-subtle, rgba(59, 130, 246, 0.1))" : "var(--surface-2)",
+                                    border: isSelected ? "1px solid var(--accent, #3b82f6)" : "1px solid var(--border)",
+                                    borderRadius: "var(--radius-sm)",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease"
+                                  }}
+                                >
                                   <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
                                     <span style={{ fontSize: 14 }}>{meta.icon}</span>
                                     <span style={{
                                       fontSize: 12.5,
                                       fontWeight: 700,
-                                      color: "var(--text)",
+                                      color: isSelected ? "var(--accent, #3b82f6)" : "var(--text)",
                                       whiteSpace: "nowrap",
                                       overflow: "hidden",
                                       textOverflow: "ellipsis",
-                                      maxWidth: 120
+                                      maxWidth: 160
                                     }} title={med.name}>
                                       {med.name}
                                     </span>
                                   </div>
                                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                                    <select
-                                      value={med.category || "Pharmacy"}
-                                      onChange={(e) => handleChangeMedicineCategory(medId, e.target.value)}
-                                      style={{
-                                        background: "var(--surface)",
-                                        border: "1px solid var(--border)",
-                                        borderRadius: "var(--radius-sm)",
-                                        color: "var(--text)",
-                                        fontSize: 11,
-                                        padding: "2px 4px",
-                                        cursor: "pointer",
-                                        fontFamily: "var(--font)",
-                                        outline: "none"
-                                      }}
-                                    >
-                                      <option value="Pharmacy">💊 Pharmacy</option>
-                                      <option value="Herbal Remedies">🌿 Herbal</option>
-                                      <option value="Nutrition Center">🥗 Nutrition</option>
-                                      <option value="First Aid Station">🏥 First Aid</option>
-                                    </select>
                                     <button
-                                      onClick={() => handleDeleteMedicine(med.id || med._id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteMedicine(med.id || med._id);
+                                      }}
                                       style={{
                                         background: "none",
                                         border: "none",
