@@ -2195,8 +2195,14 @@ function Home({
               padding: "11px 22px",
               fontWeight: 700, cursor: "pointer",
               fontSize: 13.5, fontFamily: "var(--font)",
-              boxShadow: "0 4px 16px rgba(59,130,246,0.4)",
+              boxShadow: "0 2px 8px rgba(59,130,246,0.15)",
               whiteSpace: "nowrap",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,0.22)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.boxShadow = "0 2px 8px rgba(59,130,246,0.15)";
             }}
           >Analyze →</button>
         </div>
@@ -2295,9 +2301,15 @@ function Home({
                 padding: "10px 20px", fontWeight: 700,
                 cursor: "pointer", fontSize: 13.5,
                 fontFamily: "var(--font)",
-                boxShadow: "0 4px 16px rgba(59,130,246,0.25)",
+                boxShadow: "0 2px 8px rgba(59,130,246,0.15)",
                 whiteSpace: "nowrap",
                 flexShrink: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,0.22)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(59,130,246,0.15)";
               }}
             >Explore Store</button>
           </div>
@@ -12051,9 +12063,20 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [activeFoodItem, setActiveFoodItem] = useState(null);
   const [currentFoodStep, setCurrentFoodStep] = useState(0);
 
+  const [pharmacySubcat, setPharmacySubcat] = useState("all");
+  const [herbsSubcat, setHerbsSubcat] = useState("all");
+  const [nutritionSubcat, setNutritionSubcat] = useState("all");
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, isExploringFood, selectedCategory]);
+    setPharmacySubcat("all");
+    setHerbsSubcat("all");
+    setNutritionSubcat("all");
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, isExploringFood, pharmacySubcat, herbsSubcat, nutritionSubcat]);
 
   // Custom Need form & recommendation states
   const [customNeedActive, setCustomNeedActive] = useState(false);
@@ -12428,7 +12451,8 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       desc: "Essential medicines and supplements for everyday health needs.",
       items: [
         { name: "ORSL Apple Drink", use: "Rehydration & electrolyte support", dosage: "Drink 1 pack during dehydration or weakness" },
-        { name: "Premium Condoms", use: "Contraception & safe intimacy", dosage: "Use once per sexual intercourse" },
+        { name: "Durex Air Condoms", use: "Ultra-thin contraception & sensitivity", dosage: "Single-use during intimate contact" },
+        { name: "Manforce Extra Dotted Condoms", use: "Contraception, stimulation & safety", dosage: "Single-use during intimate contact" },
         { name: "Ketoconazole Anti-Hairfall Shampoo", use: "Dandruff & hairfall control", dosage: "Apply twice weekly to wet scalp, leave for 5 mins" },
         { name: "Hydrocortisone Skin Rash Ointment", use: "Eczema, rashes & itch relief", dosage: "Apply thin layer to affected skin 2-3 times daily" },
         { name: "Paracetamol 500mg", use: "Fever & pain relief", dosage: "1-2 tablets every 4-6 hours" },
@@ -12687,11 +12711,98 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
 
   const activeCategory = categories.find(c => c.id === selectedCategory);
 
+  const getPharmacySubcategory = (item) => {
+    const name = item.name.toLowerCase();
+    const use = item.use.toLowerCase();
+    if (name.includes("condom") || name.includes("skore") || name.includes("durex") || name.includes("manforce") || name.includes("kamasutra") || use.includes("contraception") || use.includes("intimacy")) {
+      return "intimacy";
+    }
+    if (name.includes("orsl") || use.includes("rehydration") || use.includes("electrolyte") || use.includes("dehydration")) {
+      return "drinks";
+    }
+    if (name.includes("shampoo") || name.includes("soap") || name.includes("facewash") || name.includes("wash") || name.includes("dettol") || name.includes("cleaner") || use.includes("hairfall") || use.includes("dandruff")) {
+      return "personal_care";
+    }
+    if (name.includes("cough") || name.includes("cold") || name.includes("vaporub") || name.includes("vicks") || name.includes("strepsils") || name.includes("lozenge") || name.includes("otrivin") || name.includes("gargle") || name.includes("throat") || use.includes("cough") || use.includes("nasal") || use.includes("sore throat")) {
+      return "cough_cold";
+    }
+    if (name.includes("paracetamol") || name.includes("dolo") || name.includes("crocin") || name.includes("saridon") || name.includes("ibuprofen") || name.includes("aspirin") || use.includes("fever") || use.includes("headache") || use.includes("migraine") || use.includes("body pain") || use.includes("pain relief")) {
+      return "pain_fever";
+    }
+    if (name.includes("omeprazole") || name.includes("pantoprazole") || name.includes("ranitidine") || name.includes("antacid") || name.includes("gelusil") || name.includes("digene") || name.includes("eno") || name.includes("pudin") || name.includes("hara") || name.includes("dulcolax") || name.includes("isabgol") || name.includes("loperamide") || name.includes("domperidone") || use.includes("acidity") || use.includes("gastric") || use.includes("gerd") || use.includes("heartburn") || use.includes("constipation") || use.includes("gut health") || use.includes("digestion") || use.includes("diarrhea")) {
+      return "digestion";
+    }
+    if (name.includes("cream") || name.includes("ointment") || name.includes("gel") || name.includes("dusting") || name.includes("powder") || name.includes("candid") || name.includes("ring guard") || name.includes("soframycin") || name.includes("betadine") || name.includes("luliconazole") || use.includes("fungal") || use.includes("rash") || use.includes("skin") || use.includes("itch") || use.includes("wound") || use.includes("burns") || use.includes("acne")) {
+      return "skin_care";
+    }
+    return "wellness";
+  };
+
+  const getHerbsSubcategory = (item) => {
+    const name = item.name.toLowerCase();
+    const use = item.use.toLowerCase();
+    if (name.includes("vasaka") || name.includes("pippali") || name.includes("tulsi") || name.includes("chyawanprash") || name.includes("echinacea") || name.includes("elderberry") || name.includes("yastimadhu") || use.includes("respiratory") || use.includes("asthma") || use.includes("cough") || use.includes("immune") || use.includes("immunity") || use.includes("cold") || use.includes("flu") || use.includes("throat")) {
+      return "respiratory_immunity";
+    }
+    if (name.includes("shatavari") || name.includes("gokshura") || name.includes("kaunch") || name.includes("musli") || name.includes("saw palmetto") || name.includes("shilajit") || name.includes("fenugreek") || use.includes("prostate") || use.includes("reproduction") || use.includes("reproductive") || use.includes("hormonal") || use.includes("lactation") || use.includes("vitality") || use.includes("stamina") || use.includes("strength")) {
+      return "reproduction_hormones";
+    }
+    if (name.includes("ashwagandha") || name.includes("brahmi") || name.includes("ginkgo") || name.includes("chamomile") || name.includes("valerian") || name.includes("lavender") || name.includes("tagara") || name.includes("john's") || use.includes("stress") || use.includes("anxiety") || use.includes("calming") || use.includes("sleep") || use.includes("insomnia") || use.includes("memory") || use.includes("cognitive") || use.includes("brain") || use.includes("focus") || use.includes("mood")) {
+      return "brain_stress_sleep";
+    }
+    if (name.includes("triphala") || name.includes("peppermint") || name.includes("ginger") || name.includes("bael") || name.includes("kutki") || name.includes("bhumyamalaki") || name.includes("thistle") || name.includes("punarnava") || use.includes("liver") || use.includes("detox") || use.includes("digestion") || use.includes("digestive") || use.includes("bloating") || use.includes("ibs") || use.includes("stomach") || use.includes("kidney") || use.includes("fluid retention") || use.includes("colon")) {
+      return "digestion_detox";
+    }
+    if (name.includes("shallaki") || name.includes("boswellia") || name.includes("turmeric") || name.includes("curcumin") || use.includes("joint") || use.includes("arthritis") || use.includes("anti-inflammatory")) {
+      return "joints_inflammation";
+    }
+    if (name.includes("aloe") || name.includes("neem") || name.includes("rosehip") || name.includes("gotu kola") || name.includes("manjistha") || name.includes("amla") || use.includes("skin") || use.includes("hair") || use.includes("acne") || use.includes("sunburn") || use.includes("varicose")) {
+      return "skin_hair";
+    }
+    return "wellness";
+  };
+
+  const getNutritionSubcategory = (item) => {
+    const name = item.name.toLowerCase();
+    const use = item.use.toLowerCase();
+    if (name.includes("vitamin") || name.includes("iron") || name.includes("zinc") || name.includes("magnesium") || name.includes("calcium") || name.includes("biotin") || name.includes("folic") || name.includes("b-complex") || name.includes("methylcobalamin") || name.includes("thiamine") || name.includes("riboflavin") || name.includes("niacinamide") || name.includes("potassium") || name.includes("iodine") || name.includes("selenium") || name.includes("manganese") || name.includes("boron") || name.includes("copper") || use.includes("anemia") || use.includes("bone") || use.includes("deficiency")) {
+      return "vitamins_minerals";
+    }
+    if (name.includes("protein") || name.includes("creatine") || name.includes("carnitine") || name.includes("theanine") || name.includes("gpc") || name.includes("collagen") || name.includes("bcaa") || use.includes("muscle") || use.includes("recovery") || use.includes("endurance")) {
+      return "proteins_muscles";
+    }
+    if (name.includes("fish oil") || name.includes("omega") || name.includes("flaxseed") || name.includes("primrose") || use.includes("omega-3") || use.includes("essential fatty acids")) {
+      return "oils_fats";
+    }
+    if (name.includes("probiotic") || name.includes("vinegar") || name.includes("acv") || name.includes("supergreens") || use.includes("gut") || use.includes("digestion") || use.includes("microbiome")) {
+      return "gut_digestion";
+    }
+    if (name.includes("melatonin") || name.includes("sleep") || name.includes("theanine") || name.includes("bacopa") || name.includes("brahmi") || use.includes("sleep") || use.includes("insomnia") || use.includes("focus") || use.includes("memory") || use.includes("neurotransmitter")) {
+      return "brain_sleep";
+    }
+    if (name.includes("resveratrol") || name.includes("astaxanthin") || name.includes("glutathione") || name.includes("chlorella") || name.includes("spirulina") || name.includes("beetroot") || name.includes("thistle") || name.includes("silymarin") || use.includes("antioxidant") || use.includes("detox")) {
+      return "antioxidants_detox";
+    }
+    return "wellness";
+  };
+
   const filteredItems = activeCategory
-    ? activeCategory.items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.use.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? activeCategory.items.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.use.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+        
+        if (selectedCategory === "pharmacy" && pharmacySubcat !== "all") {
+          return getPharmacySubcategory(item) === pharmacySubcat;
+        }
+        if (selectedCategory === "herbs" && herbsSubcat !== "all") {
+          return getHerbsSubcategory(item) === herbsSubcat;
+        }
+        if (selectedCategory === "nutrition" && nutritionSubcat !== "all") {
+          return getNutritionSubcategory(item) === nutritionSubcat;
+        }
+        return true;
+      })
     : [];
 
   const filteredFoodItems = isExploringFood
@@ -13587,16 +13698,81 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             </button>
           </div>
 
-          <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
+          <div style={{ marginBottom: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <input
               type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
               placeholder={selectedCategory === 'nutrition' ? (isExploringFood ? "Search food dishes..." : "Search nutrition ingredients...") : "Search medicines..."}
               style={{
-                flex: 1, padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
+                flex: 2, minWidth: "200px", padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
                 fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
                 outline: "none"
               }}
             />
+
+            {selectedCategory === 'pharmacy' && (
+              <select
+                value={pharmacySubcat}
+                onChange={e => setPharmacySubcat(e.target.value)}
+                style={{
+                  flex: 1, minWidth: "150px", padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
+                  fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
+                  outline: "none", cursor: "pointer", height: "48px", boxSizing: "border-box"
+                }}
+              >
+                <option value="all">All Categories</option>
+                <option value="pain_fever">Fever & Pain Relief</option>
+                <option value="cough_cold">Cough & Cold</option>
+                <option value="digestion">Acidity & Digestion</option>
+                <option value="skin_care">Skin Care & Fungal</option>
+                <option value="personal_care">Soap & Shampoo</option>
+                <option value="intimacy">Intimacy & Contraception</option>
+                <option value="drinks">Rehydration & Drinks</option>
+                <option value="wellness">General Wellness</option>
+              </select>
+            )}
+
+            {selectedCategory === 'herbs' && (
+              <select
+                value={herbsSubcat}
+                onChange={e => setHerbsSubcat(e.target.value)}
+                style={{
+                  flex: 1, minWidth: "150px", padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
+                  fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
+                  outline: "none", cursor: "pointer", height: "48px", boxSizing: "border-box"
+                }}
+              >
+                <option value="all">All Uses</option>
+                <option value="respiratory_immunity">Respiratory & Immunity</option>
+                <option value="reproduction_hormones">Reproductive & Hormones</option>
+                <option value="brain_stress_sleep">Stress, Brain & Sleep</option>
+                <option value="digestion_detox">Digestion, Liver & Detox</option>
+                <option value="joints_inflammation">Joints & Inflammation</option>
+                <option value="skin_hair">Skin & Hair Care</option>
+                <option value="wellness">General Wellness</option>
+              </select>
+            )}
+
+            {selectedCategory === 'nutrition' && !isExploringFood && (
+              <select
+                value={nutritionSubcat}
+                onChange={e => setNutritionSubcat(e.target.value)}
+                style={{
+                  flex: 1, minWidth: "150px", padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
+                  fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
+                  outline: "none", cursor: "pointer", height: "48px", boxSizing: "border-box"
+                }}
+              >
+                <option value="all">All Nutrients</option>
+                <option value="vitamins_minerals">Vitamins & Minerals</option>
+                <option value="proteins_muscles">Proteins & Muscles</option>
+                <option value="oils_fats">Essential Oils & Fats</option>
+                <option value="gut_digestion">Gut Health & Digestion</option>
+                <option value="brain_sleep">Brain & Sleep Support</option>
+                <option value="antioxidants_detox">Antioxidants & Detox</option>
+                <option value="wellness">General Wellness</option>
+              </select>
+            )}
+
             {selectedCategory === 'nutrition' && (
               <button
                 onClick={() => {
@@ -13624,7 +13800,8 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   border: "none",
                   cursor: "pointer",
                   fontFamily: "var(--font)",
-                  transition: "all 0.2s ease"
+                  transition: "all 0.2s ease",
+                  height: "48px"
                 }}
               >
                 {isExploringFood ? "Show Supplements" : "Explore Food Dishes"}
