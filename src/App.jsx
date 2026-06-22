@@ -12424,7 +12424,11 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Zincovit Tablets", use: "Immunity & multimineral support", dosage: "1 tablet daily after lunch" },
         { name: "Crocin Pain Relief", use: "Headache & mild migraine relief", dosage: "1 tablet every 4-6 hours as needed" },
         { name: "Dulcolax 5mg", use: "Overnight constipation relief", dosage: "1-2 tablets at bedtime with water" },
-        { name: "Betadine Gargle 2%", use: "Throat infection & germ protection", dosage: "Gargle with 10ml diluted gargle for 30 seconds" }
+        { name: "Betadine Gargle 2%", use: "Throat infection & germ protection", dosage: "Gargle with 10ml diluted gargle for 30 seconds" },
+        { name: "ORSL Plus Orange Drink", use: "Rehydration & recovery support", dosage: "Sip 1 pack during fatigue or post-exercise" },
+        { name: "Dettol Liquid Antiseptic", use: "Skin disinfection & hygiene protection", dosage: "Dilute 1:20 with water for wound cleansing" },
+        { name: "Skore Condoms Chocolate", use: "Contraception, protection & flavor", dosage: "Single-use during intimate contact" },
+        { name: "Luliconazole Cream 1%", use: "Tinea, athlete's foot & fungal itch relief", dosage: "Apply to clean affected area once daily" }
       ]
     },
     {
@@ -12482,7 +12486,10 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Bael Fruit Powder", use: "Irritable bowel & dysentery relief", dosage: "1 tsp mixed in water twice daily" },
         { name: "Chyawanprash Organic", use: "Daily family immunity booster", dosage: "1 tablespoon daily on empty stomach" },
         { name: "Yastimadhu Lozenges", use: "Throat soothing & gastric comfort", dosage: "Suck 1 lozenge as needed" },
-        { name: "Dashmula Arishta", use: "Post-illness physical recovery", dosage: "15ml with equal water twice daily after food" }
+        { name: "Dashmula Arishta", use: "Post-illness physical recovery", dosage: "15ml with equal water twice daily after food" },
+        { name: "Pippali Powder", use: "Respiratory defense & lung warming", dosage: "1/2 tsp daily with honey" },
+        { name: "Tagara Capsules", use: "Mind calming & healthy sleep induction", dosage: "1 capsule 1 hour before bed" },
+        { name: "Neem & Turmeric Soap", use: "Antibacterial protection & skin purification", dosage: "Use daily during bath" }
       ]
     },
     {
@@ -12540,7 +12547,10 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Milk Thistle (Silymarin)", use: "Liver cell regeneration & defense", dosage: "150mg twice daily" },
         { name: "Glutathione Liposomal", use: "Master cellular antioxidant & detoxifier", dosage: "250mg daily on empty stomach" },
         { name: "Supergreens Antioxidant Blend", use: "Digestive enzymes & phytonutrients", dosage: "1 scoop in 250ml cold water" },
-        { name: "Chia Seeds Powder", use: "Fiber, protein & mineral source", dosage: "1 tablespoon daily in yogurt" }
+        { name: "Chia Seeds Powder", use: "Fiber, protein & mineral source", dosage: "1 tablespoon daily in yogurt" },
+        { name: "Plant Protein Powder", use: "Vegan clean muscle repair & growth", dosage: "1 scoop in water post-exercise" },
+        { name: "Cod Liver Oil Capsules", use: "Joint health & natural vitamins A/D boost", dosage: "1 softgel daily with breakfast" },
+        { name: "Ashwagandha Gummies", use: "Stress ease & cortisol control support", dosage: "2 gummies daily after lunch" }
       ]
     },
     {
@@ -12598,7 +12608,10 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Antiseptic Spray (No-Sting)", use: "Sting-free skin disinfection", dosage: "Spray directly onto minor scrape from 10cm" },
         { name: "Benzalkonium Wipes", use: "Alcohol-free skin preparation", dosage: "Wipe skin area before drawing blood or checking vitals" },
         { name: "Sting Relief Pads", use: "Local anesthetic for wasp & bee stings", dosage: "Press pad against sting site for 1 minute" },
-        { name: "Sterile Saline Wipes", use: "Gentle mechanical wound cleansing", dosage: "Wipe raw skin from center outwards to remove dirt" }
+        { name: "Sterile Saline Wipes", use: "Gentle mechanical wound cleansing", dosage: "Wipe raw skin from center outwards to remove dirt" },
+        { name: "Eye Wash Solution Sterile", use: "Flushing dust, chemicals or debris from eyes", dosage: "Rinse affected eye thoroughly with solution" },
+        { name: "Zinc Oxide Tape Roll", use: "Securing dressings & strapping joints", dosage: "Apply directly over gauze or secure around joints" },
+        { name: "Petroleum Gauze Dressing", use: "Non-adherent dressing for burns & open wounds", dosage: "Place directly over wound before applying outer wrap" }
       ]
     }
   ];
