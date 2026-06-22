@@ -13129,39 +13129,6 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 <div style={{ flex: 1, textAlign: "left" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
-                    {selectedCategory === 'herbs' && (
-                      <a
-                        href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' herbal remedies')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          color: "var(--blue)",
-                          textDecoration: "none",
-                          fontSize: 10.5,
-                          fontWeight: 600,
-                          padding: "2px 6px",
-                          borderRadius: 5,
-                          background: "rgba(37,99,235,0.06)",
-                          border: "1px solid rgba(37,99,235,0.15)",
-                          transition: "all 0.2s ease"
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = "var(--blue)";
-                          e.currentTarget.style.color = "#fff";
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = "rgba(37,99,235,0.06)";
-                          e.currentTarget.style.color = "var(--blue)";
-                        }}
-                        title={`Search Google for ${item.name}`}
-                      >
-                        <span>Google</span>
-                        <span style={{ fontSize: 8.5 }}>↗</span>
-                      </a>
-                    )}
                   </div>
                   <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.use}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
@@ -13186,6 +13153,27 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                       }}
                     >
                       🛒 Buy Now
+                    </a>
+                  )}
+                  {selectedCategory === 'herbs' && (
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' herbal remedies')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-buy-btn"
+                      style={{
+                        padding: "8px 18px",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 12,
+                        lineHeight: 1.2,
+                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                        color: "#fff",
+                        boxShadow: "0 2px 6px rgba(37,99,235,0.15)",
+                        gap: 6
+                      }}
+                    >
+                      Know More
                     </a>
                   )}
                   <button
