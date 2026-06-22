@@ -15443,46 +15443,7 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Category Selector on Top */}
-                {savedMedicines.length > 0 && activeMed && (
-                  <div style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    padding: "10px 14px",
-                    background: "var(--surface-2)",
-                    borderBottom: "1.5px solid var(--border)",
-                    gap: 6
-                  }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span>Change Category for:</span>
-                      <strong style={{ color: "var(--accent, #3b82f6)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={activeMed.name}>
-                        {activeMed.name}
-                      </strong>
-                    </div>
-                    <select
-                      value={activeMed.category || "Pharmacy"}
-                      onChange={(e) => handleChangeMedicineCategory(activeMedId, e.target.value)}
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-sm)",
-                        color: "var(--text)",
-                        fontSize: 12,
-                        padding: "6px 10px",
-                        cursor: "pointer",
-                        fontFamily: "var(--font)",
-                        outline: "none",
-                        width: "100%",
-                        boxSizing: "border-box"
-                      }}
-                    >
-                      <option value="Pharmacy">💊 Pharmacy</option>
-                      <option value="Herbal Remedies">🌿 Herbal Remedies</option>
-                      <option value="Nutrition Center">🥗 Nutrition Center</option>
-                      <option value="First Aid Station">🏥 First Aid Station</option>
-                    </select>
-                  </div>
-                )}
+
 
                 {/* Body */}
                 <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10, background: "var(--surface)" }}>
