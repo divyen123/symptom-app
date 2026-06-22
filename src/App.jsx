@@ -12223,7 +12223,17 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
         { name: "Iron + Folic Acid", use: "Anemia prevention", dosage: "1 tablet daily on empty stomach" },
         { name: "Zinc 50mg", use: "Immune support & skin health", dosage: "1 tablet daily with food" },
         { name: "Magnesium Glycinate", use: "Sleep & muscle relaxation", dosage: "400mg before bedtime" },
-        { name: "B-Complex Vitamins", use: "Energy & nervous system", dosage: "1 tablet daily after breakfast" }
+        { name: "B-Complex Vitamins", use: "Energy & nervous system", dosage: "1 tablet daily after breakfast" },
+        { name: "Coenzyme Q10 (CoQ10) 100mg", use: "Heart health & cellular energy production", dosage: "1 capsule daily with food" },
+        { name: "Calcium + Vitamin D3", use: "Bone density & joint support", dosage: "1 tablet daily after lunch" },
+        { name: "Whey Protein Isolate", use: "Muscle recovery & daily protein replenishment", dosage: "1 scoop (30g) in 200ml water post-workout" },
+        { name: "Vitamin E 400IU", use: "Antioxidant protection & skin nourishment", dosage: "1 softgel daily with a meal" },
+        { name: "Biotin 10000mcg", use: "Hair follicle strengthening & nail thickness", dosage: "1 tablet daily with breakfast" },
+        { name: "Collagen Peptides Powder", use: "Skin elasticity & joint flexibility", dosage: "10g dissolved in warm water daily" },
+        { name: "Apple Cider Vinegar (ACV)", use: "Healthy digestion & metabolic support", dosage: "2 ACV gummies before meals" },
+        { name: "Melatonin 3mg", use: "Sleep quality & sleep cycle regulation", dosage: "1 tablet 30-60 mins before bedtime" },
+        { name: "Probiotics Multistrain", use: "Gut microbiome balance & immunity support", dosage: "1 capsule daily on empty stomach" },
+        { name: "Electrolytes Complex", use: "Hydration replenishment & cramp prevention", dosage: "1 tablet dissolved in 300ml water" }
       ]
     },
     {
@@ -13104,16 +13114,41 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             </button>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
             <input
               type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search medicines..."
+              placeholder={selectedCategory === 'nutrition' ? "Search nutrition ingredients..." : "Search medicines..."}
               style={{
-                width: "100%", padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
+                flex: 1, padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
                 fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
                 outline: "none"
               }}
             />
+            {selectedCategory === 'nutrition' && (
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent((searchTerm ? searchTerm : 'essential vitamins and minerals') + ' rich whole food sources list')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-buy-btn"
+                style={{
+                  padding: "12px 20px",
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  lineHeight: 1.2,
+                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                  color: "#fff",
+                  boxShadow: "0 2px 6px rgba(245,158,11,0.15)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none"
+                }}
+              >
+                Explore as Food
+              </a>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -13186,7 +13221,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                         ? "var(--bg-green-light)" : `linear-gradient(135deg, ${activeCategory.color}, ${activeCategory.color}dd)`,
                       color: isSaved(item.name) ? "var(--green)" : "#fff",
                       opacity: isSaved(item.name) ? 0.7 : 1,
-                      boxShadow: isSaved(item.name) ? "none" : `0 4px 12px ${activeCategory.color}40`
+                      boxShadow: isSaved(item.name) ? "none" : `0 2px 6px ${activeCategory.color}20`
                     }}
                   >
                     {isSaved(item.name) ? "✓ Saved" : "+ Save"}
