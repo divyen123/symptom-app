@@ -6816,7 +6816,7 @@ function FeverCareGuide({ savedMedicines = [], onSaveMedicine }) {
 // ─── HEALTH TIPS ──────────────────────────────────────────────────────────────
 
 // Tip Detail Modal — shown when user clicks a wellness tip card
-function TipDetailModal({ tip, onClose }) {
+function TipDetailModal({ tip, savedMedicines = [], onSaveMedicine, onClose }) {
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
   const [error, setError] = useState(null);
@@ -6824,6 +6824,8 @@ function TipDetailModal({ tip, onClose }) {
   const [itemDetail, setItemDetail] = useState(null);
   const [loadingItem, setLoadingItem] = useState(false);
   const [errorItem, setErrorItem] = useState(null);
+
+  const isSavedItem = selectedItem && savedMedicines.some(m => m?.name?.toLowerCase?.().trim() === selectedItem.name.toLowerCase().trim());
 
   const app = loadAppearance();
   const navPos = app.navPosition || "left";
@@ -7124,6 +7126,42 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => onSaveMedicine && onSaveMedicine(selectedItem.name, "Wellness Guide", "Nutrition Center")}
+                  disabled={isSavedItem}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "var(--radius-sm)",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    border: "none",
+                    cursor: isSavedItem ? "default" : "pointer",
+                    background: isSavedItem ? "rgba(16,185,129,0.25)" : "var(--white)",
+                    color: isSavedItem ? "#10b981" : "#1e3a8a",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    marginRight: 6,
+                    fontFamily: "var(--font)",
+                    transition: "all 0.2s ease",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                  }}
+                  onMouseEnter={e => {
+                    if (!isSavedItem) {
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.9)";
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!isSavedItem) {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.background = "var(--white)";
+                    }
+                  }}
+                >
+                  {isSavedItem ? "🥗 Saved to Nutrition" : "🥗 Save to Nutrition"}
+                </button>
+
                 <button
                   onClick={() => fetchItemDetail(selectedItem)}
                   title="Refresh Guide"
@@ -7539,7 +7577,7 @@ Format strictly as follows with these exact section headers:
 
 
       {activeTip && (
-        <TipDetailModal tip={activeTip} onClose={() => setActiveTip(null)} />
+        <TipDetailModal tip={activeTip} savedMedicines={savedMedicines} onSaveMedicine={onSaveMedicine} onClose={() => setActiveTip(null)} />
       )}
     </div>
   );
