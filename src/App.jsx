@@ -14324,25 +14324,26 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
       )}
 
       {/* Step-by-Step Food Ingredient Modal */}
-      <AnimatePresence>
-        {activeFoodItem && createPortal(
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{
-              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-              background: "rgba(10,25,47,0.85)", backdropFilter: "blur(8px)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              zIndex: 10001, padding: 20
-            }}
-          >
+      {createPortal(
+        <AnimatePresence>
+          {activeFoodItem && (
             <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{
+                position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                background: "rgba(10,25,47,0.85)", backdropFilter: "blur(8px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 10001, padding: 20
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 250 }}
               style={{
                 background: "var(--surface)", border: "1px solid var(--border)",
                 borderRadius: 20, width: "100%", maxWidth: 500, padding: 30,
@@ -14516,10 +14517,11 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                 )}
               </div>
             </motion.div>
-          </motion.div>,
-          document.body
+          </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
     </div>
   );
 }
