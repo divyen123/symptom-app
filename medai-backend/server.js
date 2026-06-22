@@ -851,7 +851,7 @@ app.get("/api/medications", authMiddleware, async (req, res) => {
   try {
     const { data: meds, error } = await supabase
       .from("medications")
-      .select("id, name, cause, createdAt:created_at")
+      .select("id, name, cause, category, createdAt:created_at")
       .eq("user_id", req.userId)
       .order("created_at", { ascending: true });
 
@@ -868,13 +868,14 @@ app.post("/api/medications", authMiddleware, async (req, res) => {
     const record = {
       user_id: req.userId,
       name: req.body.name,
-      cause: req.body.cause || ""
+      cause: req.body.cause || "",
+      category: req.body.category || "Pharmacy"
     };
 
     const { data: doc, error } = await supabase
       .from("medications")
       .insert(record)
-      .select("id, name, cause, createdAt:created_at")
+      .select("id, name, cause, category, createdAt:created_at")
       .single();
 
     if (error) throw error;

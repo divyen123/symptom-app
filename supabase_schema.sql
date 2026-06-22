@@ -113,6 +113,7 @@ create table if not exists public.medications (
   user_id uuid not null references public.users(id) on delete cascade,
   name text not null,
   cause text default '',
+  category text default 'Pharmacy',
   created_at timestamp with time zone default now()
 );
 

@@ -12382,7 +12382,12 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
 
   const handleSave = (itemName) => {
     if (onSaveMedicine) {
-      onSaveMedicine(itemName, "MediTown");
+      let catName = "Pharmacy";
+      if (selectedCategory === "herbs") catName = "Herbal Remedies";
+      else if (selectedCategory === "nutrition") catName = "Nutrition Center";
+      else if (selectedCategory === "firstaid") catName = "First Aid Station";
+
+      onSaveMedicine(itemName, "MediTown", catName);
       setSavedNotice(itemName);
       setTimeout(() => setSavedNotice(""), 2000);
     }
@@ -14510,15 +14515,15 @@ export default function App() {
     setTodos([]);
   };
 
-  const handleSaveMedicine = async (medicine, cause = "") => {
+  const handleSaveMedicine = async (medicine, cause = "", category = "Pharmacy") => {
     const isDuplicate = savedMedicines.some(m => m?.name?.toLowerCase?.().trim() === medicine.toLowerCase().trim());
     if (isDuplicate) return;
     try {
-      const newMed = await apiCreateMedication({ name: medicine, cause });
+      const newMed = await apiCreateMedication({ name: medicine, cause, category });
       setSavedMedicines(prev => [newMed, ...prev]);
     } catch (_e) {
       // Offline fallback: save to localStorage
-      const offlineMed = { _id: "local_" + Date.now(), id: "local_" + Date.now(), name: medicine, cause, createdAt: new Date().toISOString() };
+      const offlineMed = { _id: "local_" + Date.now(), id: "local_" + Date.now(), name: medicine, cause, category, createdAt: new Date().toISOString() };
       const updated = [offlineMed, ...savedMedicines];
       setSavedMedicines(updated);
       localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
@@ -15225,6 +15230,35 @@ export default function App() {
         // Arrow toggle symbol
         const arrowChar = "➙";
 
+        const categorized = {
+          "Pharmacy": [],
+          "Herbal Remedies": [],
+          "Nutrition Center": [],
+          "First Aid Station": []
+        };
+
+        savedMedicines.forEach(med => {
+          if (!med) return;
+          let cat = med.category || "Pharmacy";
+          if (cat.toLowerCase().includes("herbal") || cat.toLowerCase().includes("herb")) {
+            cat = "Herbal Remedies";
+          } else if (cat.toLowerCase().includes("nutrition")) {
+            cat = "Nutrition Center";
+          } else if (cat.toLowerCase().includes("first aid") || cat.toLowerCase().includes("firstaid")) {
+            cat = "First Aid Station";
+          } else {
+            cat = "Pharmacy";
+          }
+          categorized[cat].push(med);
+        });
+
+        const categoryMeta = {
+          "Pharmacy": { icon: "💊", color: "#3b82f6", rgb: "59,130,246" },
+          "Herbal Remedies": { icon: "🌿", color: "#10b981", rgb: "16,185,129" },
+          "Nutrition Center": { icon: "🥗", color: "#f59e0b", rgb: "245,158,11" },
+          "First Aid Station": { icon: "🏥", color: "#ef4444", rgb: "239,68,68" }
+        };
+
         return (
           <div ref={fabContainerRef} style={containerStyle}>
             {/* Popover for Medicine List */}
@@ -15275,66 +15309,100 @@ export default function App() {
                 </div>
 
                 {/* Body */}
-                <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, background: "var(--surface)" }}>
+                <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10, background: "var(--surface)" }}>
                   {savedMedicines.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-faint)", fontSize: 12.5 }}>
                       <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>💊</span>
                       No saved medicines yet. Add one from the Vitals Log or Search!
                     </div>
                   ) : (
-                    savedMedicines.map(med => {
-                      const medId = med._id || med.id;
+                    Object.keys(categorized).map(catName => {
+                      const list = categorized[catName];
+                      if (list.length === 0) return null;
+                      const meta = categoryMeta[catName];
                       return (
-                        <div key={medId} style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "8px 10px",
-                          background: "var(--surface-2)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "var(--radius-sm)",
-                        }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                            <span style={{ fontSize: 14 }}>💊</span>
+                        <div key={catName} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: "0.5px",
+                            textTransform: "uppercase",
+                            color: meta.color,
+                            padding: "4px 4px 2px",
+                            borderBottom: "1px solid var(--border)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            opacity: 0.95
+                          }}>
+                            <span>{meta.icon}</span>
+                            <span>{catName}</span>
                             <span style={{
-                              fontSize: 12.5,
-                              fontWeight: 700,
-                              color: "var(--text)",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              maxWidth: 140
-                            }} title={med.name}>
-                              {med.name}
-                            </span>
+                              marginLeft: "auto",
+                              background: `rgba(${meta.rgb}, 0.1)`,
+                              padding: "2px 6px",
+                              borderRadius: 10,
+                              fontSize: 9.5
+                            }}>{list.length}</span>
                           </div>
-                          <button
-                            onClick={() => handleDeleteMedicine(med.id || med._id)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                              fontSize: 14,
-                              color: "var(--text-red-light)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: "4px 8px",
-                              borderRadius: "var(--radius-sm)",
-                              transition: "all 0.2s ease"
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = "var(--bg-red-light)";
-                              e.currentTarget.style.color = "var(--text-red)";
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = "none";
-                              e.currentTarget.style.color = "var(--text-red-light)";
-                            }}
-                            title="Delete Medicine"
-                          >
-                            🗑️
-                          </button>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {list.map(med => {
+                              const medId = med._id || med.id;
+                              return (
+                                <div key={medId} style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 10px",
+                                  background: "var(--surface-2)",
+                                  border: "1px solid var(--border)",
+                                  borderRadius: "var(--radius-sm)",
+                                }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                    <span style={{ fontSize: 14 }}>{meta.icon}</span>
+                                    <span style={{
+                                      fontSize: 12.5,
+                                      fontWeight: 700,
+                                      color: "var(--text)",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      maxWidth: 140
+                                    }} title={med.name}>
+                                      {med.name}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDeleteMedicine(med.id || med._id)}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      fontSize: 14,
+                                      color: "var(--text-red-light)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      padding: "4px 8px",
+                                      borderRadius: "var(--radius-sm)",
+                                      transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={e => {
+                                      e.currentTarget.style.background = "var(--bg-red-light)";
+                                      e.currentTarget.style.color = "var(--text-red)";
+                                    }}
+                                    onMouseLeave={e => {
+                                      e.currentTarget.style.background = "none";
+                                      e.currentTarget.style.color = "var(--text-red-light)";
+                                    }}
+                                    title="Delete Item"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     })
