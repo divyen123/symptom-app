@@ -11825,11 +11825,209 @@ const NUTRIENT_DETAILS_LOOKUP = {
   }
 };
 
+const foodIngredients = [
+  {
+    name: "Spinach",
+    desc: "Leafy green packed with iron, calcium, and vitamins A & C.",
+    nutrients: "Iron, Calcium, Vitamin A, Vitamin C",
+    image: "🥬",
+    steps: [
+      { title: "Select & Rinse", desc: "Choose crisp, dark green leaves. Rinse thoroughly in cold water to remove any dirt or grit." },
+      { title: "Optimal Storage", desc: "Wrap spinach in a clean paper towel and place in a reusable container in the crisper drawer to keep dry." },
+      { title: "Cooking & Nutrients", desc: "Steam lightly or saute in olive oil for 2 minutes. Cooking helps unlock calcium and iron absorption." },
+      { title: "Perfect Pairing", desc: "Pair spinach with citrus juice (Vitamin C) to boost your body's absorption of plant-based non-heme iron." }
+    ]
+  },
+  {
+    name: "Wild Salmon",
+    desc: "Premium source of Omega-3 fatty acids, high-quality protein, and Vitamin D.",
+    nutrients: "Omega-3, Vitamin D, Vitamin B12, Protein",
+    image: "🐟",
+    steps: [
+      { title: "Choose Fresh", desc: "Select wild-caught salmon with firm, moist flesh. It should have a clean, ocean-like smell." },
+      { title: "Prep & Season", desc: "Pat dry with a paper towel. Season with a pinch of sea salt, black pepper, and fresh lemon juice." },
+      { title: "Cook Gently", desc: "Bake at 400°F (200°C) for 12-15 minutes or pan-sear skin-side down until cooked through to retain heart-healthy oils." },
+      { title: "Serving Suggestion", desc: "Serve alongside roasted asparagus or over a bed of quinoa for a complete anti-inflammatory meal." }
+    ]
+  },
+  {
+    name: "Almonds",
+    desc: "Nutrient-dense nut providing healthy fats, magnesium, and vitamin E.",
+    nutrients: "Magnesium, Vitamin E, Zinc, Healthy Fats",
+    image: "🥜",
+    steps: [
+      { title: "Quality Check", desc: "Select raw or dry-roasted unsalted almonds to avoid excess sodium and unhealthy oils." },
+      { title: "Daily Portion", desc: "Measure a handful (approx. 23 almonds or 1 ounce) as the ideal daily serving size." },
+      { title: "Activation Option", desc: "Soak almonds in water overnight to neutralise phytic acid, making them easier to digest." },
+      { title: "Versatile Use", desc: "Add to breakfast oatmeal, slice onto fresh salads, or enjoy raw as a midday energy booster." }
+    ]
+  },
+  {
+    name: "Avocados",
+    desc: "Creamy fruit loaded with potassium, monounsaturated fats, and fiber.",
+    nutrients: "Potassium, Healthy Fats, Fiber, Vitamin E",
+    image: "🥑",
+    steps: [
+      { title: "Ripe Testing", desc: "Gently squeeze the avocado. It should yield to light pressure and have a dark green skin." },
+      { title: "Slicing Safety", desc: "Cut lengthwise around the pit, twist to separate, and safely tap the pit with a knife to remove." },
+      { title: "Storage Secret", desc: "Store cut avocado with a squeeze of lemon juice or close to chopped onion to prevent browning." },
+      { title: "Diet Integration", desc: "Spread on whole-grain toast, blend into smoothies, or toss in salads for healthy fat absorption." }
+    ]
+  },
+  {
+    name: "Eggs",
+    desc: "Whole food containing vitamin D, B-vitamins, biotin, and complete protein.",
+    nutrients: "Vitamin D, Biotin, Vitamin B12, Protein",
+    image: "🥚",
+    steps: [
+      { title: "Inspection", desc: "Choose fresh, organic, or pasture-raised eggs. Ensure shells are completely clean and uncracked." },
+      { title: "Prep & Boil", desc: "Place in a saucepan of cold water. Bring to a boil, cover, remove from heat, and let sit for 6-8 minutes." },
+      { title: "Cool & Peel", desc: "Transfer boiled eggs directly into an ice water bath. Tap and peel under cold running water." },
+      { title: "Eat Whole", desc: "Consume the whole egg; the yolk contains essential fat-soluble vitamins (D, E, A, K) and biotin." }
+    ]
+  },
+  {
+    name: "Greek Yogurt",
+    desc: "Thick yogurt filled with probiotics, calcium, and immune-supporting zinc.",
+    nutrients: "Probiotics, Calcium, Zinc, Protein",
+    image: "🥛",
+    steps: [
+      { title: "Check Labels", desc: "Opt for plain, unsweetened Greek yogurt to avoid added sugars and maximize protein content." },
+      { title: "Probiotic Verification", desc: "Ensure the packaging states it contains 'live and active cultures' for gut health benefit." },
+      { title: "Toppings Addition", desc: "Add raw honey, fresh blueberries, and chia seeds to sweeten naturally and add antioxidants." },
+      { title: "Cooking Alternate", desc: "Use Greek yogurt as a healthy, high-protein substitute for sour cream or mayonnaise in recipes." }
+    ]
+  },
+  {
+    name: "Chia Seeds",
+    desc: "Tiny seeds loaded with omega-3 fatty acids, calcium, and fiber.",
+    nutrients: "Omega-3, Calcium, Fiber, Magnesium",
+    image: "🌱",
+    steps: [
+      { title: "Measure Correctly", desc: "Use 1-2 tablespoons daily. Despite their tiny size, they are highly calorie-dense." },
+      { title: "Hydration Process", desc: "Soak in water or almond milk (1:4 ratio) for 15-20 minutes until they form a gel-like consistency." },
+      { title: "Chia Pudding", desc: "Mix with vanilla extract and fruit, then refrigerate overnight for a highly nutritious breakfast." },
+      { title: "Direct Addition", desc: "Sprinkle raw seeds directly over yogurt, salads, or stir into pancake batter before cooking." }
+    ]
+  },
+  {
+    name: "Broccoli",
+    desc: "Cruciferous vegetable rich in vitamin C, iron, and antioxidant compounds.",
+    nutrients: "Vitamin C, Iron, Fiber, Antioxidants",
+    image: "🥦",
+    steps: [
+      { title: "Pre-Wash Care", desc: "Wash broccoli thoroughly under cold running water just before preparing to cook." },
+      { title: "Chopping Benefits", desc: "Cut into uniform florets. Let them sit for 5 minutes after cutting to activate healthy enzymes." },
+      { title: "Gentle Cooking", desc: "Steam for 3-5 minutes until bright green and slightly tender. Overcooking destroys vitamin C." },
+      { title: "Drizzle & Serve", desc: "Drizzle with extra virgin olive oil and a squeeze of fresh lemon juice to enhance flavor and absorption." }
+    ]
+  },
+  {
+    name: "Blueberries",
+    desc: "Antioxidant super-berries packed with vitamin C and cognitive support.",
+    nutrients: "Antioxidants, Vitamin C, Fiber",
+    image: "🫐",
+    steps: [
+      { title: "Choose & Sort", desc: "Select plump, dry berries with a dusty-blue color. Discard soft or moldy ones." },
+      { title: "Rinse Timing", desc: "Wash in a colander under a gentle stream of cold water right before consumption, not before storing." },
+      { title: "Snacking & Baking", desc: "Enjoy a cup raw, fold gently into muffin batters, or stir into morning oatmeal." },
+      { title: "Freezing Method", desc: "Freeze in a single layer on a baking sheet, then transfer to a bag to preserve them for months." }
+    ]
+  },
+  {
+    name: "Sweet Potatoes",
+    desc: "Nutritious root vegetable loaded with Vitamin A (beta-carotene) and fiber.",
+    nutrients: "Vitamin A, Vitamin C, Potassium, Fiber",
+    image: "🍠",
+    steps: [
+      { title: "Wash & Scrub", desc: "Scrub the skin thoroughly under running water with a vegetable brush. Do not peel, as skin is fiber-rich." },
+      { title: "Roasting Process", desc: "Prick with a fork, cut into wedges, toss with olive oil, and bake at 400°F (200°C) for 25-30 minutes." },
+      { title: "Mashing Guide", desc: "Boil until fork-tender (15-20 mins) and mash with a touch of cinnamon and coconut oil." },
+      { title: "Fat Pairing", desc: "Consume with healthy fats (like olive oil or butter) to fully absorb the fat-soluble Vitamin A." }
+    ]
+  },
+  {
+    name: "Quinoa",
+    desc: "Gluten-free seed offering a complete protein, iron, and magnesium.",
+    nutrients: "Protein, Iron, Magnesium, Fiber",
+    image: "🌾",
+    steps: [
+      { title: "Rinsing Step", desc: "Rinse raw quinoa in a fine-mesh strainer under cold running water to remove bitter saponin coating." },
+      { title: "Ratio & Simmer", desc: "Combine 1 part quinoa with 2 parts water in a saucepan. Bring to a boil, then reduce heat and simmer." },
+      { title: "Absorption Time", desc: "Cover and let simmer for 15 minutes until all water is absorbed and spirals appear on the seeds." },
+      { title: "Fluff & Enjoy", desc: "Remove from heat, let sit covered for 5 minutes, then fluff with a fork. Use as a grain base." }
+    ]
+  },
+  {
+    name: "Garlic",
+    desc: "Aromatic bulb rich in allicin, supporting immunity and zinc absorption.",
+    nutrients: "Zinc absorption booster, Vitamin C, Selenium",
+    image: "🧄",
+    steps: [
+      { title: "Peeling Hack", desc: "Crush the clove lightly under the flat blade of a chef's knife. The skin will slip off easily." },
+      { title: "Crush & Rest", desc: "Crush, chop, or mince the garlic and let it rest for 10 minutes before cooking to activate allicin." },
+      { title: "Cooking Prep", desc: "Saute on low-medium heat. Garlic burns very quickly, which makes it bitter and reduces health benefits." },
+      { title: "Raw Intake", desc: "For max cold-fighting power, swallow a small minced slice with warm water and honey." }
+    ]
+  },
+  {
+    name: "Oranges",
+    desc: "Citrus fruit famous for vitamin C content, potassium, and hydration.",
+    nutrients: "Vitamin C, Potassium, Fiber",
+    image: "🍊",
+    steps: [
+      { title: "Selection Guide", desc: "Pick oranges that feel heavy for their size and have smooth, firm skin. Heavier means juicier." },
+      { title: "Peeling & Slicing", desc: "Score the skin with a knife from top to bottom, peel, and separate into segments." },
+      { title: "Whole over Juice", desc: "Eat the whole fruit including the fibrous white pith, rather than juicing, to regulate sugar absorption." },
+      { title: "Iron Absorption", desc: "Eat segments with iron-rich foods (beans, lentils, spinach) to significantly increase iron absorption." }
+    ]
+  },
+  {
+    name: "Pumpkin Seeds",
+    desc: "Crisp seeds packed with zinc, magnesium, and plant-based iron.",
+    nutrients: "Zinc, Magnesium, Iron, Protein",
+    image: "🎃",
+    steps: [
+      { title: "Harvest & Clean", desc: "Scoop from fresh pumpkin. Soak in water to separate seeds from pulp, then dry thoroughly." },
+      { title: "Seasoning Mix", desc: "Toss dried seeds with olive oil, sea salt, garlic powder, and a touch of paprika." },
+      { title: "Roasting Process", desc: "Spread in a single layer on a tray. Roast at 350°F (175°C) for 15-20 minutes, stirring occasionally." },
+      { title: "Storage Life", desc: "Let them cool completely, then store in an airtight container for up to 3 weeks of crunchy snacking." }
+    ]
+  },
+  {
+    name: "Mushrooms",
+    desc: "Fungi offering an excellent plant-based source of Vitamin D and Selenium.",
+    nutrients: "Vitamin D, Selenium, B-Complex",
+    image: "🍄",
+    steps: [
+      { title: "Cleaning Method", desc: "Wipe with a damp paper towel or brush off dirt. Avoid soaking them, as they absorb water like a sponge." },
+      { title: "Sun Charging", desc: "Place fresh mushrooms gill-side up in direct sunlight for 30 minutes before cooking to boost Vitamin D levels." },
+      { title: "Sauté Technique", desc: "Cook in a hot, dry pan first to release water, then add butter or oil and herbs for crisp browning." },
+      { title: "Culinary Pair", desc: "Add to stir-fries, egg scrambles, or soups to infuse deep, savory umami flavors." }
+    ]
+  },
+  {
+    name: "Green Tea",
+    desc: "Antioxidant beverage rich in L-Theanine and polyphenol compounds.",
+    nutrients: "L-Theanine, Antioxidants, Hydration",
+    image: "🍵",
+    steps: [
+      { title: "Water Temperature", desc: "Heat fresh water to about 175°F-180°F (80°C). Boiling water will scorch the leaves and make it bitter." },
+      { title: "Steep Duration", desc: "Steep the green tea bag or loose leaves for exactly 2-3 minutes. Any longer causes bitterness." },
+      { title: "Flavor Boost", desc: "Add a squeeze of fresh lemon juice; the Vitamin C helps stabilize and absorb the tea's antioxidants." },
+      { title: "Optimal Timing", desc: "Drink between meals to enhance fat oxidation and calm focus, avoiding late evenings." }
+    ]
+  }
+];
+
 // ─── MEDITOWN VIEW ─────────────────────────────────────────────────────────────
 function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInnerBack, pushHistoryEntry, appearance = {}, initialCategory, setInitialCategory }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
+  const [isExploringFood, setIsExploringFood] = useState(false);
+  const [activeFoodItem, setActiveFoodItem] = useState(null);
+  const [currentFoodStep, setCurrentFoodStep] = useState(0);
 
   // Custom Need form & recommendation states
   const [customNeedActive, setCustomNeedActive] = useState(false);
@@ -12276,6 +12474,14 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
     ? activeCategory.items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.use.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
+
+  const filteredFoodItems = isExploringFood
+    ? foodIngredients.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.nutrients.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
 
@@ -13100,7 +13306,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             </div>
 
             <button
-              onClick={() => { setSelectedCategory(null); setSearchTerm(""); }}
+              onClick={() => { setSelectedCategory(null); setSearchTerm(""); setIsExploringFood(false); }}
               style={{
                 background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
                 padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "var(--navy)",
@@ -13117,7 +13323,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
           <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
             <input
               type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              placeholder={selectedCategory === 'nutrition' ? "Search nutrition ingredients..." : "Search medicines..."}
+              placeholder={selectedCategory === 'nutrition' ? (isExploringFood ? "Search food ingredients..." : "Search nutrition ingredients...") : "Search medicines..."}
               style={{
                 flex: 1, padding: "12px 18px", borderRadius: 12, border: "1.5px solid var(--border)",
                 fontSize: 14, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--navy)",
@@ -13125,10 +13331,11 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               }}
             />
             {selectedCategory === 'nutrition' && (
-              <a
-                href={`https://www.google.com/search?q=${encodeURIComponent((searchTerm ? searchTerm : 'essential vitamins and minerals') + ' rich whole food sources list')}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => {
+                  setIsExploringFood(!isExploringFood);
+                  setSearchTerm("");
+                }}
                 className="mt-buy-btn"
                 style={{
                   padding: "12px 20px",
@@ -13136,100 +13343,152 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   fontWeight: 700,
                   fontSize: 13,
                   lineHeight: 1.2,
-                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                  background: isExploringFood
+                    ? "linear-gradient(135deg, #10b981, #059669)"
+                    : "linear-gradient(135deg, #f59e0b, #d97706)",
                   color: "#fff",
-                  boxShadow: "0 2px 6px rgba(245,158,11,0.15)",
+                  boxShadow: isExploringFood
+                    ? "0 2px 6px rgba(16,185,129,0.15)"
+                    : "0 2px 6px rgba(245,158,11,0.15)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                   whiteSpace: "nowrap",
-                  textDecoration: "none"
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "var(--font)",
+                  transition: "all 0.2s ease"
                 }}
               >
-                Explore as Food
-              </a>
+                {isExploringFood ? "Show Supplements" : "Explore as Food"}
+              </button>
             )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {filteredItems.map((item, i) => (
-              <div
-                key={i} className="mt-item-card"
-                style={{
-                  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
-                  padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
-                  animation: `mtCardIn 0.3s ease both`, animationDelay: `${i * 0.05}s`
-                }}
-              >
-                <div style={{ flex: 1, textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
+            {isExploringFood ? (
+              filteredFoodItems.map((item, i) => (
+                <div
+                  key={i} className="mt-item-card"
+                  onClick={() => {
+                    setActiveFoodItem(item);
+                    setCurrentFoodStep(0);
+                  }}
+                  style={{
+                    background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
+                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    cursor: "pointer", transition: "all 0.2s ease",
+                    animation: `mtCardIn 0.3s ease both`, animationDelay: `${i * 0.05}s`
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.15)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = "none";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <div style={{ flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: 16 }}>
+                    <span style={{ fontSize: 36 }}>{item.image}</span>
+                    <div>
+                      <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
+                      <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.desc}</p>
+                      <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>
+                        Rich in: <span style={{ color: "#f59e0b", fontWeight: 600 }}>{item.nutrients}</span>
+                      </p>
+                    </div>
                   </div>
-                  <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.use}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700, color: "#f59e0b",
+                      background: "rgba(245,158,11,0.1)", padding: "6px 12px", borderRadius: 8
+                    }}>
+                      View Guide →
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {selectedCategory === 'firstaid' && (
-                    <a
-                      href={`https://pharmeasy.in/search/all?name=${encodeURIComponent(item.name)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-buy-btn"
+              ))
+            ) : (
+              filteredItems.map((item, i) => (
+                <div
+                  key={i} className="mt-item-card"
+                  style={{
+                    background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
+                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    animation: `mtCardIn 0.3s ease both`, animationDelay: `${i * 0.05}s`
+                  }}
+                >
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
+                    </div>
+                    <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.use}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {selectedCategory === 'firstaid' && (
+                      <a
+                        href={`https://pharmeasy.in/search/all?name=${encodeURIComponent(item.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-buy-btn"
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 10,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          lineHeight: 1.2,
+                          background: "linear-gradient(135deg, #10b981, #059669)",
+                          color: "#fff",
+                          boxShadow: "0 2px 6px rgba(16,185,129,0.15)",
+                          gap: 6
+                        }}
+                      >
+                        🛒 Buy Now
+                      </a>
+                    )}
+                    {selectedCategory === 'herbs' && (
+                      <a
+                        href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' herbal remedies')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-buy-btn"
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 10,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          lineHeight: 1.2,
+                          background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                          color: "#fff",
+                          boxShadow: "0 2px 6px rgba(37,99,235,0.15)",
+                          gap: 6
+                        }}
+                      >
+                        Know More
+                      </a>
+                    )}
+                    <button
+                      className="mt-save-btn"
+                      onClick={() => handleSave(item.name)}
+                      disabled={isSaved(item.name)}
                       style={{
-                        padding: "8px 18px",
-                        borderRadius: 10,
-                        fontWeight: 700,
-                        fontSize: 12,
-                        lineHeight: 1.2,
-                        background: "linear-gradient(135deg, #10b981, #059669)",
-                        color: "#fff",
-                        boxShadow: "0 2px 6px rgba(16,185,129,0.15)",
-                        gap: 6
+                        padding: "8px 18px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                        background: isSaved(item.name)
+                          ? "var(--bg-green-light)" : `linear-gradient(135deg, ${activeCategory.color}, ${activeCategory.color}dd)`,
+                        color: isSaved(item.name) ? "var(--green)" : "#fff",
+                        opacity: isSaved(item.name) ? 0.7 : 1,
+                        boxShadow: isSaved(item.name) ? "none" : `0 2px 6px ${activeCategory.color}20`
                       }}
                     >
-                      🛒 Buy Now
-                    </a>
-                  )}
-                  {selectedCategory === 'herbs' && (
-                    <a
-                      href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' herbal remedies')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-buy-btn"
-                      style={{
-                        padding: "8px 18px",
-                        borderRadius: 10,
-                        fontWeight: 700,
-                        fontSize: 12,
-                        lineHeight: 1.2,
-                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                        color: "#fff",
-                        boxShadow: "0 2px 6px rgba(37,99,235,0.15)",
-                        gap: 6
-                      }}
-                    >
-                      Know More
-                    </a>
-                  )}
-                  <button
-                    className="mt-save-btn"
-                    onClick={() => handleSave(item.name)}
-                    disabled={isSaved(item.name)}
-                    style={{
-                      padding: "8px 18px", borderRadius: 10, fontWeight: 700, fontSize: 12,
-                      background: isSaved(item.name)
-                        ? "var(--bg-green-light)" : `linear-gradient(135deg, ${activeCategory.color}, ${activeCategory.color}dd)`,
-                      color: isSaved(item.name) ? "var(--green)" : "#fff",
-                      opacity: isSaved(item.name) ? 0.7 : 1,
-                      boxShadow: isSaved(item.name) ? "none" : `0 2px 6px ${activeCategory.color}20`
-                    }}
-                  >
-                    {isSaved(item.name) ? "✓ Saved" : "+ Save"}
-                  </button>
+                      {isSaved(item.name) ? "✓ Saved" : "+ Save"}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {filteredItems.length === 0 && (
+              ))
+            )}
+            {((!isExploringFood && filteredItems.length === 0) || (isExploringFood && filteredFoodItems.length === 0)) && (
               <div style={{ textAlign: "center", padding: 40, color: "var(--text-muted)" }}>
                 <p style={{ fontSize: 14 }}>No items found matching your search.</p>
               </div>
@@ -13524,6 +13783,128 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                     ))}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Step-by-Step Food Ingredient Modal */}
+      {activeFoodItem && createPortal(
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(10,25,47,0.85)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 10001, padding: 20
+        }}>
+          <div style={{
+            background: "var(--surface)", border: "1px solid var(--border)",
+            borderRadius: 20, width: "100%", maxWidth: 500, padding: 30,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.5)", position: "relative",
+            animation: "mtCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+          }}>
+            {/* Close / Wrong Icon */}
+            <button
+              onClick={() => setActiveFoodItem(null)}
+              style={{
+                position: "absolute", top: 20, right: 20,
+                background: "none", border: "none", color: "var(--text-muted)",
+                fontSize: 22, cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center", width: 32, height: 32,
+                borderRadius: "50%", transition: "all 0.2s"
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "var(--surface-2)";
+                e.currentTarget.style.color = "var(--navy)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "none";
+                e.currentTarget.style.color = "var(--text-muted)";
+              }}
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <span style={{ fontSize: 32 }}>{activeFoodItem.image}</span>
+              <div style={{ textAlign: "left" }}>
+                <h4 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--navy)" }}>{activeFoodItem.name}</h4>
+                <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-muted)" }}>Preparation & Nutrition Guide</p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div style={{ height: 6, background: "var(--border)", borderRadius: 3, marginBottom: 24, overflow: "hidden" }}>
+              <div style={{
+                height: "100%", background: "linear-gradient(90deg, #f59e0b, #d97706)",
+                width: `${((currentFoodStep + 1) / activeFoodItem.steps.length) * 100}%`,
+                transition: "width 0.3s ease"
+              }} />
+            </div>
+
+            {/* Step Content */}
+            <div style={{ minHeight: 140, textAlign: "left", marginBottom: 30 }}>
+              <span style={{
+                display: "inline-block", padding: "4px 10px", borderRadius: 20,
+                background: "rgba(245,158,11,0.1)", color: "#f59e0b",
+                fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5,
+                marginBottom: 12
+              }}>
+                Step {currentFoodStep + 1} of {activeFoodItem.steps.length}
+              </span>
+              <h5 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 800, color: "var(--navy)" }}>
+                {activeFoodItem.steps[currentFoodStep].title}
+              </h5>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: "var(--text)" }}>
+                {activeFoodItem.steps[currentFoodStep].desc}
+              </p>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+              <button
+                disabled={currentFoodStep === 0}
+                onClick={() => setCurrentFoodStep(prev => prev - 1)}
+                className="mt-buy-btn"
+                style={{
+                  flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                  background: currentFoodStep === 0 ? "var(--border)" : "var(--surface)",
+                  color: currentFoodStep === 0 ? "var(--text-faint)" : "var(--navy)",
+                  border: "1px solid var(--border)",
+                  cursor: currentFoodStep === 0 ? "not-allowed" : "pointer",
+                  opacity: currentFoodStep === 0 ? 0.5 : 1
+                }}
+              >
+                Previous
+              </button>
+              {currentFoodStep < activeFoodItem.steps.length - 1 ? (
+                <button
+                  onClick={() => setCurrentFoodStep(prev => prev + 1)}
+                  className="mt-buy-btn"
+                  style={{
+                    flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    color: "#fff", border: "none", cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(245,158,11,0.15)"
+                  }}
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={() => setActiveFoodItem(null)}
+                  className="mt-buy-btn"
+                  style={{
+                    flex: 1, padding: "10px 16px", borderRadius: 10, fontWeight: 700, fontSize: 12,
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    color: "#fff", border: "none", cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(16,185,129,0.15)"
+                  }}
+                >
+                  Done
+                </button>
               )}
             </div>
           </div>
