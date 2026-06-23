@@ -9524,6 +9524,22 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
   useEffect(() => { setSettings(initialSettings); }, [JSON.stringify(initialSettings)]);
   useEffect(() => { setEmailInput(user?.email || ""); }, [user?.email]);
 
+  const settingsRef = useRef(settings);
+  const initialSettingsRef = useRef(initialSettings);
+  const onSettingsChangeRef = useRef(onSettingsChange);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
+  useEffect(() => {
+    initialSettingsRef.current = initialSettings;
+  }, [initialSettings]);
+
+  useEffect(() => {
+    onSettingsChangeRef.current = onSettingsChange;
+  }, [onSettingsChange]);
+
   // Debounced auto-save to MongoDB
   useEffect(() => {
     if (JSON.stringify(settings) === JSON.stringify(initialSettings)) {
@@ -9533,12 +9549,22 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
     const timer = setTimeout(() => {
       onSettingsChange(settings);
       setSaved(true);
-      const savedTimer = setTimeout(() => setSaved(false), 2000);
-      return () => clearTimeout(savedTimer);
+      setTimeout(() => setSaved(false), 2000);
     }, 500);
 
     return () => clearTimeout(timer);
   }, [settings, onSettingsChange, initialSettings]);
+
+  // Flush pending changes on unmount
+  useEffect(() => {
+    return () => {
+      const current = settingsRef.current;
+      const initial = initialSettingsRef.current;
+      if (JSON.stringify(current) !== JSON.stringify(initial)) {
+        onSettingsChangeRef.current?.(current);
+      }
+    };
+  }, []);
 
   const handleChange = (key, val) => {
     setSettings(prev => ({ ...prev, [key]: val }));
@@ -14944,6 +14970,7 @@ export default function App() {
           }
         } else {
           const localApp = loadAppearance();
+          setSettings(localApp);
           apiSaveSettings(localApp).catch(err => console.error("Failed to sync initial local appearance to db:", err));
         }
         setVitals(Array.isArray(dbVitals) ? dbVitals : []);
@@ -15064,14 +15091,14 @@ export default function App() {
 
   const handleSettingsChange = async (updated) => {
     setSettings(updated);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
     if (updated.name && user && user.name !== updated.name) {
       setUser(prev => ({ ...prev, name: updated.name }));
     }
     try {
       await apiSaveSettings(updated);
     } catch (e) {
-      console.warn("Backend offline, saving settings to localStorage:", e.message);
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+      console.warn("Backend offline, settings already in localStorage:", e.message);
     }
   };
 
