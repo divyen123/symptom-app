@@ -2638,82 +2638,85 @@ function Home({
               <span style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>Pill Reminder & Check-in</span>
             </div>
 
-            {savedMedicines.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "12px 6px" }}>
-                <span style={{ fontSize: 24, opacity: 0.3, marginBottom: 6 }}>💊</span>
-                <p style={{ fontSize: 12, color: "var(--text-faint)", fontWeight: 500 }}>
-                  No saved medicines.
-                </p>
-                <button
-                  onClick={() => setActive("tips")}
-                  style={{
-                    background: "none", border: "none", color: "var(--blue)",
-                    fontSize: 11.5, fontWeight: 700, cursor: "pointer",
-                    marginTop: 4, textDecoration: "underline"
-                  }}
-                >
-                  Find meds in Wellness Guide
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-                  Check off taken pills today
+            {(() => {
+              const pharmacyMeds = savedMedicines.filter(med => !med.category || med.category.toLowerCase() === "pharmacy");
+              return pharmacyMeds.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "12px 6px" }}>
+                  <span style={{ fontSize: 24, opacity: 0.3, marginBottom: 6 }}>💊</span>
+                  <p style={{ fontSize: 12, color: "var(--text-faint)", fontWeight: 500 }}>
+                    No saved medicines.
+                  </p>
+                  <button
+                    onClick={() => setActive("tips")}
+                    style={{
+                      background: "none", border: "none", color: "var(--blue)",
+                      fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+                      marginTop: 4, textDecoration: "underline"
+                    }}
+                  >
+                    Find meds in Wellness Guide
+                  </button>
                 </div>
-                {savedMedicines.map(med => {
-                  const medId = med._id || med.id;
-                  const isTaken = !!takenMeds[medId];
-                  return (
-                    <div key={medId} style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px",
-                      background: isTaken ? "rgba(16,185,129,0.06)" : "var(--surface)",
-                      border: isTaken ? "1.5px solid rgba(16,185,129,0.2)" : "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      transition: "var(--transition)",
-                    }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                        <span style={{ fontSize: 13 }}>💊</span>
-                        <span style={{
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          color: isTaken ? "var(--green)" : "var(--text)",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: 130
-                        }} title={med.name}>
-                          {med.name}
-                        </span>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+                    Check off taken pills today
+                  </div>
+                  {pharmacyMeds.map(med => {
+                    const medId = med._id || med.id;
+                    const isTaken = !!takenMeds[medId];
+                    return (
+                      <div key={medId} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "8px 10px",
+                        background: isTaken ? "rgba(16,185,129,0.06)" : "var(--surface)",
+                        border: isTaken ? "1.5px solid rgba(16,185,129,0.2)" : "1px solid var(--border)",
+                        borderRadius: "var(--radius-sm)",
+                        transition: "var(--transition)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                          <span style={{ fontSize: 13 }}>💊</span>
+                          <span style={{
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            color: isTaken ? "var(--green)" : "var(--text)",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: 130
+                          }} title={med.name}>
+                            {med.name}
+                          </span>
+                        </div>
+                        
+                        <button
+                          onClick={() => handleToggleMedTaken(medId)}
+                          style={{
+                            background: isTaken ? "var(--green)" : "none",
+                            color: isTaken ? "#fff" : "var(--text-faint)",
+                            border: isTaken ? "none" : "1.5px solid var(--border)",
+                            borderRadius: 8,
+                            padding: isTaken ? "3px 8px" : "3px 6px",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            fontFamily: "var(--font)",
+                            transition: "var(--transition)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 3
+                          }}
+                        >
+                          {isTaken ? "✓ Taken" : "Mark Taken"}
+                        </button>
                       </div>
-                      
-                      <button
-                        onClick={() => handleToggleMedTaken(medId)}
-                        style={{
-                          background: isTaken ? "var(--green)" : "none",
-                          color: isTaken ? "#fff" : "var(--text-faint)",
-                          border: isTaken ? "none" : "1.5px solid var(--border)",
-                          borderRadius: 8,
-                          padding: isTaken ? "3px 8px" : "3px 6px",
-                          fontSize: 11,
-                          fontWeight: 800,
-                          cursor: "pointer",
-                          fontFamily: "var(--font)",
-                          transition: "var(--transition)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 3
-                        }}
-                      >
-                        {isTaken ? "✓ Taken" : "Mark Taken"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </Card>
 
 
