@@ -38,7 +38,7 @@ console.log("✅ Supabase Client initialized successfully");
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.split(" ")[1] === "demo_token_offline") {
     try {
       // Find or create default demo user
       let { data: defaultUser, error: findError } = await supabase
@@ -328,6 +328,7 @@ app.delete("/api/auth/reset-profile", authMiddleware, async (req, res) => {
     await Promise.all([
       supabase.from("settings").delete().eq("user_id", userId),
       supabase.from("reports").delete().eq("user_id", userId),
+      supabase.from("history").delete().eq("user_id", userId),
       supabase.from("vitals").delete().eq("user_id", userId),
       supabase.from("chat_sessions").delete().eq("user_id", userId),
       supabase.from("todos").delete().eq("user_id", userId),
@@ -484,6 +485,159 @@ app.delete("/api/reports", authMiddleware, async (req, res) => {
   try {
     const { error } = await supabase
       .from("reports")
+      .delete()
+      .eq("user_id", req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── History API (protected) ───────────────────────────────────────────────────
+
+// GET all history records
+app.get("/api/history", authMiddleware, async (req, res) => {
+  try {
+    const { data: history, error } = await supabase
+      .from("history")
+      .select(`
+        id:history_id,
+        date,
+        symptoms,
+        duration,
+        painLevel:pain_level,
+        hasFever:has_fever,
+        condition,
+        conditions,
+        severity,
+        severityLevel:severity_level,
+        severityReason:severity_reason,
+        selfCare:self_care,
+        doctorWarning:doctor_warning,
+        simpleExplanation:simple_explanation,
+        recommendedAction:recommended_action
+      `)
+      .eq("user_id", req.userId)
+      .order("history_id", { ascending: true });
+
+    if (error) throw error;
+    res.json(history || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST single history record (upsert)
+app.post("/api/history", authMiddleware, async (req, res) => {
+  try {
+    const record = {
+      user_id: req.userId,
+      history_id: req.body.id,
+      date: req.body.date,
+      symptoms: req.body.symptoms,
+      duration: req.body.duration,
+      pain_level: req.body.painLevel,
+      has_fever: req.body.hasFever,
+      condition: req.body.condition,
+      conditions: req.body.conditions,
+      severity: req.body.severity,
+      severity_level: req.body.severityLevel,
+      severity_reason: req.body.severityReason,
+      self_care: req.body.selfCare,
+      doctor_warning: req.body.doctorWarning,
+      simple_explanation: req.body.simpleExplanation,
+      recommended_action: req.body.recommendedAction
+    };
+
+    const { data: doc, error } = await supabase
+      .from("history")
+      .upsert(record, { onConflict: "user_id,history_id" })
+      .select(`
+        id:history_id,
+        date,
+        symptoms,
+        duration,
+        painLevel:pain_level,
+        hasFever:has_fever,
+        condition,
+        conditions,
+        severity,
+        severityLevel:severity_level,
+        severityReason:severity_reason,
+        selfCare:self_care,
+        doctorWarning:doctor_warning,
+        simpleExplanation:simple_explanation,
+        recommendedAction:recommended_action
+      `)
+      .single();
+
+    if (error) throw error;
+    res.json(doc);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST bulk history records (migration from localStorage)
+app.post("/api/history/bulk", authMiddleware, async (req, res) => {
+  try {
+    const historyList = req.body;
+    if (!Array.isArray(historyList) || historyList.length === 0) return res.json({ inserted: 0 });
+
+    const records = historyList.map((r) => ({
+      user_id: req.userId,
+      history_id: r.id,
+      date: r.date,
+      symptoms: r.symptoms,
+      duration: r.duration,
+      pain_level: r.painLevel,
+      has_fever: r.hasFever,
+      condition: r.condition,
+      conditions: r.conditions,
+      severity: r.severity,
+      severity_level: r.severityLevel,
+      severity_reason: r.severityReason,
+      self_care: r.selfCare,
+      doctor_warning: r.doctorWarning,
+      simple_explanation: r.simpleExplanation,
+      recommended_action: r.recommendedAction
+    }));
+
+    const { data, error } = await supabase
+      .from("history")
+      .upsert(records, { onConflict: "user_id,history_id" })
+      .select();
+
+    if (error) throw error;
+    res.json({ inserted: data ? data.length : 0 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE one history record
+app.delete("/api/history/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("history")
+      .delete()
+      .eq("user_id", req.userId)
+      .eq("history_id", Number(req.params.id));
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE all history records
+app.delete("/api/history", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("history")
       .delete()
       .eq("user_id", req.userId);
 

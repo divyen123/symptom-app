@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const STORAGE_KEY = "symptom_reports";
+const HISTORY_KEY = "symptom_history_records";
 const SETTINGS_KEY = "symptom_settings";
 const VITALS_KEY = "symptom_vitals";
 const MEDICINE_KEY = "symptom_medicines";
@@ -61,6 +62,10 @@ const API = rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl.replace(/\/$/,
 
 const loadReports = () => {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+  catch { return []; }
+};
+const loadHistory = () => {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
   catch { return []; }
 };
 const loadSettings = () => {
@@ -327,6 +332,12 @@ const apiSaveReport    = (report) => apiFetch(`${API}/reports`, { method: "POST"
 const apiDeleteReport  = (id) => apiFetch(`${API}/reports/${id}`, { method: "DELETE", headers: authHeaders() });
 const apiDeleteAllReports = () => apiFetch(`${API}/reports`, { method: "DELETE", headers: authHeaders() });
 const apiBulkReports   = (arr) => apiFetch(`${API}/reports/bulk`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(arr) });
+
+const apiFetchHistory  = () => apiFetch(`${API}/history`, { headers: authHeaders() });
+const apiSaveHistory    = (item) => apiFetch(`${API}/history`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(item) });
+const apiDeleteHistory  = (id) => apiFetch(`${API}/history/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllHistory = () => apiFetch(`${API}/history`, { method: "DELETE", headers: authHeaders() });
+const apiBulkHistory   = (arr) => apiFetch(`${API}/history/bulk`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(arr) });
 const apiFetchSettings = () => apiFetch(`${API}/settings`, { headers: authHeaders() });
 const apiSaveSettings  = (s) => apiFetch(`${API}/settings`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(s) });
 
@@ -5987,7 +5998,7 @@ function History({ reports, onDelete, onClearAll }) {
                 </text>
                 <text x={64} y={76} textAnchor="middle" dominantBaseline="middle"
                   style={{ fontSize: 9, fontWeight: 700, fill: "#94a3b8", fontFamily: "var(--font)", letterSpacing: "1px" }}>
-                  reports
+                  analyses
                 </text>
               </svg>
               <div style={{ marginTop: 12, width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -6005,7 +6016,7 @@ function History({ reports, onDelete, onClearAll }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 12 }}>
               {[
-                { icon: "📋", label: "Total Reports",    value: reports.length,                                                               color: "#2563eb" },
+                { icon: "📋", label: "Total Analyses",    value: reports.length,                                                               color: "#2563eb" },
                 { icon: "📈", label: "Avg Pain Level",   value: `${avgPain}/10`,                                                              color: "#7c3aed" },
                 { icon: "🔴", label: "High / Emergency", value: reports.filter(r => ["High","Emergency"].includes(r.severityLevel)).length,   color: "var(--text-red)" },
                 { icon: "🔬", label: "Unique Symptoms",  value: Object.keys(freq).length,                                                     color: "#059669" },
@@ -14088,6 +14099,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
 export default function App() {
   const [active, setActive] = useState("home");
   const [reports, setReports] = useState([]);
+  const [history, setHistory] = useState([]);
   const [vitals, setVitals] = useState([]);
   const [settings, setSettings] = useState({});
   const [currentReport, setCurrentReport] = useState(null);
@@ -14853,6 +14865,7 @@ export default function App() {
         // In demo mode, skip backend calls entirely and use localStorage
         if (isDemo) {
           setReports(loadReports());
+          setHistory(loadHistory());
           setSettings(loadSettings());
           setVitals(loadVitals());
           setChatSessions([]);
@@ -14866,6 +14879,11 @@ export default function App() {
         if (lsReports.length > 0) {
           await apiBulkReports(lsReports);
           localStorage.removeItem(STORAGE_KEY);
+        }
+        const lsHistory = loadHistory();
+        if (lsHistory.length > 0) {
+          await apiBulkHistory(lsHistory);
+          localStorage.removeItem(HISTORY_KEY);
         }
         const lsSettings = loadSettings();
         if (Object.keys(lsSettings).length > 0) {
@@ -14882,8 +14900,9 @@ export default function App() {
           await Promise.all(lsReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
           localStorage.removeItem(REMINDERS_KEY);
         }
-        const [dbReports, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
+        const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
           apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
+          apiFetchHistory().catch(err => { console.error("History fetch failed:", err); return []; }),
           apiFetchSettings().catch(err => { console.error("Settings fetch failed:", err); return {}; }),
           apiFetchVitals().catch(err => { console.error("Vitals fetch failed:", err); return []; }),
           apiFetchChats().catch(err => { console.error("Chats fetch failed:", err); return []; }),
@@ -14892,6 +14911,7 @@ export default function App() {
           apiFetchReminders().catch(err => { console.error("Reminders fetch failed:", err); return []; })
         ]);
         setReports(Array.isArray(dbReports) ? dbReports : []);
+        setHistory(Array.isArray(dbHistory) ? dbHistory : []);
         setSettings(dbSettings || {});
         if (dbSettings && Object.keys(dbSettings).length > 0) {
           const localApp = loadAppearance();
@@ -14938,6 +14958,7 @@ export default function App() {
       } catch (e) {
         console.warn("Backend not reachable, using localStorage:", e.message);
         setReports(loadReports());
+        setHistory(loadHistory());
         setSettings(loadSettings());
         setVitals(loadVitals());
         setChatSessions([]);
@@ -14968,8 +14989,16 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [dbReady, user]);
 
-  const handleAnalyze = (report) => {
+  const handleAnalyze = async (report) => {
     setCurrentReport(report);
+    const updated = [...history, report];
+    setHistory(updated);
+    try {
+      await apiSaveHistory(report);
+    } catch (e) {
+      console.warn("Backend offline, saving history to localStorage:", e.message);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    }
     navigateTo("results");
   };
 
@@ -15012,6 +15041,27 @@ export default function App() {
     }
   };
 
+  const handleDeleteHistory = async (id) => {
+    const updated = history.filter(r => r.id !== id);
+    setHistory(updated);
+    try {
+      await apiDeleteHistory(id);
+    } catch (e) {
+      console.warn("Backend offline, saving history deletion to localStorage:", e.message);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    }
+  };
+
+  const handleClearAllHistory = async () => {
+    setHistory([]);
+    try {
+      await apiDeleteAllHistory();
+    } catch (e) {
+      console.warn("Backend offline, saving history deletion to localStorage:", e.message);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify([]));
+    }
+  };
+
   const handleSettingsChange = async (updated) => {
     setSettings(updated);
     if (updated.name && user && user.name !== updated.name) {
@@ -15028,6 +15078,7 @@ export default function App() {
   const handleResetProfile = async () => {
     await apiResetProfile();
     setReports([]);
+    setHistory([]);
     setVitals([]);
     setSettings({});
     setChatSessions([]);
@@ -15035,6 +15086,7 @@ export default function App() {
     setChatMsgs(getNewChatDefaultMessages());
     setTodos([]);
     setSavedMedicines([]);
+    localStorage.removeItem(HISTORY_KEY);
   };
 
   const handleSelectChat = async (id) => {
@@ -15121,7 +15173,7 @@ export default function App() {
         />
       );
       case "reports":  return <Reports reports={reports} onDelete={handleDeleteReport} />;
-      case "history":  return <History reports={reports} onDelete={handleDeleteReport} onClearAll={handleClearAllReports} />;
+      case "history":  return <History reports={history} onDelete={handleDeleteHistory} onClearAll={handleClearAllHistory} />;
       case "tips":     return <HealthTips savedMedicines={savedMedicines} onSaveMedicine={handleSaveMedicine} setActive={navigateTo} />;
 
       case "meditown": return (

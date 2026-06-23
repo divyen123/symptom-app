@@ -144,3 +144,30 @@ create table if not exists public.reminders (
 
 -- Index for reminders by user_id
 create index if not exists reminders_user_id_idx on public.reminders (user_id);
+
+-- 10. Create History Table
+create table if not exists public.history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  history_id integer not null, -- Unique per user
+  date text,
+  symptoms text[],
+  duration text,
+  pain_level integer,
+  has_fever boolean,
+  condition text,
+  conditions jsonb,
+  severity text,
+  severity_level text,
+  severity_reason text,
+  self_care text[],
+  doctor_warning text,
+  simple_explanation text,
+  recommended_action text,
+  created_at timestamp with time zone default now(),
+  unique (user_id, history_id)
+);
+
+-- Index for history by user_id
+create index if not exists history_user_id_idx on public.history (user_id);
+
