@@ -5379,6 +5379,207 @@ function ReportModal({ r, onClose, onDelete }) {
     "--modal-offset-right": navPos === "right" ? "var(--sidebar-width)" : "0",
   };
 
+  const exportReportToPDF = (report) => {
+    try {
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const userSettings = loadSettings();
+      const userName = userSettings.name || "Patient";
+
+      // Header Banner
+      doc.setFillColor(15, 31, 92);
+      doc.rect(0, 0, 210, 28, "F");
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("MedAI", 15, 18);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(191, 219, 254);
+      doc.text("CLINICAL SYMPTOM & RISK ASSESSMENT", 45, 17);
+
+      let y = 38;
+
+      // Metadata section
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`Patient: ${userName}`, 15, y);
+      
+      const reportDate = new Date(report.date).toLocaleDateString("en-IN", {
+        day: "numeric", month: "long", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
+      doc.text(`Date of Assessment: ${reportDate}`, 110, y);
+      y += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Pain Level: ${report.painLevel}/10`, 15, y);
+      doc.text(`Duration: ${report.duration}`, 70, y);
+      
+      const severity = report.severityLevel || "Low";
+      doc.text(`Severity: `, 125, y);
+      
+      doc.setFont("helvetica", "bold");
+      if (severity === "Low") doc.setTextColor(16, 185, 129);
+      else if (severity === "Medium") doc.setTextColor(245, 158, 11);
+      else doc.setTextColor(239, 68, 68);
+      doc.text(severity.toUpperCase(), 142, y);
+      y += 8;
+
+      // Separator Line
+      doc.setDrawColor(226, 232, 248);
+      doc.setLineWidth(0.5);
+      doc.line(15, y, 195, y);
+      y += 8;
+
+      // Logged Symptoms
+      doc.setTextColor(15, 31, 92);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Logged Symptoms", 15, y);
+      y += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      const symptomsText = report.symptoms.join(", ");
+      const symptomsLines = doc.splitTextToSize(symptomsText, 175);
+      doc.text(symptomsLines, 15, y);
+      y += symptomsLines.length * 5 + 6;
+
+      // Possible Conditions
+      if (report.conditions && report.conditions.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setTextColor(15, 31, 92);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Possible Conditions", 15, y);
+        y += 6;
+
+        report.conditions.forEach(cond => {
+          if (y > 250) { doc.addPage(); y = 20; }
+          
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(226, 232, 240);
+          
+          const descLines = cond.description ? doc.splitTextToSize(cond.description, 165) : [];
+          const cardHeight = 12 + descLines.length * 4.5;
+          
+          doc.rect(15, y, 180, cardHeight, "FD");
+          
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10.5);
+          doc.text(cond.name, 19, y + 6);
+          
+          doc.setTextColor(59, 130, 246);
+          doc.setFontSize(9.5);
+          doc.text(`${cond.confidence}% match`, 160, y + 6);
+          
+          if (cond.description) {
+            doc.setTextColor(71, 85, 105);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(descLines, 19, y + 11);
+          }
+          
+          y += cardHeight + 4;
+        });
+        y += 4;
+      }
+
+      // Plain-language explanation
+      if (report.simpleExplanation) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setTextColor(15, 31, 92);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Plain-Language Explanation", 15, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(51, 65, 85);
+        const explanationLines = doc.splitTextToSize(report.simpleExplanation, 175);
+        doc.text(explanationLines, 15, y);
+        y += explanationLines.length * 5 + 8;
+      }
+
+      // Self-Care Tips
+      if (report.selfCare && report.selfCare.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setTextColor(15, 31, 92);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Recommended Self-Care Tips", 15, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(30, 41, 59);
+        
+        report.selfCare.forEach(tip => {
+          if (y > 270) { doc.addPage(); y = 20; }
+          const tipLines = doc.splitTextToSize(`• ${tip}`, 175);
+          doc.text(tipLines, 15, y);
+          y += tipLines.length * 5 + 1;
+        });
+        y += 6;
+      }
+
+      // Doctor Warning
+      if (report.doctorWarning) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        
+        const warningLines = doc.splitTextToSize(report.doctorWarning, 165);
+        const boxHeight = 10 + warningLines.length * 5;
+        
+        doc.setFillColor(254, 242, 242);
+        doc.setDrawColor(252, 165, 165);
+        doc.rect(15, y, 180, boxHeight, "FD");
+        
+        doc.setTextColor(220, 38, 38);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("⚠️ WHEN TO SEE A DOCTOR", 19, y + 6);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(153, 27, 27);
+        doc.text(warningLines, 19, y + 11);
+        
+        y += boxHeight + 8;
+      }
+
+      // Footer line & text
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setDrawColor(226, 232, 248);
+      doc.setLineWidth(0.5);
+      doc.line(15, 278, 195, 278);
+
+      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text("This document is a clinical symptom assessment sheet generated by MedAI.", 15, 283);
+      doc.text("Always consult with qualified healthcare professionals for diagnosis and treatment plans.", 15, 287);
+
+      const fileName = `MedAI_Assessment_Report_${report.symptoms.slice(0, 2).join("_") || "Report"}`;
+      doc.save(`${fileName}.pdf`);
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+      alert("Could not export PDF: " + err.message);
+    }
+  };
+
   return createPortal(
     <>
       {showConfirm && (
@@ -5532,6 +5733,19 @@ function ReportModal({ r, onClose, onDelete }) {
                 fontFamily: "var(--font)",
               }}
             >🗑 Delete</button>
+            <button
+              onClick={() => exportReportToPDF(r)}
+              style={{
+                background: "var(--surface-2)", color: "var(--text-muted)", border: "1.5px solid var(--border)",
+                borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontWeight: 700, fontSize: 13,
+                fontFamily: "var(--font)", transition: "var(--transition)",
+                display: "flex", alignItems: "center", gap: 6
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--border)"; e.currentTarget.style.color = "var(--text)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            >
+              📥 Export PDF
+            </button>
             <button
               onClick={onClose}
               style={{
