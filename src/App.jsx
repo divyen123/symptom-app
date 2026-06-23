@@ -1772,7 +1772,7 @@ function Sidebar({ active, setActive, settings = {}, user, onLogout, mobileMenuO
               fontWeight: 700, fontSize: 13, color: navPalette.text,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>
-              {user?.name || settings.name || "Your Name"}
+              {settings.name || user?.name || "Your Name"}
             </div>
             <div style={{ fontSize: 11, color: navPalette.textMuted, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {user?.email || "Set profile →"}
@@ -14800,6 +14800,9 @@ export default function App() {
 
   const handleSettingsChange = async (updated) => {
     setSettings(updated);
+    if (updated.name && user && user.name !== updated.name) {
+      setUser(prev => ({ ...prev, name: updated.name }));
+    }
     try {
       await apiSaveSettings(updated);
     } catch (e) {
