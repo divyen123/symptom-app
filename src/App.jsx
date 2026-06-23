@@ -13261,7 +13261,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                     <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {selectedCategory === 'firstaid' && (
+                    {(selectedCategory === 'firstaid' || selectedCategory === 'pharmacy') && (
                       <a
                         href={`https://pharmeasy.in/search/all?name=${encodeURIComponent(item.name)}`}
                         target="_blank"
