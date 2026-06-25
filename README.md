@@ -1,44 +1,151 @@
 # 🩺 MedAI Health Assistant
 
-MedAI is a premium, responsive health assistant web application featuring a symptom checker, vitals log, medical clinic sheets, and wellness recommendations.
+**MedAI** is a full-stack, AI-powered health companion web application that helps users analyze symptoms, track vitals, manage medications, and access emergency medical resources — all from a single, beautifully designed interface.
+
+> 🔗 **Live Demo**: [medai-health.vercel.app](https://medai-health.vercel.app)
+
+---
+
+## ✨ Features
+
+### 🔬 AI Symptom Analyzer
+- Select symptoms through an interactive, categorized symptom picker
+- Get AI-generated condition predictions with severity levels (Mild / Moderate / Severe)
+- Receive personalized self-care tips and doctor-visit recommendations
+- Save and export detailed analysis reports as PDF
+
+### 💓 Vitals Log & Heart Rate Monitor
+- Log blood pressure, blood sugar, SpO2, temperature, and weight
+- Real-time heart rate measurement using your device camera (PPG-based)
+- Visual vitals history with trends over time
+
+### 🤖 Doctor AI Chatbot
+- Conversational AI health assistant powered by Groq LLaMA 3.1
+- Persistent chat history across sessions
+- Context-aware medical guidance and wellness advice
+
+### 🆔 Medical ID & Emergency Hub
+- Store personal medical information (blood group, allergies, conditions)
+- Emergency contacts with one-tap calling
+- Nearby hospitals finder using GPS geolocation
+- Exportable Medical ID card as PDF
+- Built-in CPR & first-aid quick guides
+
+### 📋 Symptom History & Reports
+- Automatic tracking of every symptom analysis performed
+- Separate saved reports section for long-term reference
+- Bulk export and management of health reports
+
+### 💊 MediTown — Medicine Explorer
+- Browse medicines across categories: Pharmacy, Herbal, Nutrition, First Aid
+- Search and filter with detailed medicine information
+- Set medication reminders with custom schedules
+
+### 🧘 Wellness & Lifestyle
+- AI-generated personalized wellness routines
+- Weather-based health recommendations
+- Daily health tips and lifestyle suggestions
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 19, Vite, Framer Motion, jsPDF |
+| **Styling** | Vanilla CSS with glassmorphism & dark mode |
+| **Backend** | Node.js, Express.js, JWT Authentication |
+| **Database** | Supabase (PostgreSQL) |
+| **AI Engine** | Groq API — LLaMA 3.1 8B Instant |
+| **APIs** | Open-Meteo (Weather), ipapi (Geolocation) |
+| **Deployment** | Vercel (Frontend) + Render (Backend) |
+
+---
 
 ## 🏗️ Architecture
 
-- **Frontend**: React + Vite (deployed on **Vercel**)
-- **Backend**: Node.js + Express (deployed on **Render**)
-- **Database**: Supabase PostgreSQL (Row-Level Security bypassed via private service role token authority)
+```
+┌─────────────────┐        ┌──────────────────┐        ┌─────────────────┐
+│                 │        │                  │        │                 │
+│   React + Vite  │◄──────►│  Express.js API  │◄──────►│    Supabase     │
+│   (Vercel)      │  REST  │  (Render)        │        │  (PostgreSQL)   │
+│                 │        │                  │        │                 │
+└─────────────────┘        └────────┬─────────┘        └─────────────────┘
+                                    │
+                                    ▼
+                           ┌──────────────────┐
+                           │   Groq LLaMA 3.1 │
+                           │   (AI Engine)     │
+                           └──────────────────┘
+```
 
 ---
 
-## 🚀 Deployment Instructions
+## 📱 Key Highlights
 
-### 1. Deploy the Backend on Render
-1. Log in to [Render](https://render.com).
-2. Click **New +** and select **Web Service**.
-3. Connect your GitHub repository (`symptom-app`).
-4. Set the following settings:
-   - **Name**: `medai-backend` (or similar)
-   - **Root Directory**: `medai-backend`
-   - **Runtime**: `Node`
-   - **Build Command**: `npm install`
-   - **Start Command**: `node server.js`
-5. In the **Environment Variables** tab, add:
-   - `PORT`: `3001` (or let Render assign it automatically)
-   - `JWT_SECRET`: `your_jwt_secret_string`
-   - `SUPABASE_URL`: `https://your-supabase-project.supabase.co`
-   - `SUPABASE_KEY`: `your_service_role_secret_key`
-6. Deploy the Web Service. Copy the public URL (e.g., `https://medai-backend.onrender.com`).
+- 🌙 **Dark Mode** — Sleek, modern dark UI with glassmorphism effects
+- 📱 **Fully Responsive** — Works seamlessly on desktop, tablet, and mobile
+- 🔒 **Secure** — JWT-based authentication with encrypted API communication
+- ⚡ **Offline Support** — LocalStorage fallback ensures functionality without internet
+- 📄 **PDF Export** — Generate and download Medical ID cards and health reports
 
 ---
 
-### 2. Deploy the Frontend on Vercel
-1. Log in to [Vercel](https://vercel.com) using your GitHub account.
-2. Click **Add New** -> **Project**.
-3. Import the `symptom-app` repository.
-4. Configure the following settings:
-   - **Framework Preset**: `Vite` (automatically detected)
-   - **Root Directory**: Leave blank (root of the repo)
-5. Expand the **Environment Variables** section and add:
-   - **Key**: `VITE_API_URL`
-   - **Value**: `https://your-render-backend-url.onrender.com/api` (replace with your actual Render API URL, making sure to append `/api` to the end).
-6. Click **Deploy**. Vercel will build and host your frontend.
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- Supabase account
+- Groq API key
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/divyen123/symptom-app.git
+cd symptom-app
+
+# Install frontend dependencies
+npm install
+
+# Install backend dependencies
+cd medai-backend
+npm install
+```
+
+### Environment Variables
+
+**Backend** (`medai-backend/.env`):
+```env
+PORT=3001
+JWT_SECRET=your_jwt_secret
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_service_role_key
+```
+
+**Frontend** (`.env`):
+```env
+VITE_API_URL=http://localhost:3001/api
+```
+
+### Run Locally
+
+```bash
+# Start backend (from medai-backend/)
+node server.js
+
+# Start frontend (from root)
+npm run dev
+```
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  Built with ❤️ using React, Node.js & AI
+</p>
