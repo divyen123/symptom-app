@@ -930,6 +930,22 @@ const GLOBAL_CSS = `
 
   /* ─── MOBILE RESPONSIVE OVERRIDES (<= 768px) ─── */
   @media (max-width: 768px) {
+    /* Prevent lagging: Disable expensive background animations and filters on mobile */
+    .ambient-background,
+    .ambient-orb,
+    .ambient-svg,
+    .ambient-hex-group,
+    .ambient-poly,
+    .ambient-line,
+    .ambient-circle {
+      animation: none !important;
+      filter: none !important;
+      transition: none !important;
+    }
+    .ambient-svg {
+      opacity: 0.05 !important;
+    }
+
     .recipe-modal-overlay {
       left: 0 !important;
       right: 0 !important;
@@ -1029,6 +1045,8 @@ const GLOBAL_CSS = `
 
     /* Modal dialog left offsets when sidebar is drawn out */
     div[style*="left: var(--sidebar-width)"],
+    div[style*="left:var(--sidebar-width)"],
+    div[style*="left: var(--sidebar-width)"],
     div[style*="left:var(--sidebar-width)"] {
       left: 0 !important;
     }
@@ -1092,50 +1110,136 @@ const GLOBAL_CSS = `
       gap: 14px !important;
     }
 
-    /* Two-column responsive structures stack naturally */
+    /* Two-column responsive structures stack naturally (support both camelCase and kebab-case) */
     div[style*="gridTemplateColumns: 1fr 1.3fr"],
-    div[style*="gridTemplateColumns: 1.2fr 1fr"] {
+    div[style*="gridTemplateColumns: 1.2fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1.3fr"],
+    div[style*="grid-template-columns: 1.2fr 1fr"] {
       grid-template-columns: 1fr !important;
       gap: 16px !important;
     }
 
-    div[style*="gridTemplateColumns: 220px 1fr"] {
+    div[style*="gridTemplateColumns: 220px 1fr"],
+    div[style*="grid-template-columns: 220px 1fr"] {
       grid-template-columns: 1fr !important;
       gap: 16px !important;
     }
 
-    div[style*="gridTemplateColumns: 1fr 1fr"] {
+    div[style*="gridTemplateColumns: 1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr"] {
       grid-template-columns: 1fr !important;
       gap: 12px !important;
     }
 
-    /* Hospital card & action stack */
-    div[style*="display: flex", justifyContent: "space-between", alignItems: "flex-start"] {
+    /* Dialog modal custom adjustments for shorter phone viewports */
+    div[style*="maxHeight: 90vh"],
+    div[style*="max-height: 90vh"] {
+      max-height: 94vh !important;
+      width: 96% !important;
+      margin: 0 auto !important;
+    }
+
+    /* Grids & Flex containers that need stacking on mobile */
+    .dashboard-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .vitals-layout-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .vitals-dashboard-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .emergency-layout-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .history-severity-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .history-stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      grid-template-rows: auto !important;
+      gap: 10px !important;
+    }
+    .results-hero-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .results-details-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+    .hospital-card-flex {
       flex-direction: column !important;
       gap: 14px !important;
       align-items: stretch !important;
     }
-
-    div[style*="display: flex", flexDirection: "column", gap: 6, flexShrink: 0] {
+    .hospital-buttons-flex {
       width: 100% !important;
       flex-direction: row !important;
       gap: 8px !important;
       margin-top: 4px !important;
+      margin-left: 0 !important;
     }
-    div[style*="display: flex", flexDirection: "column", gap: 6, flexShrink: 0] > a {
+    .hospital-buttons-flex > a {
       flex: 1 !important;
       width: auto !important;
     }
-    div[style*="display: flex", flexDirection: "column", gap: 6, flexShrink: 0] button {
+    .hospital-buttons-flex button {
       width: 100% !important;
     }
 
-    /* Dialog modal custom adjustments for shorter phone viewports */
-    div[style*="maxHeight: 90vh"],
-    div[style*="maxHeight: 90vh"] {
-      max-height: 94vh !important;
-      width: 96% !important;
-      margin: 0 auto !important;
+    /* Settings responsive structures */
+    .settings-flex-layout {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 16px !important;
+    }
+    .settings-sidebar-col {
+      width: 100% !important;
+      position: relative !important;
+      top: 0 !important;
+    }
+    .settings-content-col {
+      width: 100% !important;
+    }
+    .settings-nav-list {
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      padding: 10px !important;
+    }
+    .settings-nav-list button {
+      flex: 1 1 calc(50% - 6px) !important;
+      padding: 8px 12px !important;
+      font-size: 12px !important;
+      justify-content: center !important;
+    }
+    .settings-form-grid {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+    .settings-form-flex {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+    }
+    .profile-flex-row {
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+    .profile-flex-row-three {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+    }
+    .profile-flex-row-three button {
+      width: 100% !important;
+      margin-bottom: 0 !important;
     }
   }
 
@@ -3592,7 +3696,7 @@ function Results({ report, onSave, onNew, savedMedicines = [], onSaveMedicine, o
       <DisclaimerBanner />
 
       {/* ── Hero: Severity + Vitals ── */}
-      <div style={{
+      <div className="results-hero-grid" style={{
         display: "grid", gridTemplateColumns: "1fr 200px",
         gap: 16, marginBottom: 16,
         animation: "scaleIn 0.35s ease 0.05s both",
@@ -4570,7 +4674,7 @@ function Emergency({ settings = {}, onSettingsChange, savedMedicines = [], repor
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
+      <div className="emergency-layout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
         <Card onClick={() => { setCalled("Calling Emergency Services..."); setTimeout(() => setCalled(""), 3000); }} style={{ ...cardStyleRed, padding: 24, cursor: "pointer", textAlign: "center" }} hover={true}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🚑</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Call {emergencyNumber}</div>
@@ -4992,7 +5096,7 @@ function Hospitals() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {hospitals.map((h, i) => (
               <Card key={i}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div className="hospital-card-flex" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                       <div style={{ fontWeight: 800, color: "var(--navy)", fontSize: 15 }}>{h.name}</div>
@@ -5001,7 +5105,7 @@ function Hospitals() {
                     </div>
                     <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginBottom: 8 }}>📍 {h.address} · <span style={{ fontWeight: 700, color: "var(--navy)" }}>{h.distance}</span></div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
+                  <div className="hospital-buttons-flex" style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
                     <a href={"tel:"+h.phone} style={{ textDecoration: "none" }}>
                       <button className="btn-primary" style={{ background: "var(--blue)", color: "#fff", border: "none", borderRadius: "var(--radius-sm)", padding: "8px 16px", cursor: "pointer", fontWeight: 700, width: "100%" }}>📞 Call</button>
                     </a>
@@ -5969,7 +6073,7 @@ function History({ reports, onDelete, onClearAll }) {
       {reports.length > 0 && (
         <>
           {/* ── Severity donut + Stat cards ── */}
-          <div style={{
+          <div className="history-severity-grid" style={{
             display: "grid", gridTemplateColumns: "220px 1fr",
             gap: 16, marginBottom: 16,
             animation: "fadeUp 0.35s ease 0.06s both",
@@ -6004,17 +6108,17 @@ function History({ reports, onDelete, onClearAll }) {
               <div style={{ marginTop: 12, width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
                 {Object.entries(sevCounts).filter(([, v]) => v > 0).map(([level, count]) => (
                   <div key={level} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: sevColors[level], flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{level}</span>
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: sevColors[level] }}>{count}</span>
+                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                       <div style={{ width: 8, height: 8, borderRadius: "50%", background: sevColors[level], flexShrink: 0 }} />
+                       <span style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500 }}>{level}</span>
+                     </div>
+                     <span style={{ fontSize: 12, fontWeight: 700, color: sevColors[level] }}>{count}</span>
                   </div>
                 ))}
               </div>
             </Card>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 12 }}>
+            <div className="history-stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 12 }}>
               {[
                 { icon: "📋", label: "Total Analyses",    value: reports.length,                                                               color: "#2563eb" },
                 { icon: "📈", label: "Avg Pain Level",   value: `${avgPain}/10`,                                                              color: "#7c3aed" },
@@ -6667,7 +6771,7 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                 <p style={{ fontSize: 14.5, color: "var(--text-muted)", lineHeight: 1.8, margin: "0 0 28px" }}>{data.overview}</p>
 
                 {/* Medicines + Habits */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+                <div className="results-details-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
                   {/* Medicines */}
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>💊 Medicines</div>
@@ -8953,7 +9057,7 @@ function VitalsLog({ vitals, setVitals, setActive, showToast }) {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 20, marginBottom: 24 }}>
+      <div className="vitals-layout-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 20, marginBottom: 24 }}>
         {/* Logging Panel */}
         <Card style={{ animation: "fadeUp 0.35s ease 0.08s both" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16 }}>
@@ -9079,7 +9183,7 @@ function VitalsLog({ vitals, setVitals, setActive, showToast }) {
         </Card>
 
         {/* Dashboard displays */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="vitals-dashboard-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           {/* BP Card */}
           <Card style={{
             padding: "16px 18px", transition: "var(--transition-slow)",
@@ -9434,7 +9538,7 @@ function SettingsContactForm({ settings, setSettings, onSettingsChange }) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, verticalAlign: '-2px' }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
         Add New Contact
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+      <div className="settings-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <input
           type="text"
           placeholder="Full Name"
@@ -9460,7 +9564,7 @@ function SettingsContactForm({ settings, setSettings, onSettingsChange }) {
           }}
         />
       </div>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <div className="settings-form-flex" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <input
           type="text"
           placeholder="Relation (e.g. Spouse, Parent)"
@@ -9760,14 +9864,14 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
         )}
       </div>
 
-      <div style={{ display: "flex", gap: 28, alignItems: "flex-start", animation: "fadeUp 0.3s ease 0.08s both" }}>
+      <div className="settings-flex-layout" style={{ display: "flex", gap: 28, alignItems: "flex-start", animation: "fadeUp 0.3s ease 0.08s both" }}>
         {/* Left Column Sidebar & Disclaimer */}
-        <div style={{
+        <div className="settings-sidebar-col" style={{
           width: 240, flexShrink: 0, display: "flex", flexDirection: "column", gap: 20,
           position: "sticky", top: 20
         }}>
           {/* Settings Navigation List Sidebar */}
-          <div style={{
+          <div className="settings-nav-list" style={{
             background: "var(--surface)",
             border: "1px solid var(--border)", borderRadius: 18, padding: "16px 12px",
             display: "flex", flexDirection: "column", gap: 6,
@@ -9821,7 +9925,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
         </div>
 
         {/* Selected Settings Content Panel */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="settings-content-col" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 20 }}>
           {activeTab === "profile" && (
             <Card style={{ animation: "mtSlideIn 0.3s ease both" }}>
               <SectionTitle>👤 User Profile</SectionTitle>
@@ -9907,7 +10011,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: 12 }}>
+              <div className="profile-flex-row" style={{ display: "flex", gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <FieldRow label="Age" value={settings.age || ""} onChange={e => handleChange("age", e.target.value)} placeholder="Your age" type="number" />
                 </div>
@@ -9916,7 +10020,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16, textAlign: "left" }}>
+              <div className="profile-flex-row-three" style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 16, textAlign: "left" }}>
                 <div style={{ flex: 1 }}>
                   <FieldRow label="Country" value={settings.country || ""} onChange={e => handleChange("country", e.target.value)} placeholder="e.g. United States" />
                 </div>
@@ -10233,7 +10337,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
               {/* Navbar Palette Selector */}
               <div style={{ marginBottom: 18, textAlign: "left" }}>
                 <label style={{ display: "block", color: "var(--text)", fontWeight: 600, fontSize: 12.5, marginBottom: 12 }}>Navbar Theme Palette</label>
-                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "nowrap" }}>
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                   {NAVBAR_PALETTES.map(theme => {
                     const isSelected = appearance.navbarPalette === theme.id;
                     return (
@@ -10265,7 +10369,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
               {/* Content Palette Selector */}
               <div style={{ marginBottom: 18, textAlign: "left" }}>
                 <label style={{ display: "block", color: "var(--text)", fontWeight: 600, fontSize: 12.5, marginBottom: 12 }}>Main Content Background Palette</label>
-                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "nowrap" }}>
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                   {CONTENT_PALETTES.map(theme => {
                     const isSelected = appearance.contentPalette === theme.id;
                     return (
