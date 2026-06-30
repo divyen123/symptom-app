@@ -1247,6 +1247,41 @@ const GLOBAL_CSS = `
       display: none !important;
     }
 
+    .wellness-suggestions-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+    }
+    .wellness-suggestion-card {
+      padding: 10px 8px !important;
+      min-height: 80px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+    .wellness-suggestion-card div:last-child {
+      display: none !important;
+    }
+
+    .fever-foods-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+    }
+    .fever-food-card {
+      padding: 10px 8px !important;
+      min-height: 80px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+    .fever-food-card div:nth-child(3),
+    .fever-food-card div:nth-child(4) {
+      display: none !important;
+    }
+
     .results-header-flex {
       flex-direction: column !important;
       align-items: flex-start !important;
@@ -6607,6 +6642,7 @@ function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose 
   const [foodDetail, setFoodDetail]   = useState(null);
   const [loadingFood, setLoadingFood] = useState(false);
   const [errorFood, setErrorFood] = useState(null);
+  const [mobilePopupItem, setMobilePopupItem] = useState(null);
 
   const app = loadAppearance();
   const navPos = app.navPosition || "left";
@@ -6924,11 +6960,24 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                     <div style={{ fontSize: 11.5, color: "var(--blue)", fontWeight: 600, marginBottom: 12 }}>
                       Click any item for a step-by-step preparation guide →
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                    <div className="fever-foods-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                       {data.foods.map((f, i) => (
                         <button
                           key={i}
-                          onClick={() => fetchFoodDetail(f)}
+                          className="fever-food-card"
+                          onClick={() => {
+                            if (window.innerWidth <= 768) {
+                              setMobilePopupItem({
+                                emoji: f.emoji,
+                                name: f.name,
+                                reason: f.reason,
+                                action: () => fetchFoodDetail(f),
+                                actionLabel: "How to Prepare Guide"
+                              });
+                            } else {
+                              fetchFoodDetail(f);
+                            }
+                          }}
                           style={{
                             background: "var(--bg-green-light)", border: "1.5px solid #bbf7d0",
                             borderRadius: "var(--radius)", padding: "13px 12px",
@@ -7208,6 +7257,62 @@ Respond with ONLY valid JSON (no markdown, no backticks):
           </div>
         </div>
       )}
+
+      {/* Mobile-only compact detail popup */}
+      {mobilePopupItem && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(15, 23, 42, 0.4)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 3000, padding: 24,
+          animation: "fadeIn 0.2s ease both"
+        }}>
+          <div style={{
+            background: "var(--surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: 20,
+            width: "100%",
+            maxWidth: 380,
+            padding: "24px 20px",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)",
+            textAlign: "center",
+            animation: "scaleIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both"
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>{mobilePopupItem.emoji}</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)", margin: "0 0 10px" }}>{mobilePopupItem.name}</h3>
+            <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 20px" }}>{mobilePopupItem.reason}</p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button
+                onClick={() => {
+                  mobilePopupItem.action();
+                  setMobilePopupItem(null);
+                }}
+                className="btn-primary"
+                style={{
+                  width: "100%", padding: "10px 16px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: "var(--blue)", color: "#fff", border: "none"
+                }}
+              >
+                {mobilePopupItem.actionLabel}
+              </button>
+              <button
+                onClick={() => setMobilePopupItem(null)}
+                style={{
+                  width: "100%", padding: "10px 16px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: "var(--surface-2)", color: "var(--text-muted)", border: "1.5px solid var(--border)"
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>,
     document.body
   );
@@ -7295,6 +7400,7 @@ function TipDetailModal({ tip, savedMedicines = [], onSaveMedicine, onClose }) {
   const [itemDetail, setItemDetail] = useState(null);
   const [loadingItem, setLoadingItem] = useState(false);
   const [errorItem, setErrorItem] = useState(null);
+  const [mobilePopupItem, setMobilePopupItem] = useState(null);
 
   const isSavedItem = selectedItem && savedMedicines.some(m => m?.name?.toLowerCase?.().trim() === selectedItem.name.toLowerCase().trim());
 
@@ -7511,9 +7617,23 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                   <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-faint)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
                     {detail.suggestionLabel || "Suggestions"} — click to see steps
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                  <div className="wellness-suggestions-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
                     {(detail.suggestions || []).map((s, i) => (
-                      <button key={i} onClick={() => fetchItemDetail(s)}
+                      <button key={i}
+                        className="wellness-suggestion-card"
+                        onClick={() => {
+                          if (window.innerWidth <= 768) {
+                            setMobilePopupItem({
+                              emoji: s.emoji,
+                              name: s.name,
+                              reason: s.tagline,
+                              action: () => fetchItemDetail(s),
+                              actionLabel: "View Step-by-Step Guide"
+                            });
+                          } else {
+                            fetchItemDetail(s);
+                          }
+                        }}
                         style={{
                           background: "var(--surface)",
                           border: "1.5px solid var(--border)",
@@ -7742,6 +7862,62 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                   <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginTop: 12 }}>Please verify your backend connection and Groq API key configuration.</div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile-only compact detail popup */}
+      {mobilePopupItem && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(15, 23, 42, 0.4)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 3000, padding: 24,
+          animation: "fadeIn 0.2s ease both"
+        }}>
+          <div style={{
+            background: "var(--surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: 20,
+            width: "100%",
+            maxWidth: 380,
+            padding: "24px 20px",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)",
+            textAlign: "center",
+            animation: "scaleIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both"
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>{mobilePopupItem.emoji}</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--navy)", margin: "0 0 10px" }}>{mobilePopupItem.name}</h3>
+            <p style={{ fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 20px" }}>{mobilePopupItem.reason}</p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button
+                onClick={() => {
+                  mobilePopupItem.action();
+                  setMobilePopupItem(null);
+                }}
+                className="btn-primary"
+                style={{
+                  width: "100%", padding: "10px 16px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: "var(--blue)", color: "#fff", border: "none"
+                }}
+              >
+                {mobilePopupItem.actionLabel}
+              </button>
+              <button
+                onClick={() => setMobilePopupItem(null)}
+                style={{
+                  width: "100%", padding: "10px 16px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: "var(--surface-2)", color: "var(--text-muted)", border: "1.5px solid var(--border)"
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
