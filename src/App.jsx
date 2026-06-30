@@ -1241,6 +1241,64 @@ const GLOBAL_CSS = `
       width: 100% !important;
       margin-bottom: 0 !important;
     }
+
+    /* Mobile settings, vitals tracker, history, and results polishes */
+    .desktop-only-setting {
+      display: none !important;
+    }
+
+    .results-header-flex {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+      margin-bottom: 16px !important;
+    }
+    .results-buttons-flex {
+      width: 100% !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+    }
+    .results-buttons-flex button {
+      padding: 8px 12px !important;
+      font-size: 11.5px !important;
+      border-radius: 8px !important;
+      flex: 1 !important;
+      justify-content: center !important;
+    }
+
+    .vitals-container {
+      padding: 18px 8px 32px !important;
+    }
+    .vitals-container .card,
+    .vitals-container > div {
+      padding: 16px 14px !important;
+    }
+    .vitals-container form input,
+    .vitals-container form select {
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    .app-layout .history-stats-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      grid-template-rows: auto !important;
+      gap: 10px !important;
+    }
+    .history-stats-grid .card,
+    .history-stats-grid > div {
+      padding: 12px 10px !important;
+    }
+    .history-stats-grid .card div,
+    .history-stats-grid > div div {
+      font-size: 14px !important;
+    }
+    .history-stats-grid .card div:last-child,
+    .history-stats-grid > div div:last-child {
+      font-size: 9.5px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
   }
 
   /* Desktop layout sidebar position transitions */
@@ -3649,7 +3707,7 @@ function Results({ report, onSave, onNew, savedMedicines = [], onSaveMedicine, o
     <div style={{ padding: "32px 32px 48px", maxWidth: 860, margin: "0 auto", position: "relative" }}>
 
       {/* ── Header ── */}
-      <div style={{
+      <div className="results-header-flex" style={{
         display: "flex", justifyContent: "space-between", alignItems: "flex-start",
         marginBottom: 20, animation: "fadeUp 0.3s ease both",
       }}>
@@ -3670,7 +3728,7 @@ function Results({ report, onSave, onNew, savedMedicines = [], onSaveMedicine, o
             &nbsp;·&nbsp;{report.symptoms.length} symptom{report.symptoms.length !== 1 ? "s" : ""} analysed
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="results-buttons-flex" style={{ display: "flex", gap: 8 }}>
           <button onClick={onSave} className="btn-primary" style={{
             background: "#059669", color: "#fff", border: "none",
             borderRadius: "var(--radius-sm)", padding: "9px 16px",
@@ -9009,7 +9067,7 @@ function VitalsLog({ vitals, setVitals, setActive, showToast }) {
   };
 
   return (
-    <div style={{ padding: "32px 32px 48px", maxWidth: 900, margin: "0 auto" }}>
+    <div className="vitals-container" style={{ padding: "32px 32px 48px", maxWidth: 900, margin: "0 auto" }}>
       {/* Header */}
       <div style={{ marginBottom: 24, animation: "fadeUp 0.3s ease both" }}>
         <h2 style={{ fontSize: 26, fontWeight: 900, color: "var(--navy)", letterSpacing: "-0.6px", margin: 0 }}>
@@ -10273,7 +10331,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
             <Card style={{ animation: "mtSlideIn 0.3s ease both" }}>
               <SectionTitle>✨ Appearance Settings</SectionTitle>
 
-              <div style={{ marginBottom: 18, textAlign: "left" }}>
+              <div className="desktop-only-setting" style={{ marginBottom: 18, textAlign: "left" }}>
                 <label style={{ display: "block", color: "var(--text)", fontWeight: 600, fontSize: 12.5, marginBottom: 8 }}>Navbar Position</label>
                 <div style={{ display: "flex", gap: 10 }}>
                   {["left", "right"].map(pos => (
@@ -10424,7 +10482,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
 
               {/* Glassy Toggles */}
               <div style={{ display: "flex", gap: 16, marginTop: 18, borderTop: "1px solid var(--border)", paddingTop: 16, flexWrap: "wrap", textAlign: "left" }}>
-                <div style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-2)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border)" }}>
+                <div className="desktop-only-setting" style={{ flex: "1 1 200px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-2)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border)" }}>
                   <div>
                     <span style={{ display: "block", color: "var(--text)", fontWeight: 600, fontSize: 13 }}>Glassy Sidebar</span>
                     <span style={{ display: "block", color: "var(--text-muted)", fontSize: 11, marginTop: 2 }}>Translucent acrylic navigation</span>
@@ -14420,7 +14478,7 @@ export default function App() {
     const deltaX = clientX - dragStartRef.current.clickX;
     const deltaY = clientY - dragStartRef.current.clickY;
     
-    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+    if (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) {
       dragStartRef.current.didMove = true;
     }
     
