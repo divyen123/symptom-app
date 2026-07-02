@@ -959,6 +959,12 @@ const GLOBAL_CSS = `
     .chat-history-sidebar {
       display: none !important;
     }
+    .desktop-only-fab {
+      display: none !important;
+    }
+    .mobile-only-history-btn {
+      display: flex !important;
+    }
     /* Layout structural changes */
     .app-layout {
       flex-direction: column !important;
@@ -5293,9 +5299,10 @@ function Hospitals() {
 }
 
 // ─── DOCTOR AI / CHATBOT ──────────────────────────────────────────────────────
-function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, setChatSessions, onSaveMedicine, savedMedicines = [] }) {
+function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, setChatSessions, onSaveMedicine, savedMedicines = [], onSelectChat, onDeleteChat, onNewChat, appearance }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => {
@@ -5449,65 +5456,81 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", maxWidth: 820, margin: "0 auto", padding: "16px 32px 32px" }}>
-      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 16 }}>
-        {/* Animated Robot */}
-        <div style={{
-          width: 56, height: 56, flexShrink: 0,
-          animation: "robotFloat 3s ease-in-out infinite",
-          position: "relative",
-        }}>
-          <svg viewBox="0 0 64 64" width="56" height="56" style={{ filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.35))" }}>
-            {/* Antenna */}
-            <line x1="32" y1="6" x2="32" y2="14" stroke="var(--blue)" strokeWidth="2.5" strokeLinecap="round">
-              <animate attributeName="y1" values="6;4;6" dur="2s" repeatCount="indefinite" />
-            </line>
-            <circle cx="32" cy="5" r="3" fill="var(--blue)">
-              <animate attributeName="r" values="3;4;3" dur="1.5s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-            </circle>
-            {/* Head */}
-            <rect x="14" y="14" width="36" height="28" rx="8" fill="var(--blue)" opacity="0.15" stroke="var(--blue)" strokeWidth="2" />
-            {/* Eyes */}
-            <circle cx="24" cy="28" r="4" fill="var(--blue)">
-              <animate attributeName="ry" values="4;1;4" dur="3.5s" repeatCount="indefinite" begin="1s" />
-            </circle>
-            <circle cx="40" cy="28" r="4" fill="var(--blue)">
-              <animate attributeName="ry" values="4;1;4" dur="3.5s" repeatCount="indefinite" begin="1s" />
-            </circle>
-            {/* Eye shine */}
-            <circle cx="22" cy="26" r="1.2" fill="#fff" opacity="0.8" />
-            <circle cx="38" cy="26" r="1.2" fill="#fff" opacity="0.8" />
-            {/* Mouth */}
-            <path d="M 24 35 Q 32 40 40 35" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
-              <animate attributeName="d" values="M 24 35 Q 32 40 40 35;M 24 36 Q 32 38 40 36;M 24 35 Q 32 40 40 35" dur="4s" repeatCount="indefinite" />
-            </path>
-            {/* Body */}
-            <rect x="18" y="44" width="28" height="14" rx="5" fill="var(--blue)" opacity="0.12" stroke="var(--blue)" strokeWidth="1.5" />
-            {/* Heart/pulse on body */}
-            <text x="32" y="54" textAnchor="middle" fontSize="10" fill="var(--blue)">
-              ❤️
-              <animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />
-            </text>
-            {/* Arms */}
-            <line x1="14" y1="48" x2="6" y2="44" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
-              <animate attributeName="y2" values="44;40;44" dur="2.5s" repeatCount="indefinite" />
-            </line>
-            <line x1="50" y1="48" x2="58" y2="44" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
-              <animate attributeName="y2" values="44;40;44" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
-            </line>
-          </svg>
-          {/* Glow ring */}
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {/* Animated Robot */}
           <div style={{
-            position: "absolute", inset: -6, borderRadius: "50%",
-            border: "2px solid var(--blue)",
-            opacity: 0.15,
-            animation: "robotGlow 2s ease-in-out infinite",
-          }} />
+            width: 56, height: 56, flexShrink: 0,
+            animation: "robotFloat 3s ease-in-out infinite",
+            position: "relative",
+          }}>
+            <svg viewBox="0 0 64 64" width="56" height="56" style={{ filter: "drop-shadow(0 4px 16px rgba(59,130,246,0.35))" }}>
+              {/* Antenna */}
+              <line x1="32" y1="6" x2="32" y2="14" stroke="var(--blue)" strokeWidth="2.5" strokeLinecap="round">
+                <animate attributeName="y1" values="6;4;6" dur="2s" repeatCount="indefinite" />
+              </line>
+              <circle cx="32" cy="5" r="3" fill="var(--blue)">
+                <animate attributeName="r" values="3;4;3" dur="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+              </circle>
+              {/* Head */}
+              <rect x="14" y="14" width="36" height="28" rx="8" fill="var(--blue)" opacity="0.15" stroke="var(--blue)" strokeWidth="2" />
+              {/* Eyes */}
+              <circle cx="24" cy="28" r="4" fill="var(--blue)">
+                <animate attributeName="ry" values="4;1;4" dur="3.5s" repeatCount="indefinite" begin="1s" />
+              </circle>
+              <circle cx="40" cy="28" r="4" fill="var(--blue)">
+                <animate attributeName="ry" values="4;1;4" dur="3.5s" repeatCount="indefinite" begin="1s" />
+              </circle>
+              {/* Eye shine */}
+              <circle cx="22" cy="26" r="1.2" fill="#fff" opacity="0.8" />
+              <circle cx="38" cy="26" r="1.2" fill="#fff" opacity="0.8" />
+              {/* Mouth */}
+              <path d="M 24 35 Q 32 40 40 35" fill="none" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
+                <animate attributeName="d" values="M 24 35 Q 32 40 40 35;M 24 36 Q 32 38 40 36;M 24 35 Q 32 40 40 35" dur="4s" repeatCount="indefinite" />
+              </path>
+              {/* Body */}
+              <rect x="18" y="44" width="28" height="14" rx="5" fill="var(--blue)" opacity="0.12" stroke="var(--blue)" strokeWidth="1.5" />
+              {/* Heart/pulse on body */}
+              <text x="32" y="54" textAnchor="middle" fontSize="10" fill="var(--blue)">
+                ❤️
+                <animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />
+              </text>
+              {/* Arms */}
+              <line x1="14" y1="48" x2="6" y2="44" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
+                <animate attributeName="y2" values="44;40;44" dur="2.5s" repeatCount="indefinite" />
+              </line>
+              <line x1="50" y1="48" x2="58" y2="44" stroke="var(--blue)" strokeWidth="2" strokeLinecap="round">
+                <animate attributeName="y2" values="44;40;44" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
+              </line>
+            </svg>
+            {/* Glow ring */}
+            <div style={{
+              position: "absolute", inset: -6, borderRadius: "50%",
+              border: "2px solid var(--blue)",
+              opacity: 0.15,
+              animation: "robotGlow 2s ease-in-out infinite",
+            }} />
+          </div>
+          <div style={{ animation: "fadeUp 0.4s ease both" }}>
+            <h2 style={{ fontSize: 26, fontWeight: 900, color: "var(--navy)", margin: 0 }}>Doctor AI</h2>
+            <p style={{ color: "var(--text-muted)", marginTop: 5, fontSize: 14, margin: "5px 0 0" }}>Ask health questions and get instant guidance.</p>
+          </div>
         </div>
-        <div style={{ animation: "fadeUp 0.4s ease both" }}>
-          <h2 style={{ fontSize: 26, fontWeight: 900, color: "var(--navy)", margin: 0 }}>Doctor AI</h2>
-          <p style={{ color: "var(--text-muted)", marginTop: 5, fontSize: 14, margin: "5px 0 0" }}>Ask health questions and get instant guidance.</p>
-        </div>
+        <button
+          className="mobile-only-history-btn"
+          onClick={() => setShowHistoryDrawer(true)}
+          style={{
+            padding: "8px 14px", borderRadius: 10,
+            background: "rgba(255,255,255,0.06)", border: "1px solid var(--border)",
+            color: "var(--text)", fontWeight: 700, fontSize: 13,
+            cursor: "pointer", fontFamily: "var(--font)",
+            display: "none", alignItems: "center", gap: 6,
+            transition: "all 0.2s ease"
+          }}
+        >
+          📜 History
+        </button>
         <style>{`
           @keyframes robotFloat {
             0%, 100% { transform: translateY(0); }
@@ -5560,19 +5583,66 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
           </form>
         </div>
       </Card>
+
+      {/* History Drawer Overlay for Mobile viewports */}
+      {showHistoryDrawer && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 3000, display: "flex", justifyContent: "flex-end" }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowHistoryDrawer(false)}
+            style={{
+              position: "absolute", inset: 0,
+              background: "rgba(15,31,92,0.4)", backdropFilter: "blur(4px)",
+              animation: "fadeIn 0.2s ease both"
+            }}
+          />
+          {/* Sliding drawer content */}
+          <div style={{
+            position: "relative", width: 260, height: "100%",
+            background: "var(--surface-2)", borderLeft: "1px solid var(--border)",
+            display: "flex", flexDirection: "column",
+            boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
+            animation: "slideInRight 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both"
+          }}>
+            {/* Close button header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Chat Sessions</span>
+              <button
+                onClick={() => setShowHistoryDrawer(false)}
+                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted)", padding: 4 }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Drawer Body rendering the Sidebar */}
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              <ChatHistorySidebar
+                chatSessions={chatSessions}
+                activeChatId={activeChatId}
+                onSelectChat={(id) => { onSelectChat(id); setShowHistoryDrawer(false); }}
+                onDeleteChat={onDeleteChat}
+                onNewChat={() => { onNewChat(); setShowHistoryDrawer(false); }}
+                appearance={appearance}
+                forceShow={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ChatHistorySidebar({ chatSessions, activeChatId, onSelectChat, onDeleteChat, onNewChat, appearance }) {
+function ChatHistorySidebar({ chatSessions, activeChatId, onSelectChat, onDeleteChat, onNewChat, appearance, forceShow }) {
   const cp = CONTENT_PALETTES.find(p => p.id === appearance?.contentPalette) || CONTENT_PALETTES[0];
   const isDark = cp.isDark;
 
   return (
-    <aside className="chat-history-sidebar" style={{
-      width: 240, flexShrink: 0, height: "100%",
+    <aside className={forceShow ? "" : "chat-history-sidebar"} style={{
+      width: forceShow ? "100%" : 240, flexShrink: 0, height: "100%",
       background: "var(--surface-2)",
-      borderLeft: "1px solid var(--border)",
+      borderLeft: forceShow ? "none" : "1px solid var(--border)",
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <div style={{ padding: "20px 16px 12px", borderBottom: isDark ? "1px solid rgba(255,255,255,0.07)" : "1px solid var(--border)" }}>
@@ -10479,12 +10549,12 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                                 flexShrink: 0
                               }}
                             >
-                              <div>
+                              <div style={{ minWidth: 0, flex: 1 }}>
                                 <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--navy)' }}>{c.name || '—'}</span>
                                 {c.relation && <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>({c.relation})</span>}
                                 {c.phone && <div style={{ fontSize: 12.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{c.phone}</div>}
                               </div>
-                              <div style={{ display: 'flex', gap: 6 }}>
+                              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                                 {c.phone && (
                                   <a href={`tel:${c.phone}`} style={{ textDecoration: 'none' }}>
                                     <button
@@ -10492,7 +10562,8 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                                       style={{
                                         background: 'var(--bg-green-light)', border: '1px solid #a7f3d0', color: '#059669',
                                         borderRadius: 6, width: 32, height: 32, fontSize: 13, cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)"
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)",
+                                        flexShrink: 0
                                       }}
                                       title="Call Contact"
                                     >📞</button>
@@ -10507,7 +10578,8 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                                   style={{
                                     background: 'var(--blue-pale, #eff6ff)', border: '1px solid var(--blue-border, #bfdbfe)', color: 'var(--blue, #2563eb)',
                                     borderRadius: 6, width: 32, height: 32, fontSize: 13, cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)"
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)",
+                                    flexShrink: 0
                                   }}
                                   title="Edit Contact"
                                 >✏️</button>
@@ -10517,7 +10589,8 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                                   style={{
                                     background: 'var(--bg-red)', border: '1px solid #fecaca', color: '#ef4444',
                                     borderRadius: 6, width: 32, height: 32, fontSize: 13, cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)"
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: "var(--transition)",
+                                    flexShrink: 0
                                   }}
                                   title="Delete Contact"
                                 >🗑</button>
@@ -15590,6 +15663,10 @@ export default function App() {
           setChatSessions={setChatSessions}
           onSaveMedicine={handleSaveMedicine}
           savedMedicines={savedMedicines}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={handleDeleteChat}
+          onNewChat={handleNewChat}
+          appearance={appearance}
         />
       );
       case "reports":  return <Reports reports={reports} onDelete={handleDeleteReport} />;
@@ -15765,7 +15842,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Top Header */}
       <div className="mobile-header">
         <button onClick={() => navigateTo("home")} style={{
           display: "flex", alignItems: "center", gap: 10,
@@ -15779,6 +15855,56 @@ export default function App() {
           }}>⚕️</div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.2px" }}>MedAI</div>
         </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", marginRight: 8 }}>
+          <button
+            onClick={() => {
+              setShowMedList(!showMedList);
+              setShowReminderList(false);
+            }}
+            style={{
+              background: showMedList ? "var(--blue)" : "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#fff", width: 36, height: 36, borderRadius: 8,
+              cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative"
+            }}
+          >
+            💊
+            {savedMedicines.length > 0 && (
+              <div style={{
+                position: "absolute", top: -4, right: -4,
+                width: 16, height: 16, borderRadius: "50%",
+                background: "var(--text-red-light)", border: "2px solid #090d16",
+                color: "#fff", fontSize: 8, fontWeight: 900,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
+            )}
+          </button>
+          <button
+            onClick={() => {
+              setShowReminderList(!showReminderList);
+              setShowMedList(false);
+            }}
+            style={{
+              background: showReminderList ? "#7c3aed" : "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#fff", width: 36, height: 36, borderRadius: 8,
+              cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+              position: "relative"
+            }}
+          >
+            ⏰
+            {savedReminders.filter(r => r.active).length > 0 && (
+              <div style={{
+                position: "absolute", top: -4, right: -4,
+                width: 16, height: 16, borderRadius: "50%",
+                background: "#7c3aed", border: "2px solid #090d16",
+                color: "#fff", fontSize: 8, fontWeight: 900,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{savedReminders.filter(r => r.active).length}</div>
+            )}
+          </button>
+        </div>
         <button onClick={() => setMobileMenuOpen(true)} style={{
           background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
           color: "#fff", width: 36, height: 36, borderRadius: 8,
@@ -15871,11 +15997,17 @@ export default function App() {
         const isTop = fabCorner.endsWith("top");
         const isRightNav = appearance.navPosition === "right";
         const hasSidebar = window.innerWidth > 768;
+        const isMobile = !hasSidebar;
         const sidebarWidth = hasSidebar ? 236 : 0;
         const sidebarOnLeft = hasSidebar && !isRightNav;
         const sidebarOnRight = hasSidebar && isRightNav;
         
-        const containerStyle = {
+        const containerStyle = isMobile ? {
+          position: "fixed",
+          inset: 0,
+          zIndex: 1201,
+          pointerEvents: "none",
+        } : {
           position: "fixed",
           zIndex: 9,
           userSelect: "none",
@@ -15886,13 +16018,13 @@ export default function App() {
           gap: 12,
         };
         
-        if (isDraggingFab) {
+        if (!isMobile && isDraggingFab) {
           containerStyle.left = fabPos.x;
           containerStyle.top = fabPos.y;
           containerStyle.right = "auto";
           containerStyle.bottom = "auto";
           containerStyle.transition = "none";
-        } else {
+        } else if (!isMobile) {
           containerStyle.transition = "left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)";
           if (isLeft) {
             containerStyle.left = (sidebarOnLeft ? sidebarWidth : 0) + 24;
@@ -15911,8 +16043,8 @@ export default function App() {
         }
         
         const popoverStyle = {
-          position: "absolute",
-          width: 320,
+          position: isMobile ? "fixed" : "absolute",
+          width: isMobile ? "min(90%, 340px)" : 320,
           background: "var(--bg-modal)",
           borderRadius: 16,
           boxShadow: "0 16px 48px rgba(15,31,92,0.18), 0 2px 8px rgba(0,0,0,0.06)",
@@ -15920,24 +16052,34 @@ export default function App() {
           overflow: "hidden",
           animation: "scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both",
           zIndex: 1201,
+          pointerEvents: "auto",
         };
         
-        if (isTop) {
-          popoverStyle.top = 0;
+        if (isMobile) {
+          popoverStyle.top = "50%";
+          popoverStyle.left = "50%";
+          popoverStyle.transform = "translate(-50%, -50%)";
+          popoverStyle.transformOrigin = "center";
           popoverStyle.bottom = "auto";
-          popoverStyle.transformOrigin = isLeft ? "top left" : "top right";
-        } else {
-          popoverStyle.bottom = 0;
-          popoverStyle.top = "auto";
-          popoverStyle.transformOrigin = isLeft ? "bottom left" : "bottom right";
-        }
-        
-        if (isLeft) {
-          popoverStyle.left = 64;
           popoverStyle.right = "auto";
         } else {
-          popoverStyle.right = 64;
-          popoverStyle.left = "auto";
+          if (isTop) {
+            popoverStyle.top = 0;
+            popoverStyle.bottom = "auto";
+            popoverStyle.transformOrigin = isLeft ? "top left" : "top right";
+          } else {
+            popoverStyle.bottom = 0;
+            popoverStyle.top = "auto";
+            popoverStyle.transformOrigin = isLeft ? "bottom left" : "bottom right";
+          }
+          
+          if (isLeft) {
+            popoverStyle.left = 64;
+            popoverStyle.right = "auto";
+          } else {
+            popoverStyle.right = 64;
+            popoverStyle.left = "auto";
+          }
         }
         
         const isDarkTheme = cp.isDark;
@@ -15978,7 +16120,22 @@ export default function App() {
         const activeMed = savedMedicines.find(m => (m._id === activeMedId || m.id === activeMedId));
 
         return (
-          <div ref={fabContainerRef} style={containerStyle}>
+          <>
+            {/* Backdrop for mobile centered popups */}
+            {isMobile && (showMedList || showReminderList) && (
+              <div
+                onClick={() => {
+                  setShowMedList(false);
+                  setShowReminderList(false);
+                }}
+                style={{
+                  position: "fixed", inset: 0,
+                  background: "rgba(15,31,92,0.4)", backdropFilter: "blur(4px)",
+                  zIndex: 1200, animation: "fadeIn 0.2s ease both",
+                }}
+              />
+            )}
+            <div ref={fabContainerRef} style={containerStyle}>
             {/* Popover for Medicine List */}
             {showMedList && (
               <div style={popoverStyle}>
@@ -16583,6 +16740,8 @@ export default function App() {
               </div>
             )}
 
+            {/* Collapsible FAB Buttons - Desktop only */}
+            {!isMobile && (<>
             {/* Collapsible Action Button 2: Self-Care Reminders (⏰) */}
             <button
               onClick={() => {
@@ -16721,7 +16880,9 @@ export default function App() {
                 {arrowChar}
               </span>
             </button>
+            </>)}
           </div>
+        </>
         );
       })()}
     </div>
