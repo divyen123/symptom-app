@@ -1302,16 +1302,82 @@ const GLOBAL_CSS = `
     }
 
     .vitals-container {
-      padding: 18px 8px 32px !important;
+      padding: 12px 6px 28px !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+      box-sizing: border-box !important;
     }
-    .vitals-container .card,
     .vitals-container > div {
-      padding: 16px 14px !important;
+      padding: 10px 8px !important;
+    }
+    .vitals-container .card {
+      padding: 14px 10px !important;
+    }
+    .vitals-container h2 {
+      font-size: 20px !important;
+    }
+    .vitals-container p {
+      font-size: 12.5px !important;
+    }
+    .vitals-container form {
+      gap: 10px !important;
     }
     .vitals-container form input,
     .vitals-container form select {
       max-width: 100% !important;
+      width: 100% !important;
       box-sizing: border-box !important;
+      font-size: 12.5px !important;
+      padding: 8px 10px !important;
+    }
+    .vitals-container form label {
+      font-size: 11.5px !important;
+    }
+    .vitals-container form button {
+      font-size: 13px !important;
+      padding: 10px !important;
+    }
+    .vitals-layout-grid {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    .vitals-dashboard-grid {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    .vitals-dashboard-grid .card {
+      padding: 10px 8px !important;
+    }
+    .vitals-dashboard-grid .card span[style*="font-size: 22"] {
+      font-size: 16px !important;
+    }
+    .vitals-dashboard-grid .card div[style*="font-size: 24"] {
+      font-size: 18px !important;
+    }
+    .vitals-dashboard-grid .card div[style*="font-size: 11"] {
+      font-size: 9.5px !important;
+    }
+    .vitals-dashboard-grid .card div[style*="font-size: 10"] {
+      font-size: 9px !important;
+    }
+
+    /* Saved health plans scrollable container on mobile */
+    .saved-plans-list-mobile {
+      max-height: 260px !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      scrollbar-width: thin !important;
+      scrollbar-color: var(--border) transparent !important;
+    }
+    .saved-plans-list-mobile::-webkit-scrollbar {
+      width: 4px !important;
+    }
+    .saved-plans-list-mobile::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+    .saved-plans-list-mobile::-webkit-scrollbar-thumb {
+      background: var(--border) !important;
+      border-radius: 4px !important;
     }
 
     .app-layout .history-stats-grid {
@@ -7717,41 +7783,6 @@ Make suggestions highly specific and practical for "${tip.title}". Use relevant 
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button
-                  onClick={() => onSaveMedicine && onSaveMedicine(selectedItem.name, "Wellness Guide", "Nutrition Center")}
-                  disabled={isSavedItem}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "var(--radius-sm)",
-                    fontWeight: 700,
-                    fontSize: 12,
-                    border: "none",
-                    cursor: isSavedItem ? "default" : "pointer",
-                    background: isSavedItem ? "rgba(16,185,129,0.25)" : "var(--white)",
-                    color: isSavedItem ? "#10b981" : "#1e3a8a",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginRight: 6,
-                    fontFamily: "var(--font)",
-                    transition: "all 0.2s ease",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-                  }}
-                  onMouseEnter={e => {
-                    if (!isSavedItem) {
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.background = "rgba(255,255,255,0.9)";
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isSavedItem) {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.background = "var(--white)";
-                    }
-                  }}
-                >
-                  {isSavedItem ? "🥗 Saved to Nutrition" : "🥗 Save to Nutrition"}
-                </button>
 
                 <button
                   onClick={() => fetchItemDetail(selectedItem)}
@@ -13553,7 +13584,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             </div>
             {savedPlans && savedPlans.length > 0 ? (
               <>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className={savedPlans.length > 3 ? "saved-plans-list-mobile" : ""} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {savedPlans.slice((savedPlansPage - 1) * 10, savedPlansPage * 10).map((plan) => (
                     <div
                       key={plan.id}
