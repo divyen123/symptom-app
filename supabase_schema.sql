@@ -20,7 +20,7 @@ create index if not exists users_email_idx on public.users (email);
 create table if not exists public.reports (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
-  report_id integer not null, -- Unique per user
+  report_id bigint not null, -- Unique per user
   date text,
   symptoms text[],
   duration text,
@@ -149,7 +149,7 @@ create index if not exists reminders_user_id_idx on public.reminders (user_id);
 create table if not exists public.history (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
-  history_id integer not null, -- Unique per user
+  history_id bigint not null, -- Unique per user
   date text,
   symptoms text[],
   duration text,

@@ -15270,30 +15270,54 @@ export default function App() {
           setDbReady(true);
           return;
         }
-        const lsReports = loadReports();
-        if (lsReports.length > 0) {
-          await apiBulkReports(lsReports);
-          localStorage.removeItem(STORAGE_KEY);
+        try {
+          const lsReports = loadReports();
+          if (lsReports.length > 0) {
+            await apiBulkReports(lsReports);
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync reports to database:", err);
         }
-        const lsHistory = loadHistory();
-        if (lsHistory.length > 0) {
-          await apiBulkHistory(lsHistory);
-          localStorage.removeItem(HISTORY_KEY);
+
+        try {
+          const lsHistory = loadHistory();
+          if (lsHistory.length > 0) {
+            await apiBulkHistory(lsHistory);
+            localStorage.removeItem(HISTORY_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync history to database:", err);
         }
-        const lsSettings = loadSettings();
-        if (Object.keys(lsSettings).length > 0) {
-          await apiSaveSettings(lsSettings);
-          localStorage.removeItem(SETTINGS_KEY);
+
+        try {
+          const lsSettings = loadSettings();
+          if (Object.keys(lsSettings).length > 0) {
+            await apiSaveSettings(lsSettings);
+            localStorage.removeItem(SETTINGS_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync settings to database:", err);
         }
-        const lsVitals = loadVitals();
-        if (lsVitals.length > 0) {
-          await Promise.all(lsVitals.map(v => apiSaveVital(v)));
-          localStorage.removeItem(VITALS_KEY);
+
+        try {
+          const lsVitals = loadVitals();
+          if (lsVitals.length > 0) {
+            await Promise.all(lsVitals.map(v => apiSaveVital(v)));
+            localStorage.removeItem(VITALS_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync vitals to database:", err);
         }
-        const lsReminders = loadReminders();
-        if (lsReminders.length > 0) {
-          await Promise.all(lsReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
-          localStorage.removeItem(REMINDERS_KEY);
+
+        try {
+          const lsReminders = loadReminders();
+          if (lsReminders.length > 0) {
+            await Promise.all(lsReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
+            localStorage.removeItem(REMINDERS_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync reminders to database:", err);
         }
         const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
           apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
