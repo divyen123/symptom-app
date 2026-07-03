@@ -994,7 +994,7 @@ const GLOBAL_CSS = `
       height: 56px !important;
       padding: 0 16px !important;
       background: var(--sidebar-bg) !important;
-      border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+      border-bottom: 1px solid var(--border) !important;
       position: sticky !important;
       top: 0 !important;
       z-index: 2000 !important;
@@ -15737,6 +15737,7 @@ export default function App() {
   }
 
   const cp = CONTENT_PALETTES.find(p => p.id === appearance.contentPalette) || CONTENT_PALETTES[0];
+  const navPalette = NAVBAR_PALETTES.find(p => p.id === appearance.navbarPalette) || NAVBAR_PALETTES.find(p => p.id === "appBlue") || NAVBAR_PALETTES[0];
 
     return (
     <>
@@ -15853,7 +15854,7 @@ export default function App() {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 16,
           }}>⚕️</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.2px" }}>MedAI</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: navPalette.text, letterSpacing: "-0.2px" }}>MedAI</div>
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", marginRight: 8 }}>
           <button
@@ -15862,9 +15863,9 @@ export default function App() {
               setShowReminderList(false);
             }}
             style={{
-              background: showMedList ? "var(--blue)" : "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#fff", width: 36, height: 36, borderRadius: 8,
+              background: showMedList ? "var(--blue)" : (navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+              border: `1px solid ${showMedList ? "var(--blue)" : (navPalette.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")}`,
+              color: showMedList ? "#fff" : navPalette.text, width: 36, height: 36, borderRadius: 8,
               cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
               position: "relative"
             }}
@@ -15874,7 +15875,7 @@ export default function App() {
               <div style={{
                 position: "absolute", top: -4, right: -4,
                 width: 16, height: 16, borderRadius: "50%",
-                background: "var(--text-red-light)", border: "2px solid #090d16",
+                background: "var(--text-red-light)", border: `2px solid ${navPalette.bg}`,
                 color: "#fff", fontSize: 8, fontWeight: 900,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
@@ -15886,9 +15887,9 @@ export default function App() {
               setShowMedList(false);
             }}
             style={{
-              background: showReminderList ? "#7c3aed" : "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#fff", width: 36, height: 36, borderRadius: 8,
+              background: showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+              border: `1px solid ${showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")}`,
+              color: showReminderList ? "#fff" : navPalette.text, width: 36, height: 36, borderRadius: 8,
               cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
               position: "relative"
             }}
@@ -15898,7 +15899,7 @@ export default function App() {
               <div style={{
                 position: "absolute", top: -4, right: -4,
                 width: 16, height: 16, borderRadius: "50%",
-                background: "#7c3aed", border: "2px solid #090d16",
+                background: "#7c3aed", border: `2px solid ${navPalette.bg}`,
                 color: "#fff", fontSize: 8, fontWeight: 900,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>{savedReminders.filter(r => r.active).length}</div>
@@ -15906,8 +15907,9 @@ export default function App() {
           </button>
         </div>
         <button onClick={() => setMobileMenuOpen(true)} style={{
-          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-          color: "#fff", width: 36, height: 36, borderRadius: 8,
+          background: navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+          border: `1px solid ${navPalette.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
+          color: navPalette.text, width: 36, height: 36, borderRadius: 8,
           cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center",
         }}>☰</button>
       </div>
@@ -16007,6 +16009,9 @@ export default function App() {
           inset: 0,
           zIndex: 1201,
           pointerEvents: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         } : {
           position: "fixed",
           zIndex: 9,
@@ -16043,7 +16048,7 @@ export default function App() {
         }
         
         const popoverStyle = {
-          position: isMobile ? "fixed" : "absolute",
+          position: isMobile ? "relative" : "absolute",
           width: isMobile ? "min(90%, 340px)" : 320,
           background: "var(--bg-modal)",
           borderRadius: 16,
@@ -16056,12 +16061,7 @@ export default function App() {
         };
         
         if (isMobile) {
-          popoverStyle.top = "50%";
-          popoverStyle.left = "50%";
-          popoverStyle.transform = "translate(-50%, -50%)";
           popoverStyle.transformOrigin = "center";
-          popoverStyle.bottom = "auto";
-          popoverStyle.right = "auto";
         } else {
           if (isTop) {
             popoverStyle.top = 0;
