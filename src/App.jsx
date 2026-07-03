@@ -11336,7 +11336,9 @@ function AuthFlow({ onLoginSuccess }) {
       <style>{AUTH_FLOW_KEYFRAMES}</style>
       <div style={{
         margin: 0, padding: 0, width: "100%", height: "100%",
-        position: "fixed", top: 0, left: 0, overflow: "hidden",
+        position: "fixed", top: 0, left: 0,
+        overflowY: isMobile ? "auto" : "hidden",
+        WebkitOverflowScrolling: "touch",
         fontFamily: "var(--font)", zIndex: 9999,
         background: "linear-gradient(145deg, #060b1f 0%, #0d1640 40%, #131b4d 70%, #0a1235 100%)",
       }}>
@@ -11425,7 +11427,19 @@ function AuthFlow({ onLoginSuccess }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "20px" : "32px 56px", zIndex: 2 }}
+              style={{
+                position: isMobile ? "relative" : "absolute",
+                inset: isMobile ? "auto" : 0,
+                width: "100%",
+                minHeight: isMobile ? "100%" : "auto",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: isMobile ? "flex-start" : "center",
+                padding: isMobile ? "40px 20px" : "32px 56px",
+                zIndex: 2,
+                boxSizing: "border-box",
+              }}
             >
               <div style={{
                 display: "flex", width: "100%", maxWidth: 1100,
