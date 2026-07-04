@@ -8477,7 +8477,7 @@ function FacePPGScannerModal({ onClose, onApply }) {
       }
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      if (!video || !canvas || video.readyState < 2) {
+      if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
         rafRef.current = requestAnimationFrame(process);
         return;
       }
@@ -8506,8 +8506,8 @@ function FacePPGScannerModal({ onClose, onApply }) {
 
       const buf = bufRef.current;
 
-      // Face skin calibration detection
-      const isFaceAligned = avgR > 35 && avgG > 30 && avgG < 250;
+      // Face skin calibration detection - check that camera is active and sending light/frames
+      const isFaceAligned = avgR > 15 && avgG > 15;
 
       if (phaseRef.current === "waiting" || buf.faceFrames < 20) {
         if (isFaceAligned) {
@@ -8615,9 +8615,12 @@ function FacePPGScannerModal({ onClose, onApply }) {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play().catch(e => console.warn("Video play error:", e));
+        };
       }
       updatePhase("waiting");
       setStatusMsg("Position your face inside the glowing oval guide");
@@ -8730,7 +8733,7 @@ const phaseColor = phase === "done" ? "#10b981"
                 border: `3px solid ${phaseColor}60`,
                 boxShadow: `0 0 32px ${phaseColor}15, inset 0 0 20px rgba(0,0,0,0.5)`,
               }}>
-                <video ref={videoRef} playsInline muted style={{
+                <video ref={videoRef} autoPlay playsInline muted style={{
                   width: "100%", height: "100%", objectFit: "cover",
                   transform: "scaleX(-1)",
                 }} />
