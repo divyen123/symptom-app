@@ -141,12 +141,10 @@ const loadAppearance = () => {
 
 let alarmAudioInterval = null;
 let audioCtx = null;
-
 const startAlarmAudio = () => {
   if (alarmAudioInterval) return;
   
-  const ringtone = localStorage.getItem("MEDAI_ALARM_RINGTONE") || "Chime";
-  if (ringtone === "None") return;
+  const tone = localStorage.getItem("MEDAI_ALARM_TONE") || "Standard Meds Alert";
   
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -158,78 +156,81 @@ const startAlarmAudio = () => {
   const playTone = () => {
     if (!audioCtx) return;
     try {
-      const osc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      osc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      const now = audioCtx.currentTime;
-      
-      if (ringtone === "Digital") {
-        osc.type = "square";
-        osc.frequency.setValueAtTime(880, now);
-        gainNode.gain.setValueAtTime(0.15, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.2);
-      } else if (ringtone === "Chime") {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1200, now);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-        osc.start(now);
-        osc.stop(now + 0.7);
-      } else if (ringtone === "Bell") {
+      const actx = audioCtx;
+      const now = actx.currentTime;
+      if (tone === "Standard Meds Alert") {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
         osc.type = "sine";
         osc.frequency.setValueAtTime(600, now);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-        
-        const osc2 = audioCtx.createOscillator();
-        const gainNode2 = audioCtx.createGain();
-        osc2.type = "sine";
-        osc2.frequency.setValueAtTime(750, now);
-        osc2.connect(gainNode2);
-        gainNode2.connect(audioCtx.destination);
-        gainNode2.gain.setValueAtTime(0.15, now);
-        gainNode2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
-        
-        osc.start(now);
-        osc2.start(now);
-        osc.stop(now + 1.3);
-        osc2.stop(now + 1.1);
-      } else if (ringtone === "Beep") {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1000, now);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-        osc.start(now);
-        osc.stop(now + 0.5);
-      } else if (ringtone === "Nature") {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1500, now);
-        osc.frequency.exponentialRampToValueAtTime(3000, now + 0.15);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-        osc.start(now);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
         osc.stop(now + 0.3);
+        
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc2 = actx.createOscillator();
+          const gain2 = actx.createGain();
+          osc2.type = "sine";
+          osc2.frequency.setValueAtTime(600, actx.currentTime);
+          gain2.gain.setValueAtTime(0.1, actx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.3);
+          osc2.connect(gain2);
+          gain2.connect(actx.destination);
+          osc2.start();
+          osc2.stop(actx.currentTime + 0.3);
+        }, 350);
+      } else if (tone === "Chime Alert") {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(987.77, now);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(now + 0.8);
+      } else if (tone === "Soft Pulse Alert") {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(329.63, now);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(now + 0.6);
+      } else {
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(880, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(now + 0.25);
       }
     } catch (err) {
       console.error("Tone playback failed", err);
     }
   };
   
-  let delay = 1000;
-  if (ringtone === "Digital") delay = 350;
-  if (ringtone === "Chime") delay = 1200;
-  if (ringtone === "Bell") delay = 1800;
-  if (ringtone === "Beep") delay = 800;
-  if (ringtone === "Nature") delay = 600;
+  let delay = 1200;
+  if (tone === "Standard Meds Alert") delay = 1200;
+  if (tone === "Chime Alert") delay = 1500;
+  if (tone === "Soft Pulse Alert") delay = 1200;
+  if (tone === "Digital Alarm Alert") delay = 1000;
   
   playTone();
   alarmAudioInterval = setInterval(playTone, delay);
 };
-
 const stopAlarmAudio = () => {
   if (alarmAudioInterval) {
     clearInterval(alarmAudioInterval);
@@ -1154,8 +1155,9 @@ const GLOBAL_CSS = `
       grid-template-columns: 1fr !important;
       gap: 16px !important;
     }
-    .vitals-dashboard-grid {
-      grid-template-columns: 1fr !important;
+    .vitals-dashboard-grid,
+    div.vitals-dashboard-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
       gap: 12px !important;
     }
     .emergency-layout-grid {
@@ -1347,8 +1349,9 @@ const GLOBAL_CSS = `
       grid-template-columns: 1fr !important;
       gap: 14px !important;
     }
-    .vitals-dashboard-grid {
-      grid-template-columns: 1fr 1fr !important;
+    .vitals-dashboard-grid,
+    div.vitals-dashboard-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
       gap: 8px !important;
     }
     .vitals-dashboard-grid .card {
@@ -1405,6 +1408,26 @@ const GLOBAL_CSS = `
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
+    .analyzer-vitals-row {
+      flex-direction: row !important;
+      justify-content: space-around !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
+    .analyzer-vitals-sep-1 {
+      display: none !important;
+    }
+    .chatbot-main-container {
+      padding: 12px 10px 16px !important;
+    }
+    .chatbot-message-list {
+      padding: 16px 12px !important;
+    }
+    .chatbot-bubble-wrapper {
+      max-width: 92% !important;
+    }
+    .chatbot-input-container {
+      padding: 10px 12px !important;
     }
   }
 
@@ -3959,20 +3982,22 @@ function Results({ report, onSave, onNew, savedMedicines = [], onSaveMedicine, o
           gap: 16, alignItems: "center", justifyContent: "center",
           padding: "20px 16px",
         }}>
-          <RadialGauge value={report.painLevel} max={10} color={painColor} label="Pain" />
-          <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
-          <div style={{ textAlign: "center" }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: "50%", margin: "0 auto 6px",
-              background: report.hasFever ? "var(--bg-red)" : "var(--bg-green-light)",
-              border: `2px solid ${report.hasFever ? "var(--border-red)" : "var(--border-green)"}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20,
-            }}>🌡️</div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: report.hasFever ? "var(--text-red)" : "#10b981" }}>
-              {report.hasFever ? "Fever" : "No Fever"}
+          <div className="analyzer-vitals-row" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: "100%", justifyContent: "center" }}>
+            <RadialGauge value={report.painLevel} max={10} color={painColor} label="Pain" />
+            <div className="analyzer-vitals-sep-1" style={{ width: "100%", height: 1, background: "var(--border)" }} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: "50%", margin: "0 auto 6px",
+                background: report.hasFever ? "var(--bg-red)" : "var(--bg-green-light)",
+                border: `2px solid ${report.hasFever ? "var(--border-red)" : "var(--border-green)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 20,
+              }}>🌡️</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: report.hasFever ? "var(--text-red)" : "#10b981" }}>
+                {report.hasFever ? "Fever" : "No Fever"}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>Status</div>
             </div>
-            <div style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>Status</div>
           </div>
           <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
           <div style={{ textAlign: "center", width: "100%" }}>
@@ -5428,11 +5453,11 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
       if (activeChatId) {
         const updated = await apiUpdateChat(activeChatId, { messages: backendMsgs, title });
         setChatSessions(prev => prev.map(s =>
-          s._id === activeChatId ? { ...s, ...updated, title: updated.title || title, lastMessage: assistantText.substring(0, 80) } : s
+          (s._id || s.id) === activeChatId ? { ...s, ...updated, title: updated.title || title, lastMessage: assistantText.substring(0, 80) } : s
         ));
       } else {
         const created = await apiCreateChat({ title, messages: backendMsgs });
-        setActiveChatId(created._id);
+        setActiveChatId(created._id || created.id);
         setChatSessions(prev => [{
           ...created,
           messageCount: backendMsgs.length,
@@ -5455,7 +5480,7 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", maxWidth: 820, margin: "0 auto", padding: "16px 32px 32px" }}>
+    <div className="chatbot-main-container" style={{ height: "100%", display: "flex", flexDirection: "column", maxWidth: 820, margin: "0 auto", padding: "16px 32px 32px" }}>
       <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {/* Animated Robot */}
@@ -5544,9 +5569,9 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
       </div>
 
       <Card style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", padding: 0 }}>
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="chatbot-message-list" style={{ flex: 1, overflowY: "auto", padding: "24px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
           {msgs.map((m, i) => (
-            <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
+            <div key={i} className="chatbot-bubble-wrapper" style={{ display: "flex", gap: 12, alignItems: "flex-start", alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
               {m.role === "assistant" && (
                 <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: "0 4px 12px rgba(59,130,246,0.3)" }}>⚕️</div>
               )}
@@ -5568,7 +5593,7 @@ function Chatbot({ msgs, setMsgs, activeChatId, setActiveChatId, chatSessions, s
           <div ref={endRef} />
         </div>
 
-        <div style={{ padding: "16px 20px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
+        <div className="chatbot-input-container" style={{ padding: "16px 20px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
           <form onSubmit={handleSend} style={{ display: "flex", gap: 12 }}>
             <input
               type="text"
@@ -5670,11 +5695,11 @@ function ChatHistorySidebar({ chatSessions, activeChatId, onSelectChat, onDelete
           </div>
         ) : (
           chatSessions.map(session => {
-            const isActive = activeChatId === session._id;
+            const isActive = activeChatId === (session._id || session.id);
             return (
               <div
-                key={session._id}
-                onClick={() => onSelectChat(session._id)}
+                key={session._id || session.id}
+                onClick={() => onSelectChat(session._id || session.id)}
                 style={{
                   padding: "10px 12px", borderRadius: 10, marginBottom: 4,
                   cursor: "pointer", position: "relative",
@@ -5692,7 +5717,7 @@ function ChatHistorySidebar({ chatSessions, activeChatId, onSelectChat, onDelete
                   {session.lastMessage || `${session.messageCount || 0} messages`}
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onDeleteChat(session._id); }}
+                  onClick={(e) => { e.stopPropagation(); onDeleteChat(session._id || session.id); }}
                   title="Delete chat"
                   style={{
                     position: "absolute", top: 8, right: 8,
@@ -14652,6 +14677,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [meditownInitialCategory, setMeditownInitialCategory] = useState(null);
   const [activeAlarm, setActiveAlarm] = useState(null);
+  const [reminderQueue, setReminderQueue] = useState([]);
   const [showSchedulePopup, setShowSchedulePopup] = useState(false);
   const [reminderTitle, setReminderTitle] = useState("");
   const [reminderDate, setReminderDate] = useState(() => new Date().toISOString().split("T")[0]);
@@ -14684,115 +14710,158 @@ export default function App() {
     };
   }, []);
 
+
+
+
+
   useEffect(() => {
-    const checkReminders = () => {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
-      const currentDate = String(now.getDate()).padStart(2, "0");
-      const currentDayString = `${currentYear}-${currentMonth}-${currentDate}`;
-      const currentHrs = String(now.getHours()).padStart(2, "0");
-      const currentMins = String(now.getMinutes()).padStart(2, "0");
-      const currentTimeString = `${currentHrs}:${currentMins}`;
-      const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
-      
-      const dayOfWeekMap = {
-        0: "every sunday",
-        1: "every monday",
-        2: "every tuesday",
-        3: "every wednesday",
-        4: "every thursday",
-        5: "every friday",
-        6: "every saturday"
-      };
-      
-      savedReminders.forEach(rem => {
-        if (!rem.active) return;
-        
-        let parsed = { time: "", date: "", repeat: "only one time" };
-        try {
-          if (rem.time.startsWith("{")) {
-            parsed = JSON.parse(rem.time);
-          } else {
-            parsed.time = rem.time;
-          }
-        } catch (e) {
-          parsed.time = rem.time;
-        }
-        
-        if (parsed.time !== currentTimeString) return;
-        
-        let shouldTrigger = false;
-        if (parsed.repeat === "only one time") {
-          if (!parsed.date || parsed.date === currentDayString) {
-            shouldTrigger = true;
-          }
-        } else if (parsed.repeat === "daily remind") {
-          shouldTrigger = true;
-        } else if (parsed.repeat === dayOfWeekMap[currentDayOfWeek]) {
-          shouldTrigger = true;
-        }
-        
-        if (shouldTrigger) {
-          const triggerKey = `${rem.id}_${currentDayString}_${currentTimeString}`;
-          const lastTriggered = localStorage.getItem("MEDAI_LAST_TRIGGERED_ALARM");
-          if (lastTriggered !== triggerKey) {
-            localStorage.setItem("MEDAI_LAST_TRIGGERED_ALARM", triggerKey);
-            
-            setActiveAlarm({
-              ...rem,
-              parsedSchedule: parsed,
-              triggerKey
-            });
-            
-            startAlarmAudio();
-            
-            if (parsed.repeat === "only one time") {
-              handleToggleReminder(rem.id, true);
-            }
-          }
-        }
-      });
+    if (!savedReminders || savedReminders.length === 0) return;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const currentDate = String(now.getDate()).padStart(2, "0");
+    const currentDayString = `${currentYear}-${currentMonth}-${currentDate}`;
+    const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+
+    const dayOfWeekMap = {
+      0: "every sunday",
+      1: "every monday",
+      2: "every tuesday",
+      3: "every wednesday",
+      4: "every thursday",
+      5: "every friday",
+      6: "every saturday"
     };
-    
-    const interval = setInterval(checkReminders, 5000);
-    return () => clearInterval(interval);
+
+    const due = [];
+    savedReminders.forEach(rem => {
+      if (!rem.active) return;
+
+      let parsed = { date: "", repeat: "only one time" };
+      try {
+        if (rem.time.startsWith("{")) {
+          parsed = JSON.parse(rem.time);
+        } else {
+          parsed.date = rem.time;
+        }
+      } catch (e) {
+        parsed.date = rem.time;
+      }
+
+      let isDue = false;
+      if (parsed.repeat === "only one time") {
+        if (parsed.date === currentDayString) {
+          isDue = true;
+        }
+      } else {
+        const startSecs = parsed.date ? new Date(parsed.date).setHours(0,0,0,0) : 0;
+        const todaySecs = new Date(currentDayString).setHours(0,0,0,0);
+        if (todaySecs >= startSecs) {
+          if (parsed.repeat === "daily remind") {
+            isDue = true;
+          } else if (parsed.repeat === dayOfWeekMap[currentDayOfWeek]) {
+            isDue = true;
+          }
+        }
+      }
+
+      if (isDue) {
+        const remId = rem._id || rem.id;
+        const ackDate = localStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
+        if (ackDate !== currentDayString) {
+          due.push(rem);
+        }
+      }
+    });
+
+    if (due.length > 0) {
+      setReminderQueue(due);
+      if (!activeAlarm) {
+        setActiveAlarm(due[0]);
+        startAlarmAudio();
+      }
+    } else {
+      setActiveAlarm(null);
+      stopAlarmAudio();
+    }
   }, [savedReminders]);
 
-  const handleStopAlarm = () => {
-    setActiveAlarm(null);
-    stopAlarmAudio();
-  };
-
-  const handleSnoozeAlarm = () => {
+  const handleIgnoreReminder = () => {
     if (!activeAlarm) return;
-    const snoozeMinutesSetting = parseInt(localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5");
-    
+    const currentRemId = activeAlarm._id || activeAlarm.id;
     const now = new Date();
-    now.setMinutes(now.getMinutes() + snoozeMinutesSetting);
-    const snoozeHrs = String(now.getHours()).padStart(2, "0");
-    const snoozeMins = String(now.getMinutes()).padStart(2, "0");
-    const snoozeTimeString = `${snoozeHrs}:${snoozeMins}`;
-    
-    const snoozedReminder = {
-      id: `snooze_${Date.now()}`,
-      title: `[Snoozed] ${activeAlarm.title}`,
-      time: JSON.stringify({
-        time: snoozeTimeString,
-        date: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`,
-        repeat: "only one time"
-      }),
-      active: true
-    };
-    
-    setSavedReminders(prev => [...prev, snoozedReminder]);
-    
-    setActiveAlarm(null);
-    stopAlarmAudio();
-    showToast(`Alarm snoozed for ${snoozeMinutesSetting} minutes!`);
+    const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    localStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
+
+    let parsed = { repeat: "only one time" };
+    try {
+      if (activeAlarm.time.startsWith("{")) {
+        parsed = JSON.parse(activeAlarm.time);
+      }
+    } catch (e) {}
+
+    if (parsed.repeat === "only one time") {
+      handleToggleReminder(currentRemId, true);
+    }
+
+    const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
+    setReminderQueue(nextQueue);
+    if (nextQueue.length > 0) {
+      setActiveAlarm(nextQueue[0]);
+    } else {
+      setActiveAlarm(null);
+      stopAlarmAudio();
+    }
   };
 
+  const handlePostponeReminder = async () => {
+    if (!activeAlarm) return;
+    const currentRemId = activeAlarm._id || activeAlarm.id;
+    const now = new Date();
+    const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
+    localStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
+
+    let parsed = { date: "", repeat: "only one time" };
+    try {
+      if (activeAlarm.time.startsWith("{")) {
+        parsed = JSON.parse(activeAlarm.time);
+      }
+    } catch (e) {}
+
+    if (parsed.repeat === "only one time") {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,"0")}-${String(tomorrow.getDate()).padStart(2,"0")}`;
+      parsed.date = tomorrowStr;
+      const scheduleStr = JSON.stringify(parsed);
+
+      try {
+        const updated = await apiUpdateReminder(currentRemId, { time: scheduleStr });
+        setSavedReminders(prev => prev.map(r => (r._id === currentRemId || r.id === currentRemId) ? updated : r));
+      } catch {
+        const updatedList = savedReminders.map(r => {
+          if (r._id === currentRemId || r.id === currentRemId) {
+            return { ...r, time: scheduleStr };
+          }
+          return r;
+        });
+        setSavedReminders(updatedList);
+        localStorage.setItem(REMINDERS_KEY, JSON.stringify(updatedList));
+      }
+    }
+
+    const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
+    setReminderQueue(nextQueue);
+    if (nextQueue.length > 0) {
+      setActiveAlarm(nextQueue[0]);
+    } else {
+      setActiveAlarm(null);
+      stopAlarmAudio();
+    }
+  };
 
   const handleFabMouseMove = useCallback((e) => {
     if (!dragStartRef.current) return;
@@ -15633,7 +15702,7 @@ export default function App() {
       const normalized = normalizeChatMessages(session.messages);
       setChatMsgs(normalized.length ? normalized : getNewChatDefaultMessages());
     } catch {
-      const session = chatSessions.find(s => s._id === id);
+      const session = chatSessions.find(s => (s._id || s.id) === id);
       if (session?.messages?.length) {
         setChatMsgs(normalizeChatMessages(session.messages));
       }
@@ -15652,7 +15721,7 @@ export default function App() {
   const executeDeleteChat = async (id) => {
     try {
       await apiDeleteChat(id);
-      setChatSessions(prev => prev.filter(s => s._id !== id));
+      setChatSessions(prev => prev.filter(s => (s._id || s.id) !== id));
       if (activeChatId === id) {
         handleNewChat();
       }
@@ -16623,30 +16692,13 @@ export default function App() {
                         <option value="every sunday">Every Sunday</option>
                       </select>
                     </div>
-
-                    {/* Date selection (only for one time) */}
-                    {reminderRepeat === "only one time" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Date</label>
-                        <input
-                          type="date"
-                          value={reminderDate}
-                          onChange={e => setReminderDate(e.target.value)}
-                          style={{
-                            padding: "6px 8px", borderRadius: 8, border: "1.5px solid var(--border)",
-                            fontSize: 12, fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Time selection */}
+                    {/* Date selection */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 4, textAlign: "left" }}>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Time</label>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>Date</label>
                       <input
-                        type="time"
-                        value={reminderTime}
-                        onChange={e => setReminderTime(e.target.value)}
+                        type="date"
+                        value={reminderDate}
+                        onChange={e => setReminderDate(e.target.value)}
                         style={{
                           padding: "6px 8px", borderRadius: 8, border: "1.5px solid var(--border)",
                           fontSize: 12, fontFamily: "var(--font)", background: "var(--surface-2)", color: "var(--text)"
@@ -16670,8 +16722,8 @@ export default function App() {
                             return;
                           }
                           const scheduleStr = JSON.stringify({
-                            time: reminderTime,
-                            date: reminderRepeat === "only one time" ? reminderDate : "",
+                            time: "",
+                            date: reminderDate,
                             repeat: reminderRepeat
                           });
                           handleSaveReminder(reminderTitle, scheduleStr);
@@ -16684,8 +16736,7 @@ export default function App() {
                           cursor: "pointer", fontFamily: "var(--font)", background: "var(--blue)", color: "#fff", border: "none"
                         }}
                       >Confirm & Set</button>
-                    </div>
-                  </div>
+                    </div>                  </div>
                 )}
 
                 {/* Reminders List Body */}
@@ -16729,16 +16780,16 @@ export default function App() {
                                   if (rem.time.startsWith("{")) {
                                     const parsed = JSON.parse(rem.time);
                                     if (parsed.repeat === "only one time") {
-                                      return `🔔 ${parsed.time} (${parsed.date})`;
+                                      return `📅 ${parsed.date}`;
                                     } else if (parsed.repeat === "daily remind") {
-                                      return `🔔 ${parsed.time} (Daily)`;
+                                      return `📅 Daily`;
                                     } else {
                                       const day = parsed.repeat.replace("every ", "");
-                                      return `🔔 ${parsed.time} (Every ${day.charAt(0).toUpperCase() + day.slice(1)})`;
+                                      return `📅 Every ${day.charAt(0).toUpperCase() + day.slice(1)}`;
                                     }
                                   }
                                 } catch (e) {}
-                                return `🔔 ${rem.time}`;
+                                return `📅 ${rem.time}`;
                               })()}
                             </span>
                           </div>
@@ -16936,7 +16987,7 @@ export default function App() {
         <div style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(15, 23, 42, 0.45)",
+          background: "rgba(15, 23, 42, 0.65)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           display: "flex",
@@ -16984,7 +17035,7 @@ export default function App() {
             
             <div style={{ display: "flex", gap: 14 }}>
               <button
-                onClick={handleSnoozeAlarm}
+                onClick={handlePostponeReminder}
                 type="button"
                 style={{
                   flex: 1,
@@ -17000,10 +17051,10 @@ export default function App() {
                   transition: "var(--transition)",
                 }}
               >
-                Snooze ({localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5"}m)
+                Remind me tomorrow
               </button>
               <button
-                onClick={handleStopAlarm}
+                onClick={handleIgnoreReminder}
                 type="button"
                 style={{
                   flex: 1,
@@ -17013,21 +17064,20 @@ export default function App() {
                   fontSize: 14.5,
                   cursor: "pointer",
                   fontFamily: "var(--font)",
-                  background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                  background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
                   border: "none",
                   color: "#fff",
-                  boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
+                  boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
                   transition: "var(--transition)",
                 }}
               >
-                Stop
+                Ignore
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Global Toast Notification */}
       {(() => {
         return createPortal(
           <AnimatePresence>
