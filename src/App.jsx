@@ -8370,8 +8370,7 @@ function FacePPGScannerModal({ onClose, onApply }) {
     scanStart: 0,
   });
 
-  // 1. drawWave (depends only on refs)
-  const drawWave = (points) => {
+  const drawWave = useCallback((points) => {
     const canvas = waveRef.current;
     if (!canvas || points.length < 2) return;
     const ctx = canvas.getContext("2d");
@@ -8419,7 +8418,7 @@ function FacePPGScannerModal({ onClose, onApply }) {
     }
     ctx.stroke();
     ctx.shadowBlur = 0;
-  };
+  }, []);
 
   // 2. stopCamera (depends only on refs)
   const stopCamera = useCallback(() => {
