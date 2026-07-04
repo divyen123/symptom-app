@@ -141,8 +141,21 @@ const loadAppearance = () => {
 
 let alarmAudioInterval = null;
 let audioCtx = null;
-const startAlarmAudio = () => {
+const startAlarmAudio = (rem) => {
   if (alarmAudioInterval) return;
+  
+  if (rem && rem.time && rem.time.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(rem.time);
+      if (!parsed.soundEnabled) {
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+  } else {
+    return;
+  }
   
   const tone = localStorage.getItem("MEDAI_ALARM_TONE") || "Standard Meds Alert";
   
@@ -14659,6 +14672,7 @@ export default function App() {
   const [reminderDate, setReminderDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [reminderTime, setReminderTime] = useState("08:00");
   const [reminderRepeat, setReminderRepeat] = useState("only one time");
+  const [reminderSoundEnabled, setReminderSoundEnabled] = useState(false);
 
   const getVisibleReminders = () => {
     const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
@@ -14788,7 +14802,7 @@ export default function App() {
       setReminderQueue(due);
       if (!activeAlarm) {
         setActiveAlarm(due[0]);
-        startAlarmAudio();
+        startAlarmAudio(due[0]);
       }
     } else {
       setActiveAlarm(null);
@@ -14806,11 +14820,12 @@ export default function App() {
 
     const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
     setReminderQueue(nextQueue);
+    stopAlarmAudio();
     if (nextQueue.length > 0) {
       setActiveAlarm(nextQueue[0]);
+      startAlarmAudio(nextQueue[0]);
     } else {
       setActiveAlarm(null);
-      stopAlarmAudio();
     }
   };
 
@@ -14853,11 +14868,12 @@ export default function App() {
 
     const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
     setReminderQueue(nextQueue);
+    stopAlarmAudio();
     if (nextQueue.length > 0) {
       setActiveAlarm(nextQueue[0]);
+      startAlarmAudio(nextQueue[0]);
     } else {
       setActiveAlarm(null);
-      stopAlarmAudio();
     }
   };
 
@@ -16674,7 +16690,7 @@ export default function App() {
                   }}>
                     <div style={{ fontWeight: 800, fontSize: 13, color: "var(--navy)", borderBottom: "1.5px solid var(--border)", paddingBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ color: "var(--text)" }}>📅 Configure Schedule</span>
-                      <button onClick={() => setShowSchedulePopup(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--text)" }}>×</button>
+                      <button onClick={() => { setShowSchedulePopup(false); setReminderSoundEnabled(false); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--text)" }}>×</button>
                     </div>
                     
                     {/* Repeat selection */}
@@ -16713,9 +16729,36 @@ export default function App() {
                       />
                     </div>
 
+                    {/* Sound Switch toggle */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 2px" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>Enable Alarm Sound</span>
+                      <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
+                        <input
+                          type="checkbox"
+                          checked={reminderSoundEnabled}
+                          onChange={e => setReminderSoundEnabled(e.target.checked)}
+                          style={{
+                            width: 32, height: 18, appearance: "none",
+                            backgroundColor: reminderSoundEnabled ? "var(--blue)" : "rgba(0,0,0,0.15)",
+                            borderRadius: 9, position: "relative", cursor: "pointer",
+                            transition: "background-color 0.2s ease"
+                          }}
+                        />
+                        <span style={{
+                          width: 14, height: 14, backgroundColor: "#fff",
+                          borderRadius: "50%", position: "absolute", top: 2,
+                          left: reminderSoundEnabled ? 16 : 2, transition: "left 0.2s ease",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.2)"
+                        }} />
+                      </label>
+                    </div>
+
                     <div style={{ display: "flex", gap: 8, marginTop: "auto", paddingTop: 8 }}>
                       <button
-                        onClick={() => setShowSchedulePopup(false)}
+                        onClick={() => {
+                          setShowSchedulePopup(false);
+                          setReminderSoundEnabled(false);
+                        }}
                         type="button"
                         style={{
                           flex: 1, padding: "8px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 700,
@@ -16731,10 +16774,12 @@ export default function App() {
                           const scheduleStr = JSON.stringify({
                             time: "",
                             date: reminderDate,
-                            repeat: reminderRepeat
+                            repeat: reminderRepeat,
+                            soundEnabled: reminderSoundEnabled
                           });
                           handleSaveReminder(reminderTitle, scheduleStr);
                           setReminderTitle("");
+                          setReminderSoundEnabled(false);
                           setShowSchedulePopup(false);
                         }}
                         type="button"
