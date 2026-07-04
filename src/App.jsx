@@ -6109,7 +6109,7 @@ function ReportModal({ r, onClose, onDelete }) {
 function Reports({ reports, onDelete }) {
   const [sel, setSel] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 8;
 
   const totalPages = Math.ceil(reports.length / itemsPerPage) || 1;
   const activePage = Math.min(currentPage, totalPages);
@@ -6241,7 +6241,7 @@ function History({ reports, onDelete, onClearAll }) {
   const [search, setSearch] = useState("");
   const [confirmId, setConfirmId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 8;
 
   const filtered = reports.filter(r =>
     r.symptoms.some(s => s.toLowerCase().includes(search.toLowerCase())) ||
