@@ -11187,6 +11187,13 @@ const AUTH_FLOW_KEYFRAMES = `
     0% { left: -30%; }
     100% { left: 100%; }
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
 `;
 
 // ─── AMBIENT HEX BACKGROUND ──────────────────────────────────────────────────
@@ -11334,7 +11341,7 @@ function AuthFlow({ onLoginSuccess }) {
     <>
       <style>{GLOBAL_CSS}</style>
       <style>{AUTH_FLOW_KEYFRAMES}</style>
-      <div style={{
+      <div className="no-scrollbar" style={{
         margin: 0, padding: 0, width: "100%", height: "100%",
         position: "fixed", top: 0, left: 0,
         overflowX: "hidden",
