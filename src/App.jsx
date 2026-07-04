@@ -8618,6 +8618,9 @@ function FacePPGScannerModal({ onClose, onApply }) {
       const video = videoRef.current;
       if (video) {
         video.srcObject = stream;
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
         video.onloadedmetadata = () => {
           video.play().catch(e => console.warn("Video play error:", e));
         };
@@ -8733,10 +8736,27 @@ const phaseColor = phase === "done" ? "#10b981"
                 border: `3px solid ${phaseColor}60`,
                 boxShadow: `0 0 32px ${phaseColor}15, inset 0 0 20px rgba(0,0,0,0.5)`,
               }}>
-                <video ref={videoRef} autoPlay playsInline muted style={{
-                  width: "100%", height: "100%", objectFit: "cover",
-                  transform: "scaleX(-1)",
-                }} />
+                <video
+                  ref={(el) => {
+                    videoRef.current = el;
+                    if (el && streamRef.current && el.srcObject !== streamRef.current) {
+                      el.srcObject = streamRef.current;
+                      el.muted = true;
+                      el.defaultMuted = true;
+                      el.playsInline = true;
+                      el.play().catch(e => console.warn("Ref callback play error:", e));
+                    }
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transform: "scaleX(-1)",
+                  }}
+                />
                 {/* Face Guide Oval Overlay */}
                 <div style={{
                   position: "absolute",
