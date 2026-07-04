@@ -10859,10 +10859,10 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                   </button>
                 </div>
               </div>
-              {/* Reminder Alert Tone & Snooze Settings */}
+              {/* Reminder Alert Tone Settings */}
               <div style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 20, textAlign: "left" }}>
                 <label style={{ display: "block", color: "var(--text)", fontWeight: 700, fontSize: 13.5, marginBottom: 14 }}>
-                  🔔 Reminder Audio & Snooze Options
+                  🔔 Reminder Audio Options
                 </label>
                 
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -10978,30 +10978,6 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                         🔊 Test Sound
                       </button>
                     </div>
-                  </div>
-                  
-                  {/* Snooze interval selection */}
-                  <div>
-                    <label style={{ display: "block", color: "var(--text-muted)", fontWeight: 600, fontSize: 12, marginBottom: 6 }}>
-                      Snooze Duration
-                    </label>
-                    <select
-                      value={localStorage.getItem("MEDAI_SNOOZE_LEVEL") || "5"}
-                      onChange={e => {
-                        localStorage.setItem("MEDAI_SNOOZE_LEVEL", e.target.value);
-                        onAppearanceChange("snoozeLevel", parseInt(e.target.value));
-                      }}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: 8,
-                        border: "1px solid var(--border)", fontSize: 13.5, fontFamily: "var(--font)",
-                        background: "var(--surface)", color: "var(--text)"
-                      }}
-                    >
-                      <option value="1">1 Minute</option>
-                      <option value="2">2 Minutes</option>
-                      <option value="5">5 Minutes</option>
-                      <option value="10">10 Minutes</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -14684,6 +14660,39 @@ export default function App() {
   const [reminderTime, setReminderTime] = useState("08:00");
   const [reminderRepeat, setReminderRepeat] = useState("only one time");
 
+  const getVisibleReminders = () => {
+    const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
+    const todayTime = new Date(todayStr).getTime();
+    return savedReminders.filter(rem => {
+      try {
+        if (rem.time && rem.time.startsWith("{")) {
+          const parsed = JSON.parse(rem.time);
+          if (parsed.repeat === "only one time" && parsed.date) {
+            const reminderTime = new Date(parsed.date).getTime();
+            const diffDays = (reminderTime - todayTime) / (1000 * 60 * 60 * 24);
+            if (diffDays > 1) return false;
+          }
+        }
+      } catch (e) {}
+      return true;
+    });
+  };
+
+  const isReminderFinished = (rem) => {
+    try {
+      if (rem.time && rem.time.startsWith("{")) {
+        const parsed = JSON.parse(rem.time);
+        if (parsed.repeat === "only one time" && parsed.date) {
+          const todayStr = new Date().toLocaleDateString("en-CA");
+          if (todayStr > parsed.date) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
   // FAB Draggable states
   const [fabCorner, setFabCorner] = useState(() => {
     return localStorage.getItem("MEDAI_FAB_CORNER") || (loadAppearance().navPosition === "right" ? "left-bottom" : "right-bottom");
@@ -14715,7 +14724,7 @@ export default function App() {
 
 
   useEffect(() => {
-    if (!savedReminders || savedReminders.length === 0) return;
+    if (!savedReminders || savedReminders.length === 0 || splashPhase !== "done") return;
 
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -14768,7 +14777,7 @@ export default function App() {
 
       if (isDue) {
         const remId = rem._id || rem.id;
-        const ackDate = localStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
+        const ackDate = sessionStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
         if (ackDate !== currentDayString) {
           due.push(rem);
         }
@@ -14785,7 +14794,7 @@ export default function App() {
       setActiveAlarm(null);
       stopAlarmAudio();
     }
-  }, [savedReminders]);
+  }, [savedReminders, splashPhase]);
 
   const handleIgnoreReminder = () => {
     if (!activeAlarm) return;
@@ -14793,18 +14802,7 @@ export default function App() {
     const now = new Date();
     const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    localStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
-
-    let parsed = { repeat: "only one time" };
-    try {
-      if (activeAlarm.time.startsWith("{")) {
-        parsed = JSON.parse(activeAlarm.time);
-      }
-    } catch (e) {}
-
-    if (parsed.repeat === "only one time") {
-      handleToggleReminder(currentRemId, true);
-    }
+    sessionStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
 
     const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
     setReminderQueue(nextQueue);
@@ -14822,7 +14820,7 @@ export default function App() {
     const now = new Date();
     const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    localStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
+    sessionStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
 
     let parsed = { date: "", repeat: "only one time" };
     try {
@@ -15994,30 +15992,32 @@ export default function App() {
               }}>{savedMedicines.length > 9 ? "9+" : savedMedicines.length}</div>
             )}
           </button>
-          <button
-            onClick={() => {
-              setShowReminderList(!showReminderList);
-              setShowMedList(false);
-            }}
-            style={{
-              background: showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
-              border: `1px solid ${showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")}`,
-              color: showReminderList ? "#fff" : navPalette.text, width: 36, height: 36, borderRadius: 8,
-              cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
-              position: "relative"
-            }}
-          >
-            ⏰
-            {savedReminders.filter(r => r.active).length > 0 && (
-              <div style={{
-                position: "absolute", top: -4, right: -4,
-                width: 16, height: 16, borderRadius: "50%",
-                background: "#7c3aed", border: `2px solid ${navPalette.bg}`,
-                color: "#fff", fontSize: 8, fontWeight: 900,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{savedReminders.filter(r => r.active).length}</div>
-            )}
-          </button>
+          {splashPhase === "done" && (
+            <button
+              onClick={() => {
+                setShowReminderList(!showReminderList);
+                setShowMedList(false);
+              }}
+              style={{
+                background: showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"),
+                border: `1px solid ${showReminderList ? "#7c3aed" : (navPalette.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)")}`,
+                color: showReminderList ? "#fff" : navPalette.text, width: 36, height: 36, borderRadius: 8,
+                cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                position: "relative"
+              }}
+            >
+              ⏰
+              {getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length > 0 && (
+                <div style={{
+                  position: "absolute", top: -4, right: -4,
+                  width: 16, height: 16, borderRadius: "50%",
+                  background: "#7c3aed", border: `2px solid ${navPalette.bg}`,
+                  color: "#fff", fontSize: 8, fontWeight: 900,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length}</div>
+              )}
+            </button>
+          )}
         </div>
         <button onClick={() => setMobileMenuOpen(true)} style={{
           background: navPalette.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
@@ -16533,8 +16533,15 @@ export default function App() {
             )}
 
             {/* Popover for Self-Care Reminders */}
-            {showReminderList && (
-              <div style={{ ...popoverStyle, ...(showSchedulePopup ? { minHeight: 340 } : {}) }}>
+            <AnimatePresence>
+              {showReminderList && splashPhase === "done" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                  transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ ...popoverStyle, ...(showSchedulePopup ? { minHeight: 340 } : {}) }}
+                >
                 {/* Header */}
                 <div style={{
                   background: "linear-gradient(135deg, #7c3aed, #8b5cf6)",
@@ -16741,13 +16748,13 @@ export default function App() {
 
                 {/* Reminders List Body */}
                 <div className="styled-scroll" style={{ maxHeight: 240, overflowY: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, background: "var(--surface)" }}>
-                  {savedReminders.length === 0 ? (
+                  {getVisibleReminders().length === 0 ? (
                     <div style={{ textAlign: "center", padding: "30px 10px", color: "var(--text-faint)", fontSize: 12.5 }}>
                       <span style={{ fontSize: 24, display: "block", marginBottom: 6, opacity: 0.35 }}>⏰</span>
                       No reminders set. Set one above!
                     </div>
                   ) : (
-                    savedReminders.map(rem => {
+                    getVisibleReminders().map(rem => {
                       const remId = rem._id || rem.id;
                       const isActive = rem.active;
                       return (
@@ -16796,25 +16803,27 @@ export default function App() {
 
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             {/* Toggle switch */}
-                            <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
-                              <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={() => handleToggleReminder(remId, isActive)}
-                                style={{
-                                  width: 28, height: 16, appearance: "none",
-                                  backgroundColor: isActive ? "var(--blue)" : "rgba(0,0,0,0.15)",
-                                  borderRadius: 8, position: "relative", cursor: "pointer",
-                                  transition: "background-color 0.2s ease"
-                                }}
-                              />
-                              <span style={{
-                                width: 12, height: 12, backgroundColor: "#fff",
-                                borderRadius: "50%", position: "absolute", top: 2,
-                                left: isActive ? 14 : 2, transition: "left 0.2s ease",
-                                boxShadow: "0 1px 2px rgba(0,0,0,0.2)"
-                              }} />
-                            </label>
+                            {!isReminderFinished(rem) && (
+                              <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isActive}
+                                  onChange={() => handleToggleReminder(remId, isActive)}
+                                  style={{
+                                    width: 28, height: 16, appearance: "none",
+                                    backgroundColor: isActive ? "var(--blue)" : "rgba(0,0,0,0.15)",
+                                    borderRadius: 8, position: "relative", cursor: "pointer",
+                                    transition: "background-color 0.2s ease"
+                                  }}
+                                />
+                                <span style={{
+                                  width: 12, height: 12, backgroundColor: "#fff",
+                                  borderRadius: "50%", position: "absolute", top: 2,
+                                  left: isActive ? 14 : 2, transition: "left 0.2s ease",
+                                  boxShadow: "0 1px 2px rgba(0,0,0,0.2)"
+                                }} />
+                              </label>
+                            )}
 
                             <button
                               onClick={() => handleDeleteReminder(remId)}
@@ -16832,60 +16841,63 @@ export default function App() {
                     })
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
 
             {/* Collapsible FAB Buttons - Desktop only */}
             {!isMobile && (<>
             {/* Collapsible Action Button 2: Self-Care Reminders (⏰) */}
-            <button
-              onClick={() => {
-                setShowReminderList(!showReminderList);
-                setShowMedList(false);
-              }}
-              title="Self-Care Reminders"
-              style={{
-                width: 46, height: 46,
-                borderRadius: "50%",
-                background: showReminderList 
-                  ? "linear-gradient(135deg, #7c3aed, #8b5cf6)" 
-                  : (isDarkTheme ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.95)"),
-                color: showReminderList ? "#fff" : "var(--navy)",
-                border: isDarkTheme ? "1.5px solid rgba(255,255,255,0.15)" : "1.5px solid rgba(59,130,246,0.25)",
-                boxShadow: "0 8px 32px 0 rgba(15, 23, 42, 0.15)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.08s" : "0s"}`,
-                opacity: fabMenuExpanded ? 1 : 0,
-                transform: fabMenuExpanded ? "scale(1) translateY(0)" : `scale(0) translateY(${isTop ? "-12px" : "12px"})`,
-                pointerEvents: fabMenuExpanded ? "auto" : "none",
-                position: "relative",
-                order: isTop ? 3 : 1,
-              }}
-            >
-              ⏰
-              {savedReminders.filter(r => r.active).length > 0 && (
-                <div style={{
-                  position: "absolute",
-                  top: -4, right: -4,
-                  width: 18, height: 18,
+            {splashPhase === "done" && (
+              <button
+                onClick={() => {
+                  setShowReminderList(!showReminderList);
+                  setShowMedList(false);
+                }}
+                title="Self-Care Reminders"
+                style={{
+                  width: 46, height: 46,
                   borderRadius: "50%",
-                  background: "#7c3aed",
-                  border: "2px solid #fff",
-                  color: "#fff",
-                  fontSize: 9,
-                  fontWeight: 800,
+                  background: showReminderList 
+                    ? "linear-gradient(135deg, #7c3aed, #8b5cf6)" 
+                    : (isDarkTheme ? "rgba(30, 41, 59, 0.9)" : "rgba(255, 255, 255, 0.95)"),
+                  color: showReminderList ? "#fff" : "var(--navy)",
+                  border: isDarkTheme ? "1.5px solid rgba(255,255,255,0.15)" : "1.5px solid rgba(59,130,246,0.25)",
+                  boxShadow: "0 8px 32px 0 rgba(15, 23, 42, 0.15)",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontFamily: "var(--font)",
-                  boxShadow: "0 2px 6px rgba(124,58,237,0.4)",
-                }}>{savedReminders.filter(r => r.active).length}</div>
-              )}
-            </button>
+                  fontSize: 18,
+                  transition: `all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabMenuExpanded ? "0.08s" : "0s"}`,
+                  opacity: fabMenuExpanded ? 1 : 0,
+                  transform: fabMenuExpanded ? "scale(1) translateY(0)" : `scale(0) translateY(${isTop ? "-12px" : "12px"})`,
+                  pointerEvents: fabMenuExpanded ? "auto" : "none",
+                  position: "relative",
+                  order: isTop ? 3 : 1,
+                }}
+              >
+                ⏰
+                {getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length > 0 && (
+                  <div style={{
+                    position: "absolute",
+                    top: -4, right: -4,
+                    width: 18, height: 18,
+                    borderRadius: "50%",
+                    background: "#7c3aed",
+                    border: "2px solid #fff",
+                    color: "#fff",
+                    fontSize: 9,
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--font)",
+                    boxShadow: "0 2px 6px rgba(124,58,237,0.4)",
+                  }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length}</div>
+                )}
+              </button>
+            )}
 
             {/* Collapsible Action Button 1: Medicine List (💊) */}
             <button
