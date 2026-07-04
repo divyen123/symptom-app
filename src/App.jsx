@@ -14733,82 +14733,156 @@ export default function App() {
     };
   }, []);
 
+  // Register Service Worker for push notification click events
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered:', reg.scope))
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+  }, []);
 
+  // Listen to messages from Service Worker (e.g., clicking on a notification)
+  useEffect(() => {
+    const handleSWMessage = (event) => {
+      if (event.data && event.data.type === 'OPEN_REMINDER_POPUP') {
+        setShowReminderList(true);
+      }
+    };
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    }
+    return () => {
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+      }
+    };
+  }, []);
 
-
+  // Request Notification permission when login splash Phase finishes
+  useEffect(() => {
+    if (splashPhase === "done") {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+  }, [splashPhase]);
 
   useEffect(() => {
     if (!savedReminders || savedReminders.length === 0 || splashPhase !== "done") return;
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
-    const currentDate = String(now.getDate()).padStart(2, "0");
-    const currentDayString = `${currentYear}-${currentMonth}-${currentDate}`;
-    const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const checkAlarms = () => {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+      const currentDate = String(now.getDate()).padStart(2, "0");
+      const currentDayString = `${currentYear}-${currentMonth}-${currentDate}`;
+      const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
 
-    const dayOfWeekMap = {
-      0: "every sunday",
-      1: "every monday",
-      2: "every tuesday",
-      3: "every wednesday",
-      4: "every thursday",
-      5: "every friday",
-      6: "every saturday"
-    };
+      const dayOfWeekMap = {
+        0: "every sunday",
+        1: "every monday",
+        2: "every tuesday",
+        3: "every wednesday",
+        4: "every thursday",
+        5: "every friday",
+        6: "every saturday"
+      };
 
-    const due = [];
-    savedReminders.forEach(rem => {
-      if (!rem.active) return;
+      const due = [];
+      savedReminders.forEach(rem => {
+        if (!rem.active) return;
 
-      let parsed = { date: "", repeat: "only one time" };
-      try {
-        if (rem.time.startsWith("{")) {
-          parsed = JSON.parse(rem.time);
-        } else {
+        let parsed = { date: "", repeat: "only one time" };
+        try {
+          if (rem.time.startsWith("{")) {
+            parsed = JSON.parse(rem.time);
+          } else {
+            parsed.date = rem.time;
+          }
+        } catch (e) {
           parsed.date = rem.time;
         }
-      } catch (e) {
-        parsed.date = rem.time;
-      }
 
-      let isDue = false;
-      if (parsed.repeat === "only one time") {
-        if (parsed.date === currentDayString) {
-          isDue = true;
-        }
-      } else {
-        const startSecs = parsed.date ? new Date(parsed.date).setHours(0,0,0,0) : 0;
-        const todaySecs = new Date(currentDayString).setHours(0,0,0,0);
-        if (todaySecs >= startSecs) {
-          if (parsed.repeat === "daily remind") {
-            isDue = true;
-          } else if (parsed.repeat === dayOfWeekMap[currentDayOfWeek]) {
+        let isDue = false;
+        if (parsed.repeat === "only one time") {
+          if (parsed.date === currentDayString) {
             isDue = true;
           }
+        } else {
+          const startSecs = parsed.date ? new Date(parsed.date).setHours(0,0,0,0) : 0;
+          const todaySecs = new Date(currentDayString).setHours(0,0,0,0);
+          if (todaySecs >= startSecs) {
+            if (parsed.repeat === "daily remind") {
+              isDue = true;
+            } else if (parsed.repeat === dayOfWeekMap[currentDayOfWeek]) {
+              isDue = true;
+            }
+          }
         }
-      }
 
-      if (isDue) {
-        const remId = rem._id || rem.id;
-        const ackDate = sessionStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
-        if (ackDate !== currentDayString) {
-          due.push(rem);
+        if (isDue) {
+          const remId = rem._id || rem.id;
+          const ackDate = sessionStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
+          if (ackDate !== currentDayString) {
+            due.push(rem);
+          }
         }
-      }
-    });
+      });
 
-    if (due.length > 0) {
-      setReminderQueue(due);
-      if (!activeAlarm) {
-        setActiveAlarm(due[0]);
-        startAlarmAudio(due[0]);
+      if (due.length > 0) {
+        setReminderQueue(due);
+        if (!activeAlarm) {
+          setActiveAlarm(due[0]);
+          startAlarmAudio(due[0]);
+        }
+
+        // Trigger browser native notifications for each due reminder
+        if ("Notification" in window && Notification.permission === "granted") {
+          due.forEach(rem => {
+            const remId = rem._id || rem.id;
+            const notifiedKey = `MEDAI_NOTIFIED_${remId}_${currentDayString}`;
+
+            if (!sessionStorage.getItem(notifiedKey)) {
+              sessionStorage.setItem(notifiedKey, "true");
+
+              if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.showNotification(`Reminder: ${rem.title}`, {
+                    body: `It's time for your scheduled reminder: "${rem.title}". Click to open.`,
+                    icon: "/favicon.svg",
+                    tag: remId,
+                    requireInteraction: true,
+                    data: { remId }
+                  });
+                });
+              } else {
+                const notification = new Notification(`Reminder: ${rem.title}`, {
+                  body: `It's time for your scheduled reminder: "${rem.title}". Click to open.`,
+                  icon: "/favicon.svg",
+                  tag: remId,
+                  requireInteraction: true
+                });
+
+                notification.onclick = () => {
+                  window.focus();
+                  setShowReminderList(true);
+                  notification.close();
+                };
+              }
+            }
+          });
+        }
+      } else {
+        setActiveAlarm(null);
+        stopAlarmAudio();
       }
-    } else {
-      setActiveAlarm(null);
-      stopAlarmAudio();
-    }
-  }, [savedReminders, splashPhase]);
+    };
+
+    checkAlarms();
+    const checkInterval = setInterval(checkAlarms, 30000);
+    return () => clearInterval(checkInterval);
+  }, [savedReminders, splashPhase, activeAlarm]);
 
   const handleIgnoreReminder = () => {
     if (!activeAlarm) return;
