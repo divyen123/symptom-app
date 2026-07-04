@@ -9648,7 +9648,7 @@ function VitalsLog({ vitals, setVitals, setActive, showToast }) {
           No vital readings recorded yet. Log your first metrics above!
         </Card>
       ) : (() => {
-        const itemsPerPage = 5;
+        const itemsPerPage = 8;
         const totalPages = Math.ceil(vitals.length / itemsPerPage) || 1;
         const activePage = Math.min(currentPage, totalPages);
         const reversedVitals = [...vitals].reverse();
