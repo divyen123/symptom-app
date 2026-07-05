@@ -306,6 +306,17 @@ const apiChangePassword = (currentPassword, newPassword) =>
     return data;
   });
 
+const apiVerifyPassword = (password) =>
+  fetch(`${API}/auth/verify-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ password })
+  }).then(async r => {
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Password verification failed");
+    return data;
+  });
+
 const apiUpdateEmail = (email) => 
   fetch(`${API}/auth/update-email`, { 
     method: "PUT", 
@@ -1421,6 +1432,7 @@ const GLOBAL_CSS = `
       white-space: nowrap !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
+    }
     .analyzer-vitals-row {
       flex-direction: row !important;
       justify-content: space-around !important;
@@ -1428,19 +1440,28 @@ const GLOBAL_CSS = `
       width: 100% !important;
     }
     .analyzer-vitals-sep-1 {
-      display: none !important;
+      width: 1px !important;
+      height: 48px !important;
+      background: var(--border) !important;
+      margin: 0 12px !important;
+      display: block !important;
+    }
+    .active-chatbot .main-content > div {
+      padding: 0 !important;
     }
     .chatbot-main-container {
-      padding: 12px 10px 16px !important;
+      padding: 8px 4px 12px !important;
     }
     .chatbot-message-list {
-      padding: 16px 12px !important;
+      padding: 12px 8px !important;
+      gap: 12px !important;
     }
     .chatbot-bubble-wrapper {
-      max-width: 92% !important;
+      max-width: 95% !important;
+      gap: 8px !important;
     }
     .chatbot-input-container {
-      padding: 10px 12px !important;
+      padding: 8px 10px !important;
     }
   }
 
@@ -9483,11 +9504,11 @@ function VitalsLog({ vitals, setVitals, setActive, showToast }) {
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   type="number" value={sugar} onChange={e => setSugar(e.target.value)} placeholder="e.g. 95"
-                  style={{ flex: 1, padding: "9px 12px", borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)", fontSize: 13 }}
+                  style={{ flex: 1, width: "50%", minWidth: 0, padding: "9px 12px", borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)", fontSize: 13 }}
                 />
                 <select
                   value={sugarState} onChange={e => setSugarState(e.target.value)}
-                  style={{ padding: "9px 12px", borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)", fontSize: 13, cursor: "pointer" }}
+                  style={{ flex: 1, width: "50%", minWidth: 0, padding: "9px 12px", borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)", fontSize: 13, cursor: "pointer" }}
                 >
                   <option>Fasting</option>
                   <option>Post-prandial</option>
@@ -9881,7 +9902,7 @@ const SectionTitle = ({ children }) => (
   }}>{children}</div>
 );
 
-const FieldRow = ({ label, value, onChange, placeholder, type = "text" }) => (
+const FieldRow = ({ label, value, onChange, placeholder, type = "text", disabled = false }) => (
   <div style={{ marginBottom: 14 }}>
     <label style={{ fontSize: 12.5, color: "var(--text-muted)", display: "block", marginBottom: 5, fontWeight: 600 }}>{label}</label>
     <input
@@ -9889,11 +9910,14 @@ const FieldRow = ({ label, value, onChange, placeholder, type = "text" }) => (
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      disabled={disabled}
       style={{
         width: "100%", padding: "10px 13px",
         borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)",
         fontSize: 13.5, fontFamily: "var(--font)", boxSizing: "border-box",
-        background: "var(--white)", color: "var(--text)",
+        background: disabled ? "var(--surface-2)" : "var(--white)", color: disabled ? "var(--text-muted)" : "var(--text)",
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "text",
       }}
     />
   </div>
@@ -10019,6 +10043,42 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [emailSuccess, setEmailSuccess] = useState("");
+
+  const [isCurrentPasswordCorrect, setIsCurrentPasswordCorrect] = useState(false);
+
+  useEffect(() => {
+    if (!pwdCurrent) {
+      setIsCurrentPasswordCorrect(false);
+      return;
+    }
+
+    const isDemo = localStorage.getItem("MEDAI_DEMO_MODE") === "true";
+    if (isDemo) {
+      if (pwdCurrent === "demo123") {
+        setIsCurrentPasswordCorrect(true);
+      } else {
+        setIsCurrentPasswordCorrect(false);
+      }
+      return;
+    }
+
+    const sessionPwd = sessionStorage.getItem("MEDAI_SESSION_PWD");
+    if (sessionPwd && pwdCurrent === sessionPwd) {
+      setIsCurrentPasswordCorrect(true);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiVerifyPassword(pwdCurrent);
+        setIsCurrentPasswordCorrect(res.valid === true);
+      } catch (e) {
+        setIsCurrentPasswordCorrect(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [pwdCurrent]);
 
   useEffect(() => { setSettings(initialSettings); }, [JSON.stringify(initialSettings)]);
   useEffect(() => { setEmailInput(user?.email || ""); }, [user?.email]);
@@ -11027,6 +11087,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                     value={pwdNew}
                     onChange={e => setPwdNew(e.target.value)}
                     placeholder="Min 6 characters"
+                    disabled={!isCurrentPasswordCorrect}
                   />
                   <FieldRow
                     label="Confirm New Password"
@@ -11034,18 +11095,19 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
                     value={pwdConfirm}
                     onChange={e => setPwdConfirm(e.target.value)}
                     placeholder="Confirm new password"
+                    disabled={!isCurrentPasswordCorrect}
                   />
                   <button
                     type="button"
                     onClick={handlePasswordChange}
-                    disabled={pwdLoading || !pwdCurrent || !pwdNew || !pwdConfirm}
+                    disabled={pwdLoading || !isCurrentPasswordCorrect || !pwdNew || !pwdConfirm || pwdNew !== pwdConfirm}
                     style={{
                       width: "100%", padding: "12px", borderRadius: 10, border: "none",
-                      background: (pwdCurrent && pwdNew && pwdConfirm) ? "var(--blue)" : "var(--border)",
-                      color: (pwdCurrent && pwdNew && pwdConfirm) ? "#fff" : "var(--text-faint)",
-                      fontWeight: 700, fontSize: 14, cursor: (pwdCurrent && pwdNew && pwdConfirm) ? "pointer" : "default",
+                      background: (isCurrentPasswordCorrect && pwdNew && pwdConfirm && pwdNew === pwdConfirm) ? "var(--blue)" : "var(--border)",
+                      color: (isCurrentPasswordCorrect && pwdNew && pwdConfirm && pwdNew === pwdConfirm) ? "#fff" : "var(--text-faint)",
+                      fontWeight: 700, fontSize: 14, cursor: (isCurrentPasswordCorrect && pwdNew && pwdConfirm && pwdNew === pwdConfirm) ? "pointer" : "default",
                       fontFamily: "var(--font)", transition: "var(--transition)", marginTop: 6,
-                      boxShadow: (pwdCurrent && pwdNew && pwdConfirm) ? "0 4px 16px rgba(59,130,246,0.25)" : "none"
+                      boxShadow: (isCurrentPasswordCorrect && pwdNew && pwdConfirm && pwdNew === pwdConfirm) ? "0 4px 16px rgba(59,130,246,0.25)" : "none"
                     }}
                   >
                     {pwdLoading ? "Updating..." : "Update Password"}
@@ -11351,6 +11413,7 @@ function AuthFlow({ onLoginSuccess }) {
       } else {
         data = await apiLogin(email, password);
       }
+      sessionStorage.setItem("MEDAI_SESSION_PWD", password);
       localStorage.setItem("MEDAI_TOKEN", data.token);
       handleAuthSuccess(data.user, isRegister);
     } catch (err) {
@@ -15399,6 +15462,7 @@ export default function App() {
     localStorage.removeItem("MEDAI_TOKEN");
     localStorage.removeItem("MEDAI_DEMO_MODE");
     localStorage.removeItem(REMINDERS_KEY);
+    sessionStorage.removeItem("MEDAI_SESSION_PWD");
     setUser(null);
     setReports([]);
     setVitals([]);
@@ -16129,7 +16193,7 @@ export default function App() {
       )}
 
       {/* ── Main App ── */}
-      <div className={`app-layout nav-${appearance.navPosition === "right" ? "right" : "left"}`} style={{
+      <div className={`app-layout nav-${appearance.navPosition === "right" ? "right" : "left"} ${active === "chatbot" ? "active-chatbot" : ""}`} style={{
         display: "flex", height: "100%", width: "100%",
         overflow: "hidden", background: "var(--surface-2)",
         fontFamily: "var(--font)",

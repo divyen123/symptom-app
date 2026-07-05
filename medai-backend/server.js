@@ -247,6 +247,29 @@ app.post("/api/auth/change-password", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/auth/verify-password
+app.post("/api/auth/verify-password", authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const { data: user, error: findError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", req.userId)
+      .single();
+
+    if (findError || !user) return res.status(404).json({ error: "User not found" });
+
+    const match = await bcrypt.compare(password, user.password);
+    res.json({ valid: match });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // PUT /api/auth/update-email
 app.put("/api/auth/update-email", authMiddleware, async (req, res) => {
   try {
