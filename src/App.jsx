@@ -6839,6 +6839,13 @@ function FeverDetailModal({ fever, savedMedicines = [], onSaveMedicine, onClose 
   const [errorFood, setErrorFood] = useState(null);
   const [mobilePopupItem, setMobilePopupItem] = useState(null);
 
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const app = loadAppearance();
   const navPos = app.navPosition || "left";
   const modalOffsetStyles = {
@@ -7044,7 +7051,11 @@ Respond with ONLY valid JSON (no markdown, no backticks):
                   background: urgencyBgs[data.urgency] || "#f8fafc",
                   border: `1px solid ${urgencyColors[data.urgency] || "#94a3b8"}30`,
                   borderRadius: "var(--radius)", padding: "12px 16px",
-                  display: "flex", alignItems: "center", gap: 12, marginBottom: 20,
+                  display: "flex",
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: isMobile ? "flex-start" : "center",
+                  gap: isMobile ? 8 : 12,
+                  marginBottom: 20,
                 }}>
                   <span style={{
                     fontWeight: 800, fontSize: 11, letterSpacing: "0.1em",
