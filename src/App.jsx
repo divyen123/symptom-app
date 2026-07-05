@@ -14736,6 +14736,15 @@ export default function App() {
   const [reminderTime, setReminderTime] = useState("08:00");
   const [reminderRepeat, setReminderRepeat] = useState("only one time");
   const [reminderSoundEnabled, setReminderSoundEnabled] = useState(false);
+  const [postponeMode, setPostponeMode] = useState(false);
+  const [customPostponeVal, setCustomPostponeVal] = useState("3");
+  const [customPostponeUnit, setCustomPostponeUnit] = useState("hours");
+
+  useEffect(() => {
+    setPostponeMode(false);
+    setCustomPostponeVal("3");
+    setCustomPostponeUnit("hours");
+  }, [activeAlarm]);
 
   const getVisibleReminders = () => {
     const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
@@ -14898,6 +14907,13 @@ export default function App() {
           const remId = rem._id || rem.id;
           const ackDate = sessionStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`);
           if (ackDate !== currentDayString) {
+            const postponeTimeStr = localStorage.getItem(`MEDAI_REMINDER_POSTPONED_${remId}`);
+            if (postponeTimeStr) {
+              const postponeTime = parseInt(postponeTimeStr, 10);
+              if (Date.now() < postponeTime) {
+                return; // Skip, still postponed!
+              }
+            }
             due.push(rem);
           }
         }
@@ -14964,6 +14980,7 @@ export default function App() {
     const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     sessionStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
+    localStorage.removeItem(`MEDAI_REMINDER_POSTPONED_${currentRemId}`);
 
     const nextQueue = reminderQueue.filter(r => (r._id || r.id) !== currentRemId);
     setReminderQueue(nextQueue);
@@ -14976,7 +14993,7 @@ export default function App() {
     }
   };
 
-  const handlePostponeReminder = async () => {
+  const handlePostponeAction = async (hoursOrDays, isCustom = false) => {
     if (!activeAlarm) return;
     const currentRemId = activeAlarm._id || activeAlarm.id;
     const now = new Date();
@@ -14984,20 +15001,43 @@ export default function App() {
 
     sessionStorage.setItem(`MEDAI_REMINDER_ACK_${currentRemId}`, currentDayString);
 
+    let msToAdd = 0;
+    if (isCustom) {
+      const val = parseFloat(customPostponeVal);
+      if (isNaN(val) || val <= 0) return;
+      if (customPostponeUnit === "hours") {
+        msToAdd = val * 60 * 60 * 1000;
+      } else {
+        msToAdd = val * 24 * 60 * 60 * 1000;
+      }
+    } else {
+      if (hoursOrDays === "5h") msToAdd = 5 * 60 * 60 * 1000;
+      else if (hoursOrDays === "12h") msToAdd = 12 * 60 * 60 * 1000;
+      else if (hoursOrDays === "tomorrow") msToAdd = 24 * 60 * 60 * 1000;
+      else if (hoursOrDays === "2d") msToAdd = 48 * 60 * 60 * 1000;
+    }
+
+    const postponeUntil = Date.now() + msToAdd;
+    localStorage.setItem(`MEDAI_REMINDER_POSTPONED_${currentRemId}`, postponeUntil.toString());
+
+    // Calculate future target date
+    const postponeDate = new Date(Date.now() + msToAdd);
+    const postponeDateStr = `${postponeDate.getFullYear()}-${String(postponeDate.getMonth() + 1).padStart(2, "0")}-${String(postponeDate.getDate()).padStart(2, "0")}`;
+
     let parsed = { date: "", repeat: "only one time" };
     try {
       if (activeAlarm.time.startsWith("{")) {
         parsed = JSON.parse(activeAlarm.time);
+      } else {
+        parsed.date = activeAlarm.time;
       }
-    } catch (e) {}
+    } catch (e) {
+      parsed.date = activeAlarm.time;
+    }
 
     if (parsed.repeat === "only one time") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,"0")}-${String(tomorrow.getDate()).padStart(2,"0")}`;
-      parsed.date = tomorrowStr;
+      parsed.date = postponeDateStr;
       const scheduleStr = JSON.stringify(parsed);
-
       try {
         const updated = await apiUpdateReminder(currentRemId, { time: scheduleStr });
         setSavedReminders(prev => prev.map(r => (r._id === currentRemId || r.id === currentRemId) ? updated : r));
@@ -17241,47 +17281,219 @@ export default function App() {
               {activeAlarm.title}
             </div>
             
-            <div style={{ display: "flex", gap: 14 }}>
-              <button
-                onClick={handlePostponeReminder}
-                type="button"
-                style={{
-                  flex: 1,
-                  padding: "14px 18px",
-                  borderRadius: 12,
-                  fontWeight: 700,
-                  fontSize: 14.5,
-                  cursor: "pointer",
-                  fontFamily: "var(--font)",
-                  background: "var(--surface-2)",
-                  border: "1.5px solid var(--border)",
-                  color: "var(--text)",
-                  transition: "var(--transition)",
-                }}
-              >
-                Remind me tomorrow
-              </button>
-              <button
-                onClick={handleNotedReminder}
-                type="button"
-                style={{
-                  flex: 1,
-                  padding: "14px 18px",
-                  borderRadius: 12,
-                  fontWeight: 800,
-                  fontSize: 14.5,
-                  cursor: "pointer",
-                  fontFamily: "var(--font)",
-                  background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-                  border: "none",
-                  color: "#fff",
-                  boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
-                  transition: "var(--transition)",
-                }}
-              >
-                Noted
-              </button>
-            </div>
+            {!postponeMode ? (
+              <div style={{ display: "flex", gap: 14 }}>
+                <button
+                  onClick={() => setPostponeMode(true)}
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: "14px 18px",
+                    borderRadius: 12,
+                    fontWeight: 700,
+                    fontSize: 14.5,
+                    cursor: "pointer",
+                    fontFamily: "var(--font)",
+                    background: "var(--surface-2)",
+                    border: "1.5px solid var(--border)",
+                    color: "var(--text)",
+                    transition: "var(--transition)",
+                  }}
+                >
+                  ⏳ Postpone
+                </button>
+                <button
+                  onClick={handleNotedReminder}
+                  type="button"
+                  style={{
+                    flex: 1,
+                    padding: "14px 18px",
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    fontSize: 14.5,
+                    cursor: "pointer",
+                    fontFamily: "var(--font)",
+                    background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                    border: "none",
+                    color: "#fff",
+                    boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
+                    transition: "var(--transition)",
+                  }}
+                >
+                  Noted
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-faint)", marginBottom: 2 }}>
+                  Choose when to remind next:
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    onClick={() => handlePostponeAction("5h")}
+                    type="button"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font)",
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
+                      textAlign: "center"
+                    }}
+                  >
+                    After 5 hours
+                  </button>
+                  <button
+                    onClick={() => handlePostponeAction("12h")}
+                    type="button"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font)",
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
+                      textAlign: "center"
+                    }}
+                  >
+                    After 12 hours
+                  </button>
+                  <button
+                    onClick={() => handlePostponeAction("tomorrow")}
+                    type="button"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font)",
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
+                      textAlign: "center"
+                    }}
+                  >
+                    Tomorrow
+                  </button>
+                  <button
+                    onClick={() => handlePostponeAction("2d")}
+                    type="button"
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontFamily: "var(--font)",
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text)",
+                      textAlign: "center"
+                    }}
+                  >
+                    After 2 days
+                  </button>
+                </div>
+
+                <div style={{
+                  borderTop: "1px solid var(--border)",
+                  paddingTop: 10,
+                  marginTop: 4,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8
+                }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text-faint)" }}>
+                    Custom remind interval:
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input
+                      type="number"
+                      min="1"
+                      value={customPostponeVal}
+                      onChange={(e) => setCustomPostponeVal(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: "1.5px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: "var(--font)",
+                        outline: "none",
+                        minWidth: 0
+                      }}
+                    />
+                    <select
+                      value={customPostponeUnit}
+                      onChange={(e) => setCustomPostponeUnit(e.target.value)}
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: "1.5px solid var(--border)",
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: "var(--font)",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="hours">Hours</option>
+                      <option value="days">Days</option>
+                    </select>
+                    <button
+                      onClick={() => handlePostponeAction(null, true)}
+                      type="button"
+                      style={{
+                        padding: "8px 14px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        fontFamily: "var(--font)",
+                        background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                        border: "none",
+                        color: "#fff"
+                      }}
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setPostponeMode(false)}
+                  type="button"
+                  style={{
+                    marginTop: 6,
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontFamily: "var(--font)",
+                    background: "transparent",
+                    border: "1.5px dashed var(--border)",
+                    color: "var(--text-faint)",
+                    textAlign: "center"
+                  }}
+                >
+                  ← Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
