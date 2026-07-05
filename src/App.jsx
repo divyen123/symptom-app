@@ -10056,12 +10056,6 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
   }, [activeTab]);
 
   useEffect(() => {
-    if (!pwdCurrent) {
-      setIsCurrentPasswordCorrect(false);
-      setPwdError("");
-      return;
-    }
-
     const isDemo = localStorage.getItem("MEDAI_DEMO_MODE") === "true";
     if (isDemo) {
       if (pwdCurrent === "demo123") {
@@ -10069,7 +10063,7 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
         setPwdError("");
       } else {
         setIsCurrentPasswordCorrect(false);
-        if (pwdCurrent.length >= 6) {
+        if (pwdCurrent && pwdCurrent.length >= 6) {
           setPwdError("Incorrect current password");
         } else {
           setPwdError("");
@@ -10081,6 +10075,14 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
     const sessionPwd = sessionStorage.getItem("MEDAI_SESSION_PWD");
     if (sessionPwd && pwdCurrent === sessionPwd) {
       setIsCurrentPasswordCorrect(true);
+      setPwdError("");
+      return;
+    }
+
+    // Instantly disable password fields while re-verifying a new password value
+    setIsCurrentPasswordCorrect(false);
+
+    if (!pwdCurrent) {
       setPwdError("");
       return;
     }
