@@ -10047,8 +10047,18 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
   const [isCurrentPasswordCorrect, setIsCurrentPasswordCorrect] = useState(false);
 
   useEffect(() => {
+    setPwdCurrent("");
+    setPwdNew("");
+    setPwdConfirm("");
+    setPwdError("");
+    setPwdSuccess("");
+    setIsCurrentPasswordCorrect(false);
+  }, [activeTab]);
+
+  useEffect(() => {
     if (!pwdCurrent) {
       setIsCurrentPasswordCorrect(false);
+      setPwdError("");
       return;
     }
 
@@ -10056,8 +10066,14 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
     if (isDemo) {
       if (pwdCurrent === "demo123") {
         setIsCurrentPasswordCorrect(true);
+        setPwdError("");
       } else {
         setIsCurrentPasswordCorrect(false);
+        if (pwdCurrent.length >= 6) {
+          setPwdError("Incorrect current password");
+        } else {
+          setPwdError("");
+        }
       }
       return;
     }
@@ -10065,19 +10081,37 @@ function Settings({ reports, setReports, settings: initialSettings = {}, onSetti
     const sessionPwd = sessionStorage.getItem("MEDAI_SESSION_PWD");
     if (sessionPwd && pwdCurrent === sessionPwd) {
       setIsCurrentPasswordCorrect(true);
+      setPwdError("");
       return;
     }
 
+    let active = true;
     const timer = setTimeout(async () => {
       try {
         const res = await apiVerifyPassword(pwdCurrent);
-        setIsCurrentPasswordCorrect(res.valid === true);
+        if (!active) return;
+        if (res.valid === true) {
+          setIsCurrentPasswordCorrect(true);
+          setPwdError("");
+        } else {
+          setIsCurrentPasswordCorrect(false);
+          if (pwdCurrent.length >= 6) {
+            setPwdError("Incorrect current password");
+          } else {
+            setPwdError("");
+          }
+        }
       } catch (e) {
+        if (!active) return;
         setIsCurrentPasswordCorrect(false);
+        setPwdError(e.message || "Failed to verify password");
       }
     }, 400);
 
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [pwdCurrent]);
 
   useEffect(() => { setSettings(initialSettings); }, [JSON.stringify(initialSettings)]);
