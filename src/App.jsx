@@ -14770,6 +14770,16 @@ export default function App() {
     return false;
   };
 
+  const isReminderNotedToday = (rem) => {
+    try {
+      const remId = rem._id || rem.id;
+      const now = new Date();
+      const currentDayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      return sessionStorage.getItem(`MEDAI_REMINDER_ACK_${remId}`) === currentDayString;
+    } catch (e) {}
+    return false;
+  };
+
   // FAB Draggable states
   const [fabCorner, setFabCorner] = useState(() => {
     return localStorage.getItem("MEDAI_FAB_CORNER") || (loadAppearance().navPosition === "right" ? "left-bottom" : "right-bottom");
@@ -14900,8 +14910,8 @@ export default function App() {
           startAlarmAudio(due[0]);
         }
 
-        // Trigger browser native notifications for each due reminder
-        if ("Notification" in window && Notification.permission === "granted") {
+        // Trigger browser native notifications for each due reminder only if the tab is hidden
+        if (document.hidden && "Notification" in window && Notification.permission === "granted") {
           due.forEach(rem => {
             const remId = rem._id || rem.id;
             const notifiedKey = `MEDAI_NOTIFIED_${remId}_${currentDayString}`;
@@ -14947,7 +14957,7 @@ export default function App() {
     return () => clearInterval(checkInterval);
   }, [savedReminders, splashPhase, activeAlarm]);
 
-  const handleIgnoreReminder = () => {
+  const handleNotedReminder = () => {
     if (!activeAlarm) return;
     const currentRemId = activeAlarm._id || activeAlarm.id;
     const now = new Date();
@@ -16161,14 +16171,14 @@ export default function App() {
               }}
             >
               ⏰
-              {getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length > 0 && (
+              {getVisibleReminders().filter(r => r.active && !isReminderFinished(r) && !isReminderNotedToday(r)).length > 0 && (
                 <div style={{
                   position: "absolute", top: -4, right: -4,
                   width: 16, height: 16, borderRadius: "50%",
                   background: "#7c3aed", border: `2px solid ${navPalette.bg}`,
                   color: "#fff", fontSize: 8, fontWeight: 900,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length}</div>
+                }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r) && !isReminderNotedToday(r)).length}</div>
               )}
             </button>
           )}
@@ -16940,6 +16950,7 @@ export default function App() {
                     getVisibleReminders().map(rem => {
                       const remId = rem._id || rem.id;
                       const isActive = rem.active;
+                      const isNoted = isReminderNotedToday(rem);
                       return (
                         <div key={remId} style={{
                           display: "flex",
@@ -16949,14 +16960,15 @@ export default function App() {
                           background: "var(--surface-2)",
                           border: "1px solid var(--border)",
                           borderRadius: "var(--radius-sm)",
-                          opacity: isActive ? 1 : 0.65
+                          opacity: (isActive && !isNoted) ? 1 : 0.65
                         }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
                             <span style={{
                               fontSize: 12.5,
                               fontWeight: 700,
                               color: "var(--text)",
-                              textDecoration: isActive ? "none" : "line-through",
+                              textDecoration: (isActive && !isNoted) ? "none" : "line-through",
+                              opacity: (isActive && !isNoted) ? 1 : 0.5,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -16986,7 +16998,7 @@ export default function App() {
 
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             {/* Toggle switch */}
-                            {!isReminderFinished(rem) && (
+                            {!isReminderFinished(rem) && !isNoted && (
                               <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
                                 <input
                                   type="checkbox"
@@ -16998,6 +17010,7 @@ export default function App() {
                                     borderRadius: 8, position: "relative", cursor: "pointer",
                                     transition: "background-color 0.2s ease"
                                   }}
+                                  disabled={isNoted}
                                 />
                                 <span style={{
                                   width: 12, height: 12, backgroundColor: "#fff",
@@ -17061,7 +17074,7 @@ export default function App() {
                 }}
               >
                 ⏰
-                {getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length > 0 && (
+                {getVisibleReminders().filter(r => r.active && !isReminderFinished(r) && !isReminderNotedToday(r)).length > 0 && (
                   <div style={{
                     position: "absolute",
                     top: -4, right: -4,
@@ -17077,7 +17090,7 @@ export default function App() {
                     justifyContent: "center",
                     fontFamily: "var(--font)",
                     boxShadow: "0 2px 6px rgba(124,58,237,0.4)",
-                  }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r)).length}</div>
+                  }}>{getVisibleReminders().filter(r => r.active && !isReminderFinished(r) && !isReminderNotedToday(r)).length}</div>
                 )}
               </button>
             )}
@@ -17249,7 +17262,7 @@ export default function App() {
                 Remind me tomorrow
               </button>
               <button
-                onClick={handleIgnoreReminder}
+                onClick={handleNotedReminder}
                 type="button"
                 style={{
                   flex: 1,
@@ -17266,7 +17279,7 @@ export default function App() {
                   transition: "var(--transition)",
                 }}
               >
-                Ignore
+                Noted
               </button>
             </div>
           </div>
