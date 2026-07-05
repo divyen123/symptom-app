@@ -14739,6 +14739,10 @@ export default function App() {
   const [postponeMode, setPostponeMode] = useState(false);
   const [customPostponeVal, setCustomPostponeVal] = useState("3");
   const [customPostponeUnit, setCustomPostponeUnit] = useState("hours");
+  const [editingReminderId, setEditingReminderId] = useState(null);
+  const [editRepeat, setEditRepeat] = useState("only one time");
+  const [editDate, setEditDate] = useState("");
+  const [editPostponeTime, setEditPostponeTime] = useState("");
 
   useEffect(() => {
     setPostponeMode(false);
@@ -14972,6 +14976,84 @@ export default function App() {
     const checkInterval = setInterval(checkAlarms, 30000);
     return () => clearInterval(checkInterval);
   }, [savedReminders, splashPhase, activeAlarm]);
+
+  const handleStartEditReminder = (rem) => {
+    const remId = rem._id || rem.id;
+    setEditingReminderId(remId);
+    let parsed = { date: "", repeat: "only one time" };
+    try {
+      if (rem.time.startsWith("{")) {
+        parsed = JSON.parse(rem.time);
+      } else {
+        parsed.date = rem.time;
+      }
+    } catch (e) {
+      parsed.date = rem.time;
+    }
+
+    setEditRepeat(parsed.repeat || "only one time");
+    setEditDate(parsed.date || new Date().toISOString().split("T")[0]);
+
+    const pst = localStorage.getItem(`MEDAI_REMINDER_POSTPONED_${remId}`);
+    if (pst) {
+      const d = new Date(parseInt(pst, 10));
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const min = String(d.getMinutes()).padStart(2, "0");
+      setEditPostponeTime(`${yyyy}-${mm}-${dd}T${hh}:${min}`);
+    } else {
+      setEditPostponeTime("");
+    }
+  };
+
+  const handleSaveEditReminder = async (rem) => {
+    const remId = rem._id || rem.id;
+    let parsed = { date: "", repeat: "only one time", soundEnabled: false };
+    try {
+      if (rem.time.startsWith("{")) {
+        parsed = JSON.parse(rem.time);
+      } else {
+        parsed.date = rem.time;
+      }
+    } catch (e) {
+      parsed.date = rem.time;
+    }
+
+    const scheduleStr = JSON.stringify({
+      time: "",
+      date: editRepeat === "only one time" ? editDate : "",
+      repeat: editRepeat,
+      soundEnabled: parsed.soundEnabled
+    });
+
+    try {
+      const updated = await apiUpdateReminder(remId, { time: scheduleStr });
+      setSavedReminders(prev => prev.map(r => (r._id === remId || r.id === remId) ? updated : r));
+    } catch {
+      const updatedList = savedReminders.map(r => {
+        if (r._id === remId || r.id === remId) {
+          return { ...r, time: scheduleStr };
+        }
+        return r;
+      });
+      setSavedReminders(updatedList);
+      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updatedList));
+    }
+
+    if (editPostponeTime) {
+      const ms = new Date(editPostponeTime).getTime();
+      if (!isNaN(ms)) {
+        localStorage.setItem(`MEDAI_REMINDER_POSTPONED_${remId}`, ms.toString());
+      }
+    } else {
+      localStorage.removeItem(`MEDAI_REMINDER_POSTPONED_${remId}`);
+    }
+
+    setEditingReminderId(null);
+    showToast("Reminder updated successfully!");
+  };
 
   const handleNotedReminder = () => {
     if (!activeAlarm) return;
@@ -16991,6 +17073,142 @@ export default function App() {
                       const remId = rem._id || rem.id;
                       const isActive = rem.active;
                       const isNoted = isReminderNotedToday(rem);
+
+                      if (editingReminderId === remId) {
+                        return (
+                          <div key={remId} style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                            padding: "12px",
+                            background: "var(--surface-2)",
+                            border: "1.5px solid var(--blue)",
+                            borderRadius: "var(--radius-sm)",
+                            textAlign: "left"
+                          }}>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text)", borderBottom: "1px solid var(--border)", paddingBottom: 4 }}>
+                              ✏️ Edit: <strong>{rem.title}</strong>
+                            </div>
+
+                            {/* Repeat behavior */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-faint)" }}>Repeat Behavior</label>
+                              <select
+                                value={editRepeat}
+                                onChange={e => setEditRepeat(e.target.value)}
+                                style={{
+                                  padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)",
+                                  fontSize: 11.5, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--text)"
+                                }}
+                              >
+                                <option value="only one time">Only One Time</option>
+                                <option value="daily remind">Daily Remind</option>
+                                <option value="every monday">Every Monday</option>
+                                <option value="every tuesday">Every Tuesday</option>
+                                <option value="every wednesday">Every Wednesday</option>
+                                <option value="every thursday">Every Thursday</option>
+                                <option value="every friday">Every Friday</option>
+                                <option value="every saturday">Every Saturday</option>
+                                <option value="every sunday">Every Sunday</option>
+                              </select>
+                            </div>
+
+                            {/* Date selection for one-time */}
+                            {editRepeat === "only one time" && (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-faint)" }}>Date</label>
+                                <input
+                                  type="date"
+                                  value={editDate}
+                                  onChange={e => setEditDate(e.target.value)}
+                                  style={{
+                                    padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)",
+                                    fontSize: 11.5, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--text)"
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* Postpone editing */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-faint)" }}>
+                                {editPostponeTime ? "Postponed Until" : "Postpone Reminder"}
+                              </label>
+                              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                <input
+                                  type="datetime-local"
+                                  value={editPostponeTime}
+                                  onChange={e => setEditPostponeTime(e.target.value)}
+                                  style={{
+                                    flex: 1,
+                                    padding: "4px 6px", borderRadius: 6, border: "1px solid var(--border)",
+                                    fontSize: 11, fontFamily: "var(--font)", background: "var(--surface)", color: "var(--text)",
+                                    minWidth: 0
+                                  }}
+                                />
+                                {editPostponeTime && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditPostponeTime("")}
+                                    style={{
+                                      padding: "4px 6px",
+                                      borderRadius: 6,
+                                      border: "none",
+                                      background: "var(--bg-red)",
+                                      color: "var(--text-red)",
+                                      fontSize: 10.5,
+                                      fontWeight: 700,
+                                      cursor: "pointer"
+                                    }}
+                                    title="Clear postponement"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
+                              <button
+                                type="button"
+                                onClick={() => setEditingReminderId(null)}
+                                style={{
+                                  padding: "5px 10px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  fontFamily: "var(--font)",
+                                  background: "transparent",
+                                  border: "1px solid var(--border)",
+                                  color: "var(--text-faint)"
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditReminder(rem)}
+                                style={{
+                                  padding: "5px 12px",
+                                  borderRadius: 6,
+                                  fontSize: 11,
+                                  fontWeight: 800,
+                                  cursor: "pointer",
+                                  fontFamily: "var(--font)",
+                                  background: "var(--blue)",
+                                  color: "#fff",
+                                  border: "none"
+                                }}
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={remId} style={{
                           display: "flex",
@@ -17033,10 +17251,32 @@ export default function App() {
                                 } catch (e) {}
                                 return `📅 ${rem.time}`;
                               })()}
+                              {(() => {
+                                const pst = localStorage.getItem(`MEDAI_REMINDER_POSTPONED_${remId}`);
+                                if (pst) {
+                                  const d = new Date(parseInt(pst, 10));
+                                  return ` (⏳ Postponed to ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
+                                }
+                                return "";
+                              })()}
                             </span>
                           </div>
 
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            {/* Edit button */}
+                            {isActive && !isNoted && !isReminderFinished(rem) && (
+                              <button
+                                onClick={() => handleStartEditReminder(rem)}
+                                title="Edit reminder schedule & postpone"
+                                style={{
+                                  background: "none", border: "none", cursor: "pointer",
+                                  fontSize: 11, padding: "2px"
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            )}
+
                             {/* Toggle switch */}
                             {!isReminderFinished(rem) && !isNoted && (
                               <label style={{ display: "flex", alignItems: "center", cursor: "pointer", position: "relative" }}>
