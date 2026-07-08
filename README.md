@@ -91,55 +91,6 @@
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- Supabase account
-- Groq API key
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/divyen123/symptom-app.git
-cd symptom-app
-
-# Install frontend dependencies
-npm install
-
-# Install backend dependencies
-cd medai-backend
-npm install
-```
-
-### Environment Variables
-
-**Backend** (`medai-backend/.env`):
-```env
-PORT=3001
-JWT_SECRET=your_jwt_secret
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_service_role_key
-```
-
-**Frontend** (`.env`):
-```env
-VITE_API_URL=http://localhost:3001/api
-```
-
-### Run Locally
-
-```bash
-# Start backend (from medai-backend/)
-node server.js
-
-# Start frontend (from root)
-npm run dev
-```
-
----
-
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
