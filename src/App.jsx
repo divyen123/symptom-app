@@ -11661,7 +11661,7 @@ function AuthFlow({ onLoginSuccess }) {
                   style={{ flex: isMobile ? "none" : "0 0 52%", display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "100%" : "auto" }}
                 >
                   <div style={{
-                    width: "100%", maxWidth: 440,
+                    width: "100%", maxWidth: 380,
                     background: "rgba(22,32,51,0.7)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
                     borderRadius: 24, padding: isMobile ? "20px 16px" : "24px 24px",
                     border: "1px solid rgba(255,255,255,0.1)",
