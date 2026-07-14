@@ -11477,7 +11477,7 @@ function AuthFlow({ onLoginSuccess }) {
   }));
 
   const inputStyle = {
-    width: "100%", padding: "10px 14px", borderRadius: 10,
+    width: "100%", padding: "8px 12px", borderRadius: 10,
     background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.1)",
     color: "#f1f5f9", outline: "none", fontSize: 14, fontWeight: 500,
     transition: "all 0.25s ease", boxSizing: "border-box",
@@ -11663,13 +11663,13 @@ function AuthFlow({ onLoginSuccess }) {
                   <div style={{
                     width: "100%", maxWidth: 440,
                     background: "rgba(22,32,51,0.7)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-                    borderRadius: 24, padding: isMobile ? "24px 20px" : "32px 32px",
+                    borderRadius: 24, padding: isMobile ? "20px 16px" : "24px 24px",
                     border: "1px solid rgba(255,255,255,0.1)",
                     boxShadow: "0 32px 80px -20px rgba(0,0,0,0.5), 0 0 2px rgba(255,255,255,0.05) inset",
                   }}>
                     {/* Header */}
-                    <div style={{ textAlign: "center", marginBottom: 20 }}>
-                      <h1 style={{ color: "#f1f5f9", fontSize: 24, fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
+                    <div style={{ textAlign: "center", marginBottom: 12 }}>
+                      <h1 style={{ color: "#f1f5f9", fontSize: 24, fontWeight: 800, margin: "0 0 2px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
                         {tab === "login" ? "Welcome Back" : "Get Started"}
                       </h1>
                       <p style={{ color: "rgba(148,163,184,0.8)", fontSize: 14, margin: 0, fontWeight: 500 }}>
@@ -11678,14 +11678,14 @@ function AuthFlow({ onLoginSuccess }) {
                     </div>
 
                     {/* Tab switcher with sliding pill */}
-                    <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 4, marginBottom: 20, position: "relative" }}>
+                    <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 2, marginBottom: 16, position: "relative" }}>
                       {["login", "register"].map((t) => (
                         <button
                           key={t}
                           type="button"
                           onClick={() => { setTab(t); setError(""); }}
                           style={{
-                            flex: 1, padding: "10px 0", border: "none", borderRadius: 8,
+                            flex: 1, padding: "8px 0", border: "none", borderRadius: 8,
                             background: "transparent",
                             color: tab === t ? "#fff" : "rgba(255,255,255,0.45)",
                             fontWeight: 700, fontSize: 14, cursor: "pointer",
@@ -11720,8 +11720,8 @@ function AuthFlow({ onLoginSuccess }) {
                           transition={{ duration: 0.25 }}
                           style={{
                             background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-                            color: "#fca5a5", padding: "12px 16px", borderRadius: 10, fontSize: 13,
-                            marginBottom: 22, display: "flex", alignItems: "center", gap: 8, fontWeight: 500, overflow: "hidden",
+                            color: "#fca5a5", padding: "10px 14px", borderRadius: 10, fontSize: 13,
+                            marginBottom: 16, display: "flex", alignItems: "center", gap: 8, fontWeight: 500, overflow: "hidden",
                           }}
                         >
                           <span>&#9888;&#65039;</span> {error}
@@ -11730,21 +11730,21 @@ function AuthFlow({ onLoginSuccess }) {
                     </AnimatePresence>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <AnimatePresence>
                         {tab === "register" && (
                           <motion.div key="name-field" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }}>
-                            <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 7, letterSpacing: "0.02em" }}>Full Name</label>
+                            <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 4, letterSpacing: "0.02em" }}>Full Name</label>
                             <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="John Doe" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
                           </motion.div>
                         )}
                       </AnimatePresence>
                       <div>
-                        <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 7, letterSpacing: "0.02em" }}>Email Address</label>
+                        <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 4, letterSpacing: "0.02em" }}>Email Address</label>
                         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
                       </div>
                       <div>
-                        <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 7, letterSpacing: "0.02em" }}>Password</label>
+                        <label style={{ display: "block", color: "rgba(203,213,225,0.8)", fontSize: 12.5, fontWeight: 700, marginBottom: 4, letterSpacing: "0.02em" }}>Password</label>
                         <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
                       </div>
                       <motion.button
@@ -11752,7 +11752,7 @@ function AuthFlow({ onLoginSuccess }) {
                         whileHover={!loading && !successData ? { scale: 1.02, boxShadow: "0 8px 28px rgba(59,108,244,0.45)" } : {}}
                         whileTap={!loading && !successData ? { scale: 0.98 } : {}}
                         style={{
-                          marginTop: 8, width: "100%", padding: 14, borderRadius: 10,
+                          marginTop: 4, width: "100%", padding: 10, borderRadius: 10,
                           background: loading ? "linear-gradient(135deg, #4b6db5, #3b5ced)" : "linear-gradient(135deg, #3b6cf4, #2b5eef, #1a3dc8)",
                           color: "#fff", border: "none", fontWeight: 700, fontSize: 15,
                           cursor: loading || successData ? "default" : "pointer",
@@ -11794,7 +11794,7 @@ function AuthFlow({ onLoginSuccess }) {
                     </form>
 
                     {/* Demo user */}
-                    <div style={{ marginTop: 18 }}>
+                    <div style={{ marginTop: 12 }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -11803,7 +11803,7 @@ function AuthFlow({ onLoginSuccess }) {
                           handleAuthSuccess({ id: "demo", name: "Demo User", email: "demo@medai.local" });
                         }}
                         style={{
-                          width: "100%", padding: 13, borderRadius: 10,
+                          width: "100%", padding: 10, borderRadius: 10,
                           background: "rgba(255,255,255,0.04)", color: "rgba(203,213,225,0.7)",
                           border: "1px solid rgba(255,255,255,0.1)", fontWeight: 700, fontSize: 13.5, cursor: "pointer",
                           transition: "all 0.25s ease", letterSpacing: "0.02em",
@@ -11816,7 +11816,7 @@ function AuthFlow({ onLoginSuccess }) {
                     </div>
 
                     {/* Divider */}
-                    <div style={{ display: "flex", alignItems: "center", margin: "22px 0 14px", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", margin: "14px 0 10px", gap: 12 }}>
                       <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
                       <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>or continue with</span>
                       <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
@@ -11827,7 +11827,7 @@ function AuthFlow({ onLoginSuccess }) {
                       type="button"
                       onClick={() => setShowGoogleModal(true)}
                       style={{
-                        width: "100%", padding: 13, borderRadius: 10,
+                        width: "100%", padding: 10, borderRadius: 10,
                         background: "#ffffff", color: "#1e293b",
                         border: "1px solid #e2e8f0", fontWeight: 700, fontSize: 14, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
