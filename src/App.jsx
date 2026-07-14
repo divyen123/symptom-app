@@ -438,6 +438,8 @@ const GLOBAL_CSS = `
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   :root {
     --navy: #0b1a4a;
@@ -11475,7 +11477,7 @@ function AuthFlow({ onLoginSuccess }) {
   }));
 
   const inputStyle = {
-    width: "100%", padding: "13px 16px", borderRadius: 10,
+    width: "100%", padding: "10px 14px", borderRadius: 10,
     background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.1)",
     color: "#f1f5f9", outline: "none", fontSize: 14, fontWeight: 500,
     transition: "all 0.25s ease", boxSizing: "border-box",
@@ -11577,6 +11579,7 @@ function AuthFlow({ onLoginSuccess }) {
           {scene === "login" && (
             <motion.div
               key="login-scene"
+              className="hide-scrollbar"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -11593,6 +11596,7 @@ function AuthFlow({ onLoginSuccess }) {
                 padding: isMobile ? "40px 20px" : "32px 56px",
                 zIndex: 2,
                 boxSizing: "border-box",
+                overflowY: "auto",
               }}
             >
               <div style={{
@@ -11659,13 +11663,13 @@ function AuthFlow({ onLoginSuccess }) {
                   <div style={{
                     width: "100%", maxWidth: 440,
                     background: "rgba(22,32,51,0.7)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
-                    borderRadius: 24, padding: isMobile ? "32px 24px" : "44px 40px",
+                    borderRadius: 24, padding: isMobile ? "24px 20px" : "32px 32px",
                     border: "1px solid rgba(255,255,255,0.1)",
                     boxShadow: "0 32px 80px -20px rgba(0,0,0,0.5), 0 0 2px rgba(255,255,255,0.05) inset",
                   }}>
                     {/* Header */}
-                    <div style={{ textAlign: "center", marginBottom: 30 }}>
-                      <h1 style={{ color: "#f1f5f9", fontSize: 26, fontWeight: 800, margin: "0 0 6px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
+                    <div style={{ textAlign: "center", marginBottom: 20 }}>
+                      <h1 style={{ color: "#f1f5f9", fontSize: 24, fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
                         {tab === "login" ? "Welcome Back" : "Get Started"}
                       </h1>
                       <p style={{ color: "rgba(148,163,184,0.8)", fontSize: 14, margin: 0, fontWeight: 500 }}>
@@ -11674,7 +11678,7 @@ function AuthFlow({ onLoginSuccess }) {
                     </div>
 
                     {/* Tab switcher with sliding pill */}
-                    <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 4, marginBottom: 28, position: "relative" }}>
+                    <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: 4, marginBottom: 20, position: "relative" }}>
                       {["login", "register"].map((t) => (
                         <button
                           key={t}
@@ -11726,7 +11730,7 @@ function AuthFlow({ onLoginSuccess }) {
                     </AnimatePresence>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <AnimatePresence>
                         {tab === "register" && (
                           <motion.div key="name-field" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }}>
