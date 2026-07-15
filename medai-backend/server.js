@@ -1024,7 +1024,7 @@ app.delete("/api/todos/:id", authMiddleware, async (req, res) => {
 // ─── Medications API (protected) ──────────────────────────────────────────────
 
 // GET all medications
-app.get("/api/medications", authMiddleware, async (req, res) => {
+app.get("/api/rx-list", authMiddleware, async (req, res) => {
   try {
     const { data: meds, error } = await supabase
       .from("medications")
@@ -1040,7 +1040,7 @@ app.get("/api/medications", authMiddleware, async (req, res) => {
 });
 
 // POST new medication
-app.post("/api/medications", authMiddleware, async (req, res) => {
+app.post("/api/rx-list", authMiddleware, async (req, res) => {
   try {
     const record = {
       user_id: req.userId,
@@ -1100,8 +1100,8 @@ app.delete("/api/medications/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE all medications
-app.delete("/api/medications", authMiddleware, async (req, res) => {
+// DELETE ALL medications for a user
+app.delete("/api/rx-list", authMiddleware, async (req, res) => {
   try {
     const { error } = await supabase
       .from("medications")
@@ -1109,7 +1109,7 @@ app.delete("/api/medications", authMiddleware, async (req, res) => {
       .eq("user_id", req.userId);
 
     if (error) throw error;
-    res.json({ ok: true });
+    res.json({ message: "All medications deleted successfully" });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -387,11 +387,11 @@ const apiCreateTodo    = (todo) => apiFetch(`${API}/todos`, { method: "POST", he
 const apiUpdateTodo    = (id, todo) => apiFetch(`${API}/todos/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(todo) });
 const apiDeleteTodo    = (id) => apiFetch(`${API}/todos/${id}`, { method: "DELETE", headers: authHeaders() });
 
-const apiFetchMedications    = () => apiFetch(`${API}/medications`, { headers: authHeaders() });
-const apiCreateMedication    = (med) => apiFetch(`${API}/medications`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
-const apiUpdateMedication    = (id, med) => apiFetch(`${API}/medications/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
-const apiDeleteMedication    = (id) => apiFetch(`${API}/medications/${id}`, { method: "DELETE", headers: authHeaders() });
-const apiDeleteAllMedications= () => apiFetch(`${API}/medications`, { method: "DELETE", headers: authHeaders() });
+const apiFetchMedications    = () => apiFetch(`${API}/rx-list`, { headers: authHeaders() });
+const apiCreateMedication    = (med) => apiFetch(`${API}/rx-list`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
+const apiUpdateMedication    = (id, med) => apiFetch(`${API}/rx-list/${id}`, { method: "PUT", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(med) });
+const apiDeleteMedication    = (id) => apiFetch(`${API}/rx-list/${id}`, { method: "DELETE", headers: authHeaders() });
+const apiDeleteAllMedications= () => apiFetch(`${API}/rx-list`, { method: "DELETE", headers: authHeaders() });
 
 const apiFetchReminders      = () => apiFetch(`${API}/reminders`, { headers: authHeaders() });
 const apiCreateReminder      = (rem) => apiFetch(`${API}/reminders`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(rem) });
