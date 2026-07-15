@@ -8321,13 +8321,13 @@ Format strictly as follows with these exact section headers:
           type="submit" 
           disabled={loadingSearch || !searchQuery.trim()}
           style={{
-            padding: "0 24px", borderRadius: 12, border: "none", background: "var(--blue)", color: "#fff",
+            padding: isMobile ? "0 16px" : "0 24px", borderRadius: 12, border: "none", background: "var(--blue)", color: "#fff",
             fontWeight: 700, fontSize: 15, cursor: loadingSearch || !searchQuery.trim() ? "default" : "pointer",
             opacity: loadingSearch || !searchQuery.trim() ? 0.7 : 1, transition: "var(--transition)",
-            boxShadow: "0 4px 12px rgba(59,130,246,0.3)"
+            boxShadow: "0 4px 12px rgba(59,130,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center"
           }}
         >
-          {loadingSearch ? <Spinner size={20} color="#fff" /> : "Search Tips"}
+          {loadingSearch ? <Spinner size={20} color="#fff" /> : (isMobile ? <span style={{ fontSize: 20 }}>🔍</span> : "Search Tips")}
         </button>
       </form>
 
@@ -14075,7 +14075,8 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   }}
                   style={{
                     background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
-                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center",
+                    flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 0,
                     cursor: "pointer", transition: "all 0.2s ease",
                     animation: `mtCardIn 0.3s ease both`, animationDelay: `${i * 0.05}s`
                   }}
@@ -14088,7 +14089,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 >
-                  <div style={{ flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ flex: 1, textAlign: "left", display: "flex", alignItems: "center", gap: 16, width: isMobile ? "100%" : "auto" }}>
                     <span style={{ fontSize: 36 }}>{item.image}</span>
                     <div>
                       <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
@@ -14098,7 +14099,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                       </p>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, width: isMobile ? "100%" : "auto", justifyContent: isMobile ? "flex-end" : "auto" }}>
                     <span style={{
                       fontSize: 12, fontWeight: 700, color: "#10b981",
                       background: "rgba(16,185,129,0.1)", padding: "6px 12px", borderRadius: 8
@@ -14114,18 +14115,19 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                   key={i} className="mt-item-card"
                   style={{
                     background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
-                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: 20, display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center",
+                    flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 0,
                     animation: `mtCardIn 0.3s ease both`, animationDelay: `${i * 0.05}s`
                   }}
                 >
-                  <div style={{ flex: 1, textAlign: "left" }}>
+                  <div style={{ flex: 1, textAlign: "left", width: isMobile ? "100%" : "auto" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{item.name}</h4>
                     </div>
                     <p style={{ margin: "0 0 4px", fontSize: 13, color: "var(--text-muted)" }}>{item.use}</p>
                     <p style={{ margin: 0, fontSize: 12, color: "var(--text-faint)", fontStyle: "italic" }}>Dosage: {item.dosage}</p>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, width: isMobile ? "100%" : "auto", justifyContent: isMobile ? "flex-end" : "auto" }}>
                     {(selectedCategory === 'firstaid' || selectedCategory === 'pharmacy') && (
                       <a
                         href={`https://pharmeasy.in/search/all?name=${encodeURIComponent(item.name)}`}
@@ -14279,7 +14281,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
             boxShadow: "-10px 0 30px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column",
             transform: nutrientDrawerOpen ? "translateX(0)" : "translateX(100%)",
             transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
-            overflowY: "auto", padding: 32, textAlign: "left"
+            overflowY: "auto", padding: 32, textAlign: "left", WebkitOverflowScrolling: "touch", maxHeight: "100dvh"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
               <button
