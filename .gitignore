@@ -26,6 +26,7 @@ history_matches.json
 .vscode/*
 !.vscode/extensions.json
 .idea
+medai-backend/temp_query*.cjs
 .DS_Store
 *.suo
 *.ntvs*
