@@ -15857,6 +15857,16 @@ export default function App() {
         } catch (err) {
           console.warn("Failed to sync reminders to database:", err);
         }
+
+        try {
+          const lsMedicines = loadMedicines();
+          if (lsMedicines.length > 0) {
+            await Promise.all(lsMedicines.map(m => apiCreateMedication({ name: m.name, cause: m.cause || "", category: m.category || "Pharmacy" })));
+            localStorage.removeItem(MEDICINE_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync medicines to database:", err);
+        }
         const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
           apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
           apiFetchHistory().catch(err => { console.error("History fetch failed:", err); return []; }),
