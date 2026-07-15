@@ -15959,13 +15959,22 @@ export default function App() {
         }
         setVitals(Array.isArray(dbVitals) ? dbVitals : []);
         setChatSessions(Array.isArray(dbChats) ? dbChats : []);
-        setTodos(Array.isArray(dbTodos) ? dbTodos : []);
+        
+        const validTodos = Array.isArray(dbTodos) ? dbTodos : [];
+        setTodos(validTodos);
+        localStorage.setItem(TODO_KEY, JSON.stringify(validTodos));
+        
         if (dbMeds === null) {
           setSavedMedicines(loadMedicines());
         } else {
-          setSavedMedicines(Array.isArray(dbMeds) ? dbMeds : []);
+          const validMeds = Array.isArray(dbMeds) ? dbMeds : [];
+          setSavedMedicines(validMeds);
+          localStorage.setItem(MEDICINE_KEY, JSON.stringify(validMeds));
         }
-        setSavedReminders(Array.isArray(dbReminders) ? dbReminders : []);
+        
+        const validReminders = Array.isArray(dbReminders) ? dbReminders : [];
+        setSavedReminders(validReminders);
+        localStorage.setItem(REMINDERS_KEY, JSON.stringify(validReminders));
       } catch (e) {
         console.warn("Backend not reachable, using localStorage:", e.message);
         setReports(loadReports());
@@ -15973,7 +15982,7 @@ export default function App() {
         setSettings(loadSettings());
         setVitals(loadVitals());
         setChatSessions([]);
-        setTodos([]);
+        setTodos(loadTodos());
         setSavedMedicines(loadMedicines());
         setSavedReminders(loadReminders());
       } finally {
