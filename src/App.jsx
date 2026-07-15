@@ -13963,7 +13963,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
               onMouseLeave={e => e.currentTarget.style.background = "var(--surface)"}
             >
-              ← Back to Town
+              {isMobile ? "← Town" : "← Back to Town"}
             </button>
           </div>
 
@@ -14264,7 +14264,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
               cursor: "pointer", fontFamily: "var(--font)",
             }}
           >
-            ← Back to Town
+            {isMobile ? "← Town" : "← Back to Town"}
           </button>
         </div>
       )}
