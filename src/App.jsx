@@ -8106,6 +8106,13 @@ function HealthTips({ savedMedicines = [], onSaveMedicine, setActive }) {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [customTip, setCustomTip] = useState(null);
   const [searchError, setSearchError] = useState("");
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const renderCustomTip = (text) => {
     // Parse structured sections from AI response
@@ -12273,6 +12280,13 @@ function MediTownView({ onSaveMedicine, savedMedicines = [], onBack, registerInn
   const [activeFoodItem, setActiveFoodItem] = useState(null);
   const [currentFoodStep, setCurrentFoodStep] = useState(0);
   const [particles, setParticles] = useState([]);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const triggerSplash = () => {
     if (!activeFoodItem) return;
