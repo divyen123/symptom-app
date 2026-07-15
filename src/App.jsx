@@ -10,6 +10,7 @@ const SETTINGS_KEY = "symptom_settings";
 const VITALS_KEY = "symptom_vitals";
 const MEDICINE_KEY = "symptom_medicines";
 const REMINDERS_KEY = "symptom_reminders";
+const TODO_KEY = "symptom_todos";
 const APPEARANCE_KEY = "medai_appearance";
 const MODEL = "llama-3.1-8b-instant";
 const DISCLAIMER = "⚕️ This app is not a medical diagnosis system. Please consult a qualified doctor.";
@@ -82,6 +83,11 @@ const loadMedicines = () => {
 };
 const loadReminders = () => {
   try { return JSON.parse(localStorage.getItem(REMINDERS_KEY) || "[]"); }
+  catch { return []; }
+};
+
+const loadTodos = () => {
+  try { return JSON.parse(localStorage.getItem(TODO_KEY) || "[]"); }
   catch { return []; }
 };
 const DEFAULT_APPEARANCE = {
@@ -2397,28 +2403,45 @@ function Home({
     if (!newTodoText.trim()) return;
     try {
       const newTodo = await apiCreateTodo({ text: newTodoText.trim(), completed: false });
-      setTodos(prev => [newTodo, ...prev]);
+      const updated = [newTodo, ...todos];
+      setTodos(updated);
       setNewTodoText("");
+      if (typeof Storage !== "undefined") localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     } catch (err) {
-      alert("Failed to add task: " + err.message);
+      // Offline fallback
+      const offlineTodo = { _id: "local_" + Date.now(), id: "local_" + Date.now(), text: newTodoText.trim(), completed: false, createdAt: new Date().toISOString() };
+      const updated = [offlineTodo, ...todos];
+      setTodos(updated);
+      setNewTodoText("");
+      localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     }
   };
 
   const handleToggleTodo = async (id, currentCompleted) => {
     try {
+      if (String(id).startsWith("local_")) throw new Error("Local offline");
       await apiUpdateTodo(id, { completed: !currentCompleted });
-      setTodos(prev => prev.map(t => (t.id || t._id) === id ? { ...t, completed: !currentCompleted } : t));
+      const updated = todos.map(t => (t.id || t._id) === id ? { ...t, completed: !currentCompleted } : t);
+      setTodos(updated);
+      if (typeof Storage !== "undefined") localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     } catch (err) {
-      alert("Failed to update task: " + err.message);
+      const updated = todos.map(t => (t.id || t._id) === id ? { ...t, completed: !currentCompleted } : t);
+      setTodos(updated);
+      localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     }
   };
 
   const handleDeleteTodo = async (id) => {
     try {
+      if (String(id).startsWith("local_")) throw new Error("Local offline");
       await apiDeleteTodo(id);
-      setTodos(prev => prev.filter(t => (t.id || t._id) !== id));
+      const updated = todos.filter(t => (t.id || t._id) !== id);
+      setTodos(updated);
+      if (typeof Storage !== "undefined") localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     } catch (err) {
-      alert("Failed to delete task: " + err.message);
+      const updated = todos.filter(t => (t.id || t._id) !== id);
+      setTodos(updated);
+      localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     }
   };
 
@@ -2430,11 +2453,17 @@ function Home({
   const handleSaveEditTodo = async (id) => {
     if (!editingTodoText.trim()) return;
     try {
+      if (String(id).startsWith("local_")) throw new Error("Local offline");
       await apiUpdateTodo(id, { text: editingTodoText.trim() });
-      setTodos(prev => prev.map(t => (t.id || t._id) === id ? { ...t, text: editingTodoText.trim() } : t));
+      const updated = todos.map(t => (t.id || t._id) === id ? { ...t, text: editingTodoText.trim() } : t);
+      setTodos(updated);
       setEditingTodoId(null);
+      if (typeof Storage !== "undefined") localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     } catch (err) {
-      alert("Failed to save task edit: " + err.message);
+      const updated = todos.map(t => (t.id || t._id) === id ? { ...t, text: editingTodoText.trim() } : t);
+      setTodos(updated);
+      setEditingTodoId(null);
+      localStorage.setItem(TODO_KEY, JSON.stringify(updated));
     }
   };
 
@@ -15850,22 +15879,35 @@ export default function App() {
 
         try {
           const lsReminders = loadReminders();
-          if (lsReminders.length > 0) {
-            await Promise.all(lsReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
-            localStorage.removeItem(REMINDERS_KEY);
+          const localOnlyReminders = lsReminders.filter(r => String(r.id || r._id).startsWith("local_"));
+          if (localOnlyReminders.length > 0) {
+            await Promise.all(localOnlyReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
           }
+          localStorage.removeItem(REMINDERS_KEY);
         } catch (err) {
           console.warn("Failed to sync reminders to database:", err);
         }
 
         try {
           const lsMedicines = loadMedicines();
-          if (lsMedicines.length > 0) {
-            await Promise.all(lsMedicines.map(m => apiCreateMedication({ name: m.name, cause: m.cause || "", category: m.category || "Pharmacy" })));
-            localStorage.removeItem(MEDICINE_KEY);
+          const localOnlyMeds = lsMedicines.filter(m => String(m.id || m._id).startsWith("local_"));
+          if (localOnlyMeds.length > 0) {
+            await Promise.all(localOnlyMeds.map(m => apiCreateMedication({ name: m.name, cause: m.cause || "", category: m.category || "Pharmacy" })));
           }
+          localStorage.removeItem(MEDICINE_KEY);
         } catch (err) {
           console.warn("Failed to sync medicines to database:", err);
+        }
+
+        try {
+          const lsTodos = loadTodos();
+          const localOnlyTodos = lsTodos.filter(t => String(t.id || t._id).startsWith("local_"));
+          if (localOnlyTodos.length > 0) {
+            await Promise.all(localOnlyTodos.map(t => apiCreateTodo({ text: t.text, completed: t.completed })));
+          }
+          localStorage.removeItem(TODO_KEY);
+        } catch (err) {
+          console.warn("Failed to sync todos to database:", err);
         }
 
         const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
