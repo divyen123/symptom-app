@@ -15867,6 +15867,7 @@ export default function App() {
         } catch (err) {
           console.warn("Failed to sync medicines to database:", err);
         }
+
         const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
           apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
           apiFetchHistory().catch(err => { console.error("History fetch failed:", err); return []; }),
