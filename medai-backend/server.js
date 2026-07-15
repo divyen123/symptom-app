@@ -39,36 +39,7 @@ console.log("✅ Supabase Client initialized successfully");
 async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.split(" ")[1] === "demo_token_offline") {
-    try {
-      // Find or create default demo user
-      let { data: defaultUser, error: findError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", "default@medai.local")
-        .maybeSingle();
-
-      if (findError) throw findError;
-
-      if (!defaultUser) {
-        const dummyPassword = await bcrypt.hash("default_bypass_password", 12);
-        const { data: newUser, error: createError } = await supabase
-          .from("users")
-          .insert({
-            name: "Default User",
-            email: "default@medai.local",
-            password: dummyPassword
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        defaultUser = newUser;
-      }
-      req.userId = defaultUser.id;
-      return next();
-    } catch (err) {
-      return res.status(500).json({ error: "Database error initializing default user: " + err.message });
-    }
+    return res.status(401).json({ error: "Authentication required" });
   }
   const token = authHeader.split(" ")[1];
   try {
@@ -355,6 +326,7 @@ app.delete("/api/auth/reset-profile", authMiddleware, async (req, res) => {
       supabase.from("vitals").delete().eq("user_id", userId),
       supabase.from("chat_sessions").delete().eq("user_id", userId),
       supabase.from("todos").delete().eq("user_id", userId),
+      supabase.from("medication_checkins").delete().eq("user_id", userId),
       supabase.from("medications").delete().eq("user_id", userId),
       supabase.from("reminders").delete().eq("user_id", userId)
     ]);
@@ -1024,13 +996,13 @@ app.delete("/api/todos/:id", authMiddleware, async (req, res) => {
 // ─── Medications API (protected) ──────────────────────────────────────────────
 
 // GET all medications
-app.get("/api/rx-list", authMiddleware, async (req, res) => {
+app.get(["/api/rx-list", "/api/medications"], authMiddleware, async (req, res) => {
   try {
     const { data: meds, error } = await supabase
       .from("medications")
       .select("id, name, cause, category, createdAt:created_at")
       .eq("user_id", req.userId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     res.json(meds || []);
@@ -1040,11 +1012,24 @@ app.get("/api/rx-list", authMiddleware, async (req, res) => {
 });
 
 // POST new medication
-app.post("/api/rx-list", authMiddleware, async (req, res) => {
+app.post(["/api/rx-list", "/api/medications"], authMiddleware, async (req, res) => {
   try {
+    const name = String(req.body.name || "").trim();
+    if (!name) return res.status(400).json({ error: "Medicine name is required" });
+
+    const normalizedName = name.toLowerCase();
+    const { data: existingRows, error: existingError } = await supabase
+      .from("medications")
+      .select("id, name, cause, category, createdAt:created_at")
+      .eq("user_id", req.userId);
+
+    if (existingError) throw existingError;
+    const existing = (existingRows || []).find(item => item.name.trim().toLowerCase() === normalizedName);
+    if (existing) return res.json(existing);
+
     const record = {
       user_id: req.userId,
-      name: req.body.name,
+      name,
       cause: req.body.cause || "",
       category: req.body.category || "Pharmacy"
     };
@@ -1063,15 +1048,21 @@ app.post("/api/rx-list", authMiddleware, async (req, res) => {
 });
 
 // PUT update medication
-app.put("/api/medications/:id", authMiddleware, async (req, res) => {
+app.put(["/api/rx-list/:id", "/api/medications/:id"], authMiddleware, async (req, res) => {
   try {
+    const updates = {};
+    if (req.body.category !== undefined) updates.category = String(req.body.category).trim() || "Pharmacy";
+    if (req.body.name !== undefined) {
+      const name = String(req.body.name).trim();
+      if (!name) return res.status(400).json({ error: "Medicine name is required" });
+      updates.name = name;
+    }
+    if (req.body.cause !== undefined) updates.cause = String(req.body.cause);
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No medication changes provided" });
+
     const { data: doc, error } = await supabase
       .from("medications")
-      .update({
-        category: req.body.category,
-        name: req.body.name,
-        cause: req.body.cause
-      })
+      .update(updates)
       .eq("user_id", req.userId)
       .eq("id", req.params.id)
       .select("id, name, cause, category, createdAt:created_at")
@@ -1085,7 +1076,7 @@ app.put("/api/medications/:id", authMiddleware, async (req, res) => {
 });
 
 // DELETE one medication
-app.delete("/api/medications/:id", authMiddleware, async (req, res) => {
+app.delete(["/api/rx-list/:id", "/api/medications/:id"], authMiddleware, async (req, res) => {
   try {
     const { error } = await supabase
       .from("medications")
@@ -1101,7 +1092,7 @@ app.delete("/api/medications/:id", authMiddleware, async (req, res) => {
 });
 
 // DELETE ALL medications for a user
-app.delete("/api/rx-list", authMiddleware, async (req, res) => {
+app.delete(["/api/rx-list", "/api/medications"], authMiddleware, async (req, res) => {
   try {
     const { error } = await supabase
       .from("medications")
@@ -1206,7 +1197,7 @@ app.get("/api/reminders", authMiddleware, async (req, res) => {
       .from("reminders")
       .select("id, title, time, active, createdAt:created_at")
       .eq("user_id", req.userId)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     res.json(reminders || []);
@@ -1218,10 +1209,23 @@ app.get("/api/reminders", authMiddleware, async (req, res) => {
 // POST new reminder
 app.post("/api/reminders", authMiddleware, async (req, res) => {
   try {
+    const title = String(req.body.title || "").trim();
+    if (!title) return res.status(400).json({ error: "Reminder title is required" });
+    const time = String(req.body.time || "");
+
+    const { data: existingRows, error: existingError } = await supabase
+      .from("reminders")
+      .select("id, title, time, active, createdAt:created_at")
+      .eq("user_id", req.userId);
+
+    if (existingError) throw existingError;
+    const existing = (existingRows || []).find(item => item.title.trim() === title && item.time === time);
+    if (existing) return res.json(existing);
+
     const record = {
       user_id: req.userId,
-      title: req.body.title,
-      time: req.body.time,
+      title,
+      time,
       active: req.body.active !== undefined ? req.body.active : true
     };
 
@@ -1287,6 +1291,80 @@ app.delete("/api/reminders", authMiddleware, async (req, res) => {
 
     if (error) throw error;
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Daily pill check-ins (protected and scoped to the signed-in profile)
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isValidDateKey = value => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+};
+
+app.get("/api/pill-checkins", authMiddleware, async (req, res) => {
+  try {
+    const date = String(req.query.date || new Date().toISOString().slice(0, 10));
+    if (!isValidDateKey(date)) {
+      return res.status(400).json({ error: "date must use YYYY-MM-DD" });
+    }
+
+    const { data: checkins, error } = await supabase
+      .from("medication_checkins")
+      .select("medicationId:medication_id, checkinDate:checkin_date, taken, updatedAt:updated_at")
+      .eq("user_id", req.userId)
+      .eq("checkin_date", date)
+      .order("updated_at", { ascending: true });
+
+    if (error) throw error;
+    res.json(checkins || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/pill-checkins/:medicationId", authMiddleware, async (req, res) => {
+  try {
+    const medicationId = String(req.params.medicationId || "");
+    const date = String(req.body.date || "");
+    const taken = req.body.taken;
+
+    if (!UUID_PATTERN.test(medicationId)) {
+      return res.status(400).json({ error: "Invalid medication id" });
+    }
+    if (!isValidDateKey(date)) {
+      return res.status(400).json({ error: "date must use YYYY-MM-DD" });
+    }
+    if (typeof taken !== "boolean") {
+      return res.status(400).json({ error: "taken must be a boolean" });
+    }
+
+    const { data: medicine, error: ownershipError } = await supabase
+      .from("medications")
+      .select("id")
+      .eq("id", medicationId)
+      .eq("user_id", req.userId)
+      .maybeSingle();
+
+    if (ownershipError) throw ownershipError;
+    if (!medicine) return res.status(404).json({ error: "Medicine not found" });
+
+    const { data: checkin, error } = await supabase
+      .from("medication_checkins")
+      .upsert({
+        user_id: req.userId,
+        medication_id: medicationId,
+        checkin_date: date,
+        taken,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id,medication_id,checkin_date" })
+      .select("medicationId:medication_id, checkinDate:checkin_date, taken, updatedAt:updated_at")
+      .single();
+
+    if (error) throw error;
+    res.json(checkin);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

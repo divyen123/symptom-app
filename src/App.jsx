@@ -11,6 +11,8 @@ const VITALS_KEY = "symptom_vitals";
 const MEDICINE_KEY = "symptom_medicines";
 const REMINDERS_KEY = "symptom_reminders";
 const TODO_KEY = "symptom_todos";
+const TAKEN_MEDS_KEY = "medai_taken_meds";
+const CACHED_USER_KEY = "MEDAI_CACHED_USER_V1";
 const APPEARANCE_KEY = "medai_appearance";
 const MODEL = "llama-3.1-8b-instant";
 const DISCLAIMER = "⚕️ This app is not a medical diagnosis system. Please consult a qualified doctor.";
@@ -77,13 +79,51 @@ const loadVitals = () => {
   try { return JSON.parse(localStorage.getItem(VITALS_KEY) || "[]"); }
   catch { return []; }
 };
-const loadMedicines = () => {
-  try { return JSON.parse(localStorage.getItem(MEDICINE_KEY) || "[]"); }
-  catch { return []; }
+const profileStorageKey = (baseKey, userId) =>
+  userId && userId !== "demo" ? `${baseKey}:${userId}` : baseKey;
+
+const loadProfileArray = (baseKey, userId) => {
+  try {
+    const scopedValue = localStorage.getItem(profileStorageKey(baseKey, userId));
+    const legacyValue = userId && userId !== "demo" ? localStorage.getItem(baseKey) : null;
+    const parsed = JSON.parse(scopedValue ?? legacyValue ?? "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 };
-const loadReminders = () => {
-  try { return JSON.parse(localStorage.getItem(REMINDERS_KEY) || "[]"); }
-  catch { return []; }
+
+const saveProfileArray = (baseKey, userId, value) => {
+  localStorage.setItem(profileStorageKey(baseKey, userId), JSON.stringify(value));
+};
+
+const loadMedicines = (userId) => loadProfileArray(MEDICINE_KEY, userId);
+const loadReminders = (userId) => loadProfileArray(REMINDERS_KEY, userId);
+
+const getLocalDateKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const takenMedsStorageKey = (userId, date = getLocalDateKey()) =>
+  `${TAKEN_MEDS_KEY}:${userId || "demo"}:${date}`;
+
+const loadTakenMeds = (userId, date = getLocalDateKey()) => {
+  try {
+    const scopedValue = localStorage.getItem(takenMedsStorageKey(userId, date));
+    const legacyValue = localStorage.getItem(TAKEN_MEDS_KEY);
+    const parsed = JSON.parse(scopedValue ?? legacyValue ?? "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveTakenMeds = (userId, date, value) => {
+  localStorage.setItem(takenMedsStorageKey(userId, date), JSON.stringify(value));
 };
 
 const loadTodos = () => {
@@ -284,11 +324,16 @@ const apiLogin = (email, password) =>
     return data;
   });
 
-const apiGetMe = () => 
-  fetch(`${API}/auth/me`, { headers: authHeaders() }).then(async r => {
-    if (!r.ok) throw new Error("Token invalid");
-    return r.json();
-  });
+const apiGetMe = async () => {
+  const response = await fetch(`${API}/auth/me`, { headers: authHeaders() });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data.error || "Unable to validate this session");
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+};
 
 const apiGoogleLogin = (email, name) => 
   fetch(`${API}/auth/google-login`, { 
@@ -402,6 +447,15 @@ const apiDeleteAllReminders  = () => apiFetch(`${API}/reminders`, { method: "DEL
 const apiFetchSavedPlans = () => apiFetch(`${API}/saved-plans`, { headers: authHeaders() });
 const apiSavePlan        = (plan) => apiFetch(`${API}/saved-plans`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(plan) });
 const apiDeletePlan      = (id) => apiFetch(`${API}/saved-plans/${id}`, { method: "DELETE", headers: authHeaders() });
+
+const apiFetchPillCheckins = (date) =>
+  apiFetch(`${API}/pill-checkins?date=${encodeURIComponent(date)}`, { headers: authHeaders() });
+const apiSetPillCheckin = (medicationId, date, taken) =>
+  apiFetch(`${API}/pill-checkins/${medicationId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ date, taken })
+  });
 const apiDeleteAllPlans  = () => apiFetch(`${API}/saved-plans`, { method: "DELETE", headers: authHeaders() });
 
 const apiResetProfile = () =>
@@ -2223,7 +2277,9 @@ function Home({
   handleSaveReminder,
   handleToggleReminder,
   handleDeleteReminder,
-  handleDeleteAllReminders
+  handleDeleteAllReminders,
+  takenMeds = {},
+  onToggleMedTaken
 }) {
   const cp = CONTENT_PALETTES.find(p => p.id === appearance?.contentPalette) || CONTENT_PALETTES[0];
   const isDark = cp.isDark;
@@ -2248,17 +2304,6 @@ function Home({
   const [editingTodoId, setEditingTodoId] = useState(null);
   const [editingTodoText, setEditingTodoText] = useState("");
 
-  // Medication tracking state (taken for the day)
-  const [takenMeds, setTakenMeds] = useState(() => {
-    const saved = localStorage.getItem("medai_taken_meds");
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  const handleToggleMedTaken = (medId) => {
-    const updated = { ...takenMeds, [medId]: !takenMeds[medId] };
-    setTakenMeds(updated);
-    localStorage.setItem("medai_taken_meds", JSON.stringify(updated));
-  };
 
   const handleQuickAnalyze = () => {
     if (!quickInput.trim()) return;
@@ -3060,7 +3105,7 @@ function Home({
                         </div>
                         
                         <button
-                          onClick={() => handleToggleMedTaken(medId)}
+                          onClick={() => onToggleMedTaken(medId)}
                           style={{
                             background: isTaken ? "var(--green)" : "none",
                             color: isTaken ? "#fff" : "var(--text-faint)",
@@ -14814,6 +14859,9 @@ export default function App() {
     }
   }, [showMedList, selectedCategory]);
   const [savedReminders, setSavedReminders] = useState([]);
+  const [takenMeds, setTakenMeds] = useState({});
+  const [checkinDate, setCheckinDate] = useState(getLocalDateKey);
+  const [profileSyncRevision, setProfileSyncRevision] = useState(0);
   const [showReminderList, setShowReminderList] = useState(false);
   const [showReminderDeleteConfirm, setShowReminderDeleteConfirm] = useState(false);
   const [fabMenuExpanded, setFabMenuExpanded] = useState(false);
@@ -14847,6 +14895,40 @@ export default function App() {
     setCustomPostponeUnit("hours");
   }, [activeAlarm]);
 
+
+  useEffect(() => {
+    const updateDate = () => setCheckinDate(getLocalDateKey());
+    updateDate();
+    const interval = setInterval(updateDate, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setTakenMeds({});
+      return;
+    }
+    setTakenMeds(loadTakenMeds(user.id, checkinDate));
+  }, [user, checkinDate]);
+
+  useEffect(() => {
+    if (!user || user.id === "demo") return undefined;
+    let refreshTimer;
+    const requestRefresh = () => {
+      if (document.visibilityState === "hidden") return;
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        setProfileSyncRevision(revision => revision + 1);
+      }, 200);
+    };
+    window.addEventListener("focus", requestRefresh);
+    document.addEventListener("visibilitychange", requestRefresh);
+    return () => {
+      clearTimeout(refreshTimer);
+      window.removeEventListener("focus", requestRefresh);
+      document.removeEventListener("visibilitychange", requestRefresh);
+    };
+  }, [user]);
   const getVisibleReminders = () => {
     const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD
     const todayTime = new Date(todayStr).getTime();
@@ -15661,28 +15743,51 @@ export default function App() {
 
   const checkAuth = async () => {
     setLoadingUser(true);
+    const token = getToken();
+    let cachedUser = null;
     try {
-      const token = getToken();
-      if (!token) throw new Error("No token");
+      cachedUser = JSON.parse(localStorage.getItem(CACHED_USER_KEY) || "null");
+    } catch {
+      cachedUser = null;
+    }
+
+    try {
+      if (!token) {
+        setUser(null);
+        return;
+      }
+      if (token === "demo_token_offline") {
+        const demoUser = { id: "demo", name: "Demo User", email: "demo@medai.local" };
+        localStorage.setItem("MEDAI_DEMO_MODE", "true");
+        setUser(demoUser);
+        return;
+      }
+
       const userData = await apiGetMe();
+      localStorage.removeItem("MEDAI_DEMO_MODE");
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(userData));
       setUser(userData);
     } catch (err) {
-      // If token exists but backend is unreachable, create demo user so app works offline
-      const token = getToken();
-      if (token && (err.message === "Failed to fetch" || err.message === "Token invalid")) {
-        console.warn("Backend unreachable, using demo mode");
-        setUser({ id: "demo", name: "Demo User", email: "demo@medai.local" });
-        localStorage.setItem("MEDAI_DEMO_MODE", "true");
-      } else {
-        setUser(null);
+      if (err.status === 401 || err.status === 403) {
         localStorage.removeItem("MEDAI_TOKEN");
         localStorage.removeItem("MEDAI_DEMO_MODE");
+        localStorage.removeItem(CACHED_USER_KEY);
         localStorage.removeItem(REMINDERS_KEY);
         localStorage.removeItem(MEDICINE_KEY);
-        localStorage.removeItem(TODO_KEY);
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(HISTORY_KEY);
-        localStorage.removeItem(VITALS_KEY);
+        localStorage.removeItem(TAKEN_MEDS_KEY);
+        localStorage.removeItem(profileStorageKey(REMINDERS_KEY, cachedUser?.id));
+        localStorage.removeItem(profileStorageKey(MEDICINE_KEY, cachedUser?.id));
+        Object.keys(localStorage)
+          .filter(key => key.startsWith(`${TAKEN_MEDS_KEY}:${cachedUser?.id}:`))
+          .forEach(key => localStorage.removeItem(key));
+        setUser(null);
+      } else if (cachedUser?.id && cachedUser.id !== "demo") {
+        console.warn("Backend temporarily unavailable; showing the cached profile.", err.message);
+        localStorage.removeItem("MEDAI_DEMO_MODE");
+        setUser(cachedUser);
+      } else {
+        console.warn("Unable to restore the signed-in profile.", err.message);
+        setUser(null);
       }
     } finally {
       setLoadingUser(false);
@@ -15694,10 +15799,18 @@ export default function App() {
   }, []);
 
   const handleLogout = () => {
+    const userId = user?.id;
     localStorage.removeItem("MEDAI_TOKEN");
     localStorage.removeItem("MEDAI_DEMO_MODE");
+    localStorage.removeItem(CACHED_USER_KEY);
     localStorage.removeItem(REMINDERS_KEY);
     localStorage.removeItem(MEDICINE_KEY);
+    localStorage.removeItem(TAKEN_MEDS_KEY);
+    localStorage.removeItem(profileStorageKey(REMINDERS_KEY, userId));
+    localStorage.removeItem(profileStorageKey(MEDICINE_KEY, userId));
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(`${TAKEN_MEDS_KEY}:${userId}:`))
+      .forEach(key => localStorage.removeItem(key));
     localStorage.removeItem(TODO_KEY);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(HISTORY_KEY);
@@ -15709,6 +15822,7 @@ export default function App() {
     setSettings({});
     setSavedMedicines([]);
     setSavedReminders([]);
+    setTakenMeds({});
     setChatSessions([]);
     setActiveChatId(null);
     setChatMsgs(getNewChatDefaultMessages());
@@ -15716,112 +15830,206 @@ export default function App() {
   };
 
   const handleSaveMedicine = async (medicine, cause = "", category = "Pharmacy") => {
-    const isDuplicate = savedMedicines.some(m => m?.name?.toLowerCase?.().trim() === medicine.toLowerCase().trim());
+    const normalizedName = medicine.trim().toLowerCase();
+    const isDuplicate = savedMedicines.some(m => m?.name?.trim().toLowerCase() === normalizedName);
     if (isDuplicate) return;
-    try {
-      const newMed = await apiCreateMedication({ name: medicine, cause, category });
-      setSavedMedicines(prev => [newMed, ...prev]);
-    } catch (_e) {
-      // Offline fallback: save to localStorage
-      const offlineMed = { _id: "local_" + Date.now(), id: "local_" + Date.now(), name: medicine, cause, category, createdAt: new Date().toISOString() };
-      const updated = [offlineMed, ...savedMedicines];
+
+    const savePendingMedicine = () => {
+      const localId = `local_${Date.now()}`;
+      const pendingMedicine = {
+        id: localId,
+        _id: localId,
+        name: medicine.trim(),
+        cause,
+        category,
+        pendingSync: user?.id !== "demo",
+        createdAt: new Date().toISOString()
+      };
+      const updated = [pendingMedicine, ...savedMedicines];
       setSavedMedicines(updated);
-      localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+    };
+
+    if (user?.id === "demo") {
+      savePendingMedicine();
+      return;
+    }
+
+    try {
+      const newMed = await apiCreateMedication({ name: medicine.trim(), cause, category });
+      const updated = [newMed, ...savedMedicines];
+      setSavedMedicines(updated);
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+    } catch (error) {
+      savePendingMedicine();
+      showToast("Saved on this device. It will sync when the server is available.", "error");
+      console.warn("Medicine queued for sync:", error.message);
     }
   };
 
   const handleDeleteMedicine = async (id) => {
+    const updated = savedMedicines.filter(m => m._id !== id && m.id !== id);
+    if (String(id).startsWith("local_") || user?.id === "demo") {
+      setSavedMedicines(updated);
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+      return;
+    }
     try {
       await apiDeleteMedication(id);
-      setSavedMedicines(prev => prev.filter(m => m._id !== id && m.id !== id));
-    } catch (_e) {
-      // Offline fallback: remove from localStorage
-      const updated = savedMedicines.filter(m => m._id !== id && m.id !== id);
       setSavedMedicines(updated);
-      localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+      setTakenMeds(previous => {
+        const next = { ...previous };
+        delete next[id];
+        saveTakenMeds(user?.id, checkinDate, next);
+        return next;
+      });
+    } catch (error) {
+      showToast("Could not delete this medicine. Please try again when connected.", "error");
+      console.error("Medicine delete failed:", error);
     }
   };
 
   const handleChangeMedicineCategory = async (id, newCategory) => {
-    try {
-      if (String(id).startsWith("local_")) {
-        const updated = savedMedicines.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m);
-        setSavedMedicines(updated);
-        localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
-      } else {
-        await apiUpdateMedication(id, { category: newCategory });
-        setSavedMedicines(prev => prev.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m));
-      }
-      showToast(`Category updated to ${newCategory}`);
-    } catch (_e) {
-      const updated = savedMedicines.map(m => (m.id === id || m._id === id) ? { ...m, category: newCategory } : m);
+    const updated = savedMedicines.map(m =>
+      (m.id === id || m._id === id) ? { ...m, category: newCategory } : m
+    );
+    if (String(id).startsWith("local_") || user?.id === "demo") {
       setSavedMedicines(updated);
-      localStorage.setItem(MEDICINE_KEY, JSON.stringify(updated));
-      showToast("Category updated locally");
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+      showToast(`Category updated to ${newCategory}`);
+      return;
+    }
+    try {
+      await apiUpdateMedication(id, { category: newCategory });
+      setSavedMedicines(updated);
+      saveProfileArray(MEDICINE_KEY, user?.id, updated);
+      showToast(`Category updated to ${newCategory}`);
+    } catch (error) {
+      showToast("Could not sync the category change. Please try again.", "error");
+      console.error("Medicine category update failed:", error);
     }
   };
 
   const handleDeleteAllMedicines = async () => {
+    if (user?.id === "demo") {
+      setSavedMedicines([]);
+      saveProfileArray(MEDICINE_KEY, user.id, []);
+      setTakenMeds({});
+      saveTakenMeds(user.id, checkinDate, {});
+      return;
+    }
     try {
       await apiDeleteAllMedications();
       setSavedMedicines([]);
-    } catch (_e) {
-      // Offline fallback
-      setSavedMedicines([]);
-      localStorage.removeItem(MEDICINE_KEY);
+      saveProfileArray(MEDICINE_KEY, user?.id, []);
+      setTakenMeds({});
+      saveTakenMeds(user?.id, checkinDate, {});
+    } catch (error) {
+      showToast("Could not delete the medicine list. Please try again.", "error");
+      console.error("Delete all medicines failed:", error);
     }
   };
 
   const handleSaveReminder = async (title, time) => {
+    const savePendingReminder = () => {
+      const localId = `local_${Date.now()}`;
+      const pendingReminder = {
+        id: localId,
+        _id: localId,
+        title,
+        time,
+        active: true,
+        pendingSync: user?.id !== "demo",
+        createdAt: new Date().toISOString()
+      };
+      const updated = [pendingReminder, ...savedReminders];
+      setSavedReminders(updated);
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+    };
+
+    if (user?.id === "demo") {
+      savePendingReminder();
+      return;
+    }
     try {
       const newRem = await apiCreateReminder({ title, time, active: true });
-      setSavedReminders(prev => [newRem, ...prev]);
-    } catch (_e) {
-      // Offline fallback: save to localStorage
-      const offlineRem = { _id: "local_" + Date.now(), id: "local_" + Date.now(), title, time, active: true, createdAt: new Date().toISOString() };
-      const updated = [offlineRem, ...savedReminders];
+      const updated = [newRem, ...savedReminders];
       setSavedReminders(updated);
-      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+    } catch (error) {
+      savePendingReminder();
+      showToast("Reminder saved on this device and queued for sync.", "error");
+      console.warn("Reminder queued for sync:", error.message);
     }
   };
 
   const handleToggleReminder = async (id, currentActive) => {
-    try {
-      const updatedRem = await apiUpdateReminder(id, { active: !currentActive });
-      setSavedReminders(prev => prev.map(r => (r._id === id || r.id === id) ? updatedRem : r));
-    } catch (_e) {
-      // Offline fallback: update in localStorage
-      const updated = savedReminders.map(r => {
-        if (r._id === id || r.id === id) {
-          return { ...r, active: !currentActive };
-        }
-        return r;
-      });
+    const updated = savedReminders.map(r =>
+      (r._id === id || r.id === id) ? { ...r, active: !currentActive } : r
+    );
+    if (String(id).startsWith("local_") || user?.id === "demo") {
       setSavedReminders(updated);
-      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+      return;
+    }
+    try {
+      await apiUpdateReminder(id, { active: !currentActive });
+      setSavedReminders(updated);
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+    } catch (error) {
+      showToast("Could not sync the reminder change. Please try again.", "error");
+      console.error("Reminder update failed:", error);
     }
   };
 
   const handleDeleteReminder = async (id) => {
+    const updated = savedReminders.filter(r => r._id !== id && r.id !== id);
+    if (String(id).startsWith("local_") || user?.id === "demo") {
+      setSavedReminders(updated);
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+      return;
+    }
     try {
       await apiDeleteReminder(id);
-      setSavedReminders(prev => prev.filter(r => r._id !== id && r.id !== id));
-    } catch (_e) {
-      // Offline fallback: remove from localStorage
-      const updated = savedReminders.filter(r => r._id !== id && r.id !== id);
       setSavedReminders(updated);
-      localStorage.setItem(REMINDERS_KEY, JSON.stringify(updated));
+      saveProfileArray(REMINDERS_KEY, user?.id, updated);
+    } catch (error) {
+      showToast("Could not delete this reminder. Please try again.", "error");
+      console.error("Reminder delete failed:", error);
     }
   };
 
   const handleDeleteAllReminders = async () => {
+    if (user?.id === "demo") {
+      setSavedReminders([]);
+      saveProfileArray(REMINDERS_KEY, user.id, []);
+      return;
+    }
     try {
       await apiDeleteAllReminders();
       setSavedReminders([]);
-    } catch (_e) {
-      // Offline fallback
-      setSavedReminders([]);
-      localStorage.removeItem(REMINDERS_KEY);
+      saveProfileArray(REMINDERS_KEY, user?.id, []);
+    } catch (error) {
+      showToast("Could not delete reminders. Please try again.", "error");
+      console.error("Delete all reminders failed:", error);
+    }
+  };
+
+  const handleToggleMedTaken = async (medicationId) => {
+    const previous = takenMeds;
+    const next = { ...previous, [medicationId]: !previous[medicationId] };
+    setTakenMeds(next);
+    saveTakenMeds(user?.id, checkinDate, next);
+
+    if (user?.id === "demo" || String(medicationId).startsWith("local_")) return;
+    try {
+      await apiSetPillCheckin(medicationId, checkinDate, next[medicationId]);
+    } catch (error) {
+      setTakenMeds(previous);
+      saveTakenMeds(user?.id, checkinDate, previous);
+      showToast("Could not sync this check-in. Please try again.", "error");
+      console.error("Pill check-in failed:", error);
     }
   };
 
@@ -15834,7 +16042,7 @@ export default function App() {
     async function init() {
       try {
         setDbReady(false);
-        const isDemo = localStorage.getItem("MEDAI_DEMO_MODE") === "true";
+        const isDemo = user.id === "demo";
         // In demo mode, skip backend calls entirely and use localStorage
         if (isDemo) {
           setReports(loadReports());
@@ -15843,8 +16051,9 @@ export default function App() {
           setVitals(loadVitals());
           setChatSessions([]);
           setTodos([]);
-          setSavedMedicines(loadMedicines());
-          setSavedReminders(loadReminders());
+          setSavedMedicines(loadMedicines(user.id));
+          setSavedReminders(loadReminders(user.id));
+          setTakenMeds(loadTakenMeds(user.id, checkinDate));
           setDbReady(true);
           return;
         }
@@ -15888,26 +16097,75 @@ export default function App() {
           console.warn("Failed to sync vitals to database:", err);
         }
 
+        const medicationIdMap = new Map();
+
         try {
-          const lsReminders = loadReminders();
-          const localOnlyReminders = lsReminders.filter(r => String(r.id || r._id).startsWith("local_"));
-          if (localOnlyReminders.length > 0) {
-            await Promise.all(localOnlyReminders.map(r => apiCreateReminder({ title: r.title, time: r.time, active: r.active })));
+          let cachedReminders = loadReminders(user.id);
+          const localOnlyReminders = cachedReminders.filter(r =>
+            String(r.id || r._id).startsWith("local_")
+          );
+          for (const reminder of localOnlyReminders) {
+            const localId = reminder.id || reminder._id;
+            const created = await apiCreateReminder({
+              title: reminder.title,
+              time: reminder.time,
+              active: reminder.active
+            });
+            cachedReminders = cachedReminders.map(item =>
+              (item.id === localId || item._id === localId) ? created : item
+            );
+            saveProfileArray(REMINDERS_KEY, user.id, cachedReminders);
           }
-          localStorage.removeItem(REMINDERS_KEY);
         } catch (err) {
           console.warn("Failed to sync reminders to database:", err);
         }
 
         try {
-          const lsMedicines = loadMedicines();
-          const localOnlyMeds = lsMedicines.filter(m => String(m.id || m._id).startsWith("local_"));
-          if (localOnlyMeds.length > 0) {
-            await Promise.all(localOnlyMeds.map(m => apiCreateMedication({ name: m.name, cause: m.cause || "", category: m.category || "Pharmacy" })));
+          let cachedMedicines = loadMedicines(user.id);
+          const localOnlyMeds = cachedMedicines.filter(m =>
+            String(m.id || m._id).startsWith("local_")
+          );
+          for (const medicine of localOnlyMeds) {
+            const localId = medicine.id || medicine._id;
+            const created = await apiCreateMedication({
+              name: medicine.name,
+              cause: medicine.cause || "",
+              category: medicine.category || "Pharmacy"
+            });
+            medicationIdMap.set(String(localId), created.id || created._id);
+            cachedMedicines = cachedMedicines.map(item =>
+              (item.id === localId || item._id === localId) ? created : item
+            );
+            saveProfileArray(MEDICINE_KEY, user.id, cachedMedicines);
           }
-          localStorage.removeItem(MEDICINE_KEY);
         } catch (err) {
           console.warn("Failed to sync medicines to database:", err);
+        }
+
+        try {
+          const legacyCheckins = JSON.parse(localStorage.getItem(TAKEN_MEDS_KEY) || "{}");
+          const remappedLegacyCheckins = Object.entries(legacyCheckins).reduce((result, [cachedId, taken]) => {
+            const medicationId = medicationIdMap.get(String(cachedId)) || cachedId;
+            result[medicationId] = !!taken;
+            return result;
+          }, {});
+          localStorage.setItem(TAKEN_MEDS_KEY, JSON.stringify(remappedLegacyCheckins));
+
+          const remainingLegacyCheckins = {};
+          for (const [medicationId, taken] of Object.entries(remappedLegacyCheckins)) {
+            if (String(medicationId).startsWith("local_")) {
+              remainingLegacyCheckins[medicationId] = !!taken;
+              continue;
+            }
+            await apiSetPillCheckin(medicationId, checkinDate, !!taken);
+          }
+          if (Object.keys(remainingLegacyCheckins).length > 0) {
+            localStorage.setItem(TAKEN_MEDS_KEY, JSON.stringify(remainingLegacyCheckins));
+          } else {
+            localStorage.removeItem(TAKEN_MEDS_KEY);
+          }
+        } catch (err) {
+          console.warn("Failed to sync pill check-ins to database:", err);
         }
 
         try {
@@ -15921,7 +16179,7 @@ export default function App() {
           console.warn("Failed to sync todos to database:", err);
         }
 
-        const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders] = await Promise.all([
+        const [dbReports, dbHistory, dbSettings, dbVitals, dbChats, dbTodos, dbMeds, dbReminders, dbCheckins] = await Promise.all([
           apiFetchReports().catch(err => { console.error("Reports fetch failed:", err); return []; }),
           apiFetchHistory().catch(err => { console.error("History fetch failed:", err); return []; }),
           apiFetchSettings().catch(err => { console.error("Settings fetch failed:", err); return {}; }),
@@ -15929,7 +16187,8 @@ export default function App() {
           apiFetchChats().catch(err => { console.error("Chats fetch failed:", err); return []; }),
           apiFetchTodos().catch(err => { console.error("Todos fetch failed:", err); return []; }),
           apiFetchMedications().catch(err => { console.error("Medications fetch failed:", err); return null; }),
-          apiFetchReminders().catch(err => { console.error("Reminders fetch failed:", err); return []; })
+          apiFetchReminders().catch(err => { console.error("Reminders fetch failed:", err); return null; }),
+          apiFetchPillCheckins(checkinDate).catch(err => { console.error("Pill check-ins fetch failed:", err); return null; })
         ]);
         setReports(Array.isArray(dbReports) ? dbReports : []);
         setHistory(Array.isArray(dbHistory) ? dbHistory : []);
@@ -15976,16 +16235,40 @@ export default function App() {
         localStorage.setItem(TODO_KEY, JSON.stringify(validTodos));
         
         if (dbMeds === null) {
-          setSavedMedicines(loadMedicines());
+          setSavedMedicines(loadMedicines(user.id));
         } else {
-          const validMeds = Array.isArray(dbMeds) ? dbMeds : [];
+          const serverMeds = Array.isArray(dbMeds) ? dbMeds : [];
+          const serverMedicineNames = new Set(serverMeds.map(medicine => medicine.name.trim().toLowerCase()));
+          const pendingMeds = loadMedicines(user.id).filter(medicine => String(medicine.id || medicine._id).startsWith("local_"));
+          const validMeds = [...pendingMeds.filter(medicine => !serverMedicineNames.has(medicine.name.trim().toLowerCase())), ...serverMeds];
           setSavedMedicines(validMeds);
-          localStorage.setItem(MEDICINE_KEY, JSON.stringify(validMeds));
+          saveProfileArray(MEDICINE_KEY, user.id, validMeds);
+          localStorage.removeItem(MEDICINE_KEY);
         }
         
-        const validReminders = Array.isArray(dbReminders) ? dbReminders : [];
-        setSavedReminders(validReminders);
-        localStorage.setItem(REMINDERS_KEY, JSON.stringify(validReminders));
+        if (dbReminders === null) {
+          setSavedReminders(loadReminders(user.id));
+        } else {
+          const serverReminders = Array.isArray(dbReminders) ? dbReminders : [];
+          const serverReminderKeys = new Set(serverReminders.map(reminder => JSON.stringify([reminder.title, reminder.time])));
+          const pendingReminders = loadReminders(user.id).filter(reminder => String(reminder.id || reminder._id).startsWith("local_"));
+          const validReminders = [...pendingReminders.filter(reminder => !serverReminderKeys.has(JSON.stringify([reminder.title, reminder.time]))), ...serverReminders];
+          setSavedReminders(validReminders);
+          saveProfileArray(REMINDERS_KEY, user.id, validReminders);
+          localStorage.removeItem(REMINDERS_KEY);
+        }
+
+        if (dbCheckins === null) {
+          setTakenMeds(loadTakenMeds(user.id, checkinDate));
+        } else {
+          const syncedCheckins = (Array.isArray(dbCheckins) ? dbCheckins : []).reduce((result, checkin) => {
+            const medicationId = checkin.medicationId || checkin.medication_id;
+            if (medicationId) result[medicationId] = !!checkin.taken;
+            return result;
+          }, {});
+          setTakenMeds(syncedCheckins);
+          saveTakenMeds(user.id, checkinDate, syncedCheckins);
+        }
       } catch (e) {
         console.warn("Backend not reachable, using localStorage:", e.message);
         setReports(loadReports());
@@ -15994,14 +16277,15 @@ export default function App() {
         setVitals(loadVitals());
         setChatSessions([]);
         setTodos(loadTodos());
-        setSavedMedicines(loadMedicines());
-        setSavedReminders(loadReminders());
+        setSavedMedicines(loadMedicines(user.id));
+        setSavedReminders(loadReminders(user.id));
+        setTakenMeds(loadTakenMeds(user.id, checkinDate));
       } finally {
         setDbReady(true);
       }
     }
     init();
-  }, [user, loadingUser]);
+  }, [user, loadingUser, profileSyncRevision, checkinDate]);
 
   useEffect(() => {
     if (!dbReady) return;
@@ -16117,6 +16401,12 @@ export default function App() {
     setChatMsgs(getNewChatDefaultMessages());
     setTodos([]);
     setSavedMedicines([]);
+    setSavedReminders([]);
+    setTakenMeds({});
+    saveProfileArray(MEDICINE_KEY, user?.id, []);
+    saveProfileArray(REMINDERS_KEY, user?.id, []);
+    saveTakenMeds(user?.id, checkinDate, {});
+    localStorage.removeItem(TAKEN_MEDS_KEY);
     localStorage.removeItem(HISTORY_KEY);
   };
 
@@ -16175,6 +16465,8 @@ export default function App() {
           handleToggleReminder={handleToggleReminder}
           handleDeleteReminder={handleDeleteReminder}
           handleDeleteAllReminders={handleDeleteAllReminders}
+          takenMeds={takenMeds}
+          onToggleMedTaken={handleToggleMedTaken}
         />
       );
       case "analyzer": return <Analyzer initialSymptoms={initialSymptoms} setInitialSymptoms={setInitialSymptoms} onAnalyze={handleAnalyze} />;
@@ -16245,6 +16537,13 @@ export default function App() {
   };
 
   const handleLoginSuccess = (userData, isRegister) => {
+    if (userData?.id !== "demo") {
+      localStorage.removeItem("MEDAI_DEMO_MODE");
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(userData));
+    } else {
+      localStorage.removeItem(CACHED_USER_KEY);
+    }
+
     justLoggedInRef.current = true;
     setUser(userData);
     setSplashPhase("enter");

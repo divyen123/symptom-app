@@ -117,10 +117,35 @@ create table if not exists public.medications (
   created_at timestamp with time zone default now()
 );
 
+-- Upgrade existing installations; CREATE TABLE IF NOT EXISTS does not add new columns.
+alter table public.medications add column if not exists cause text;
+alter table public.medications add column if not exists category text;
+update public.medications set cause = '' where cause is null;
+update public.medications set category = 'Pharmacy' where category is null;
+alter table public.medications alter column cause set default '';
+alter table public.medications alter column category set default 'Pharmacy';
+
 -- Index for medications by user_id
 create index if not exists medications_user_id_idx on public.medications (user_id);
 
--- 8. Create Saved Plans Table
+-- 8. Create Daily Medication Check-ins Table
+create table if not exists public.medication_checkins (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  medication_id uuid not null references public.medications(id) on delete cascade,
+  checkin_date date not null,
+  taken boolean not null default false,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now(),
+  unique (user_id, medication_id, checkin_date)
+);
+
+create index if not exists medication_checkins_user_date_idx
+  on public.medication_checkins (user_id, checkin_date);
+create index if not exists medication_checkins_medication_idx
+  on public.medication_checkins (medication_id);
+
+-- 9. Create Saved Plans Table
 create table if not exists public.saved_plans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
@@ -132,7 +157,7 @@ create table if not exists public.saved_plans (
 -- Index for saved plans by user_id
 create index if not exists saved_plans_user_id_idx on public.saved_plans (user_id);
 
--- 9. Create Reminders Table
+-- 10. Create Reminders Table
 create table if not exists public.reminders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
@@ -145,7 +170,7 @@ create table if not exists public.reminders (
 -- Index for reminders by user_id
 create index if not exists reminders_user_id_idx on public.reminders (user_id);
 
--- 10. Create History Table
+-- 11. Create History Table
 create table if not exists public.history (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
