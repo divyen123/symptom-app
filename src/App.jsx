@@ -15677,6 +15677,12 @@ export default function App() {
         setUser(null);
         localStorage.removeItem("MEDAI_TOKEN");
         localStorage.removeItem("MEDAI_DEMO_MODE");
+        localStorage.removeItem(REMINDERS_KEY);
+        localStorage.removeItem(MEDICINE_KEY);
+        localStorage.removeItem(TODO_KEY);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(HISTORY_KEY);
+        localStorage.removeItem(VITALS_KEY);
       }
     } finally {
       setLoadingUser(false);
@@ -15691,6 +15697,11 @@ export default function App() {
     localStorage.removeItem("MEDAI_TOKEN");
     localStorage.removeItem("MEDAI_DEMO_MODE");
     localStorage.removeItem(REMINDERS_KEY);
+    localStorage.removeItem(MEDICINE_KEY);
+    localStorage.removeItem(TODO_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(VITALS_KEY);
     sessionStorage.removeItem("MEDAI_SESSION_PWD");
     setUser(null);
     setReports([]);
