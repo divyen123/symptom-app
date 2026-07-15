@@ -13849,19 +13849,20 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                       key={plan.id}
                       onClick={() => handleViewSavedPlan(plan)}
                       style={{
-                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center",
+                        flexDirection: isMobile ? "column" : "row", gap: isMobile ? 12 : 0,
                         padding: "12px 16px", borderRadius: 10, background: "var(--surface-2)",
                         border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s ease"
                       }}
                       className="mt-item-card"
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, width: isMobile ? "100%" : "auto" }}>
                         <span style={{ fontSize: 16 }}>💾</span>
                         <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--navy)" }}>
                           {plan.plan_name}
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, width: isMobile ? "100%" : "auto", justifyContent: isMobile ? "flex-end" : "auto" }}>
                         <button
                           onClick={(e) => { e.stopPropagation(); exportPlanToPDF(plan); }}
                           style={{
@@ -13870,7 +13871,7 @@ You MUST respond ONLY with a valid JSON object matching this structure (do not i
                             fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)"
                           }}
                         >
-                          📄 Export PDF
+                          📄 {isMobile ? "Export" : "Export PDF"}
                         </button>
                         <button
                           onClick={(e) => handleDeletePlanItem(plan.id, e)}
